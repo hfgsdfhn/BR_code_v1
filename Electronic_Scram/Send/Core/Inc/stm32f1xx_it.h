@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    stm32f1xx_it.h
@@ -55,7 +55,7 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
-void USART1_IRQHandler(void);
+void USB_LP_CAN1_RX0_IRQHandler(void);
 void USART3_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
@@ -66,4 +66,3 @@ void USART3_IRQHandler(void);
 #endif
 
 #endif /* __STM32F1xx_IT_H */
-

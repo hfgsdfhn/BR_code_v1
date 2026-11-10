@@ -128,8 +128,8 @@ int main(void)
   MX_USART6_UART_Init();
   MX_USART10_UART_Init();
   /* USER CODE BEGIN 2 */
-  /* PC4/PC5 正常拉高：gpio.c 已置高，这里显式再写一次，确保任何外设初始化前即为高电平�?
-     写在 USER CODE 2 内，CubeMX 重新生成代码不会覆盖�?*/
+  /* 外设初始化完成后再次将 PC4、PC5 置为高电平，与 gpio.c 中的初始电平保持一致。
+     保留在 USER CODE 2 区域内，以便 CubeMX 重新生成代码时保留此设置。 */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
   /* Flash commands use 8-bit SPI frames. */
