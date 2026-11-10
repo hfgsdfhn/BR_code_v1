@@ -1,0 +1,19 @@
+# Keil / ARM compiler build outputs
+*.o
+*.d
+*.crf
+*.map
+*.lnp
+*.axf
+*.htm
+*.dep
+*.bak
+
+# Local IDE user state
+*.uvguix.*
+
+# Common generated debug/output folders
+Listings/
+Objects/
+Debug/
+Release/

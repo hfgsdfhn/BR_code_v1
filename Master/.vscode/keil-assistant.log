@@ -1,0 +1,16 @@
+[info] Log at : 2026/9/4|08:38:42|GMT+0800
+
+[Warn] 发现无效的文件组，Group: ::CMSIS
+[info] Log at : 2026/9/4|08:38:52|GMT+0800
+
+[info] Log at : 2026/9/26|10:05:09|GMT+0800
+
+[Warn] 发现无效的文件组，Group: ::CMSIS
+[Warn] 发现无效的文件组，Group: undefined
+[Error] c_cpp_properties.json parse error: SyntaxError: Unexpected token '﻿', "﻿{
+    "co"... is not valid JSON
+[Warn] 发现无效文件路径，Group: User/Bassis_port_control
+[Warn] 发现无效的文件组，Group: ::CMSIS
+[info] Log at : 2026/10/15|19:24:46|GMT+0800
+
+[Warn] 发现无效的文件组，Group: ::CMSIS

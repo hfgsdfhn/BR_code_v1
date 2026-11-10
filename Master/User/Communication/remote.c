@@ -1,0 +1,94 @@
+#include "remote.h"
+#include "usart.h"
+#include <string.h>
+
+static uint8_t remote_rx_byte;
+static uint8_t remote_parser[REMOTE_FRAME_SIZE];
+static uint8_t remote_parser_len;
+static remote_state_t remote_state;
+static uint32_t remote_valid_count;
+
+static void remote_parse_byte(uint8_t byte)
+{
+    if (remote_parser_len == 0U)
+    {
+        if (byte == REMOTE_FRAME_HEADER_0)
+            remote_parser[remote_parser_len++] = byte;
+        return;
+    }
+    if (remote_parser_len == 1U)
+    {
+        if (byte == REMOTE_FRAME_HEADER_1)
+            remote_parser[remote_parser_len++] = byte;
+        else
+            remote_parser_len = (byte == REMOTE_FRAME_HEADER_0) ? 1U : 0U;
+        return;
+    }
+    remote_parser[remote_parser_len++] = byte;
+    if (remote_parser_len == REMOTE_FRAME_SIZE)
+    {
+        remote_state.joystick = remote_parser[2];
+        remote_state.group1 = remote_parser[3];
+        remote_state.shoulder = remote_parser[4];
+        remote_state.group2 = remote_parser[5];
+        remote_state.group3 = remote_parser[6];
+        remote_state.group4 = remote_parser[7];
+        remote_state.received_tick = HAL_GetTick();
+        remote_state.valid = 1U;
+        remote_state.valid_frames = ++remote_valid_count;
+        remote_parser_len = 0U;
+    }
+}
+
+void Remote_Init(void)
+{
+    memset(&remote_state, 0, sizeof(remote_state));
+    remote_parser_len = 0U;
+    remote_valid_count = 0U;
+    remote_rx_byte = 0U;
+
+}
+
+void Remote_RxByte(void)
+{
+    remote_parse_byte(remote_rx_byte);
+
+}
+
+void Remote_RxBytes(const uint8_t *data, uint16_t size)
+{
+    while (data != NULL && size-- != 0U)
+        remote_parse_byte(*data++);
+}
+
+void Remote_UartError(void)
+{
+    __HAL_UART_CLEAR_FLAG(&huart9, UART_CLEAR_OREF | UART_CLEAR_NEF | UART_CLEAR_PEF |
+                                  UART_CLEAR_FEF | UART_CLEAR_IDLEF);
+    remote_parser_len = 0U;
+
+}
+
+uint8_t Remote_GetState(remote_state_t *state)
+{
+    uint32_t primask;
+    if (state == NULL || remote_state.valid == 0U)
+        return 0U;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    *state = remote_state;
+    __set_PRIMASK(primask);
+    return 1U;
+}
+
+uint8_t Remote_IsOnline(uint32_t timeout_ms)
+{
+    return (uint8_t)(remote_state.valid != 0U &&
+                     (HAL_GetTick() - remote_state.received_tick) <= timeout_ms);
+}
+
+uint32_t Remote_GetValidFrameCount(void)
+{
+    return remote_valid_count;
+}
+

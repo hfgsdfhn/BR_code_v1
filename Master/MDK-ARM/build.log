@@ -1,0 +1,13 @@
+*** Using Compiler 'V6.24', folder: 'D:\keil5\ARM\ARMCLANG\Bin'
+Build target 'H723VGT6'
+../User/Peripheral/UART/bsp_uart.c(157): warning: '/*' within block comment [-Wcomment]
+  157 | bool BspUart_Send(bsp_uart_channel_t channel /* 待发送数据的 UART 通道<E3><80>?*/, const uint8_t *data /* 待发送的字节流<E3><80>?*/,
+      |                                              ^
+../User/Peripheral/UART/bsp_uart.c(157): error: expected identifier or '('
+  157 | bool BspUart_Send(bsp_uart_channel_t channel /* 待发送数据的 UART 通道<E3><80>?*/, const uint8_t *data /* 待发送的字节流<E3><80>?*/,
+      |                                                                                  ^
+1 warning and 1 error generated.
+compiling bsp_uart.c...
+"H723VGT6\H723VGT6.axf" - 1 Error(s), 1 Warning(s).
+Target not created.
+Build Time Elapsed:  00:00:04
