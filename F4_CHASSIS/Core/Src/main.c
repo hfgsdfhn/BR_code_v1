@@ -20,6 +20,7 @@
 #include "main.h"
 #include "can.h"
 #include "gpio.h"
+#include "can_board.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -89,6 +90,7 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
+  CAN_Board_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
