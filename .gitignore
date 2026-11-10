@@ -1,0 +1,86 @@
+
+# ==========================================
+# STM32CubeMX + Keil MDK + VS Code
+# ==========================================
+
+# ---------- 1. Keil 用户配置 ----------
+# 个人调试配置、窗口布局、断点等
+*.uvopt
+*.uvoptx
+*.uvgui
+*.uvgui.*
+*.uvguix.*
+
+# ---------- 2. Keil 编译产物 ----------
+# 编译中间文件
+*.o
+*.obj
+*.d
+*.crf
+*.sbr
+*.lnp
+*.dep
+
+# 编译输出文件
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.cod
+*.m51
+*.m66
+*.h86
+
+# 编译日志及临时文件
+*.build_log.htm
+*.iex
+*.htm
+*.i
+
+# Keil 输出目录
+/Objects/
+/Listings/
+
+# ---------- 3. CubeMX 临时文件 ----------
+# CubeMX 备份文件
+*.ioc.bak
+*.ioc.tmp
+
+# CubeMX 工程元数据
+.mxproject
+
+# 注意：不要忽略 .ioc 文件！
+
+# ---------- 4. VS Code ----------
+# 个人工作区缓存
+.vscode/*.log
+.vscode/.browse.*
+.vscode/ipch/
+.vscode/.ropeproject/
+
+# VS Code 临时文件
+*.code-workspace.bak
+
+# ---------- 5. 其他编辑器 ----------
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ---------- 6. 临时文件 ----------
+*.bak
+*.tmp
+*.temp
+*.old
+
+# ---------- 7. Git ----------
+*.orig
