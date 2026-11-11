@@ -10,7 +10,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "my_main.h"
 
 /* USER CODE END Includes */
 
@@ -40,44 +39,11 @@ const osThreadAttr_t Status_Task_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-/* Definitions for Chassis_Task */
-osThreadId_t Chassis_TaskHandle;
-const osThreadAttr_t Chassis_Task_attributes = {
-  .name = "Chassis_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for Climb_Task */
-osThreadId_t Climb_TaskHandle;
-const osThreadAttr_t Climb_Task_attributes = {
-  .name = "Climb_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for SuctionCup_Task */
-osThreadId_t SuctionCup_TaskHandle;
-const osThreadAttr_t SuctionCup_Task_attributes = {
-  .name = "SuctionCup_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for Arm_Task */
-osThreadId_t Arm_TaskHandle;
-const osThreadAttr_t Arm_Task_attributes = {
-  .name = "Arm_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 /* USER CODE END FunctionPrototypes */
 
 extern void Status_Task(void *argument);
-extern void Chassis_Task(void *argument);
-extern void Climb_Task(void *argument);
-extern void SuctionCup_Task(void *argument);
-extern void Arm_Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -89,7 +55,7 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
    (void)xTask;
    (void)pcTaskName;
-   ERROR_HANDLER(ERROR_CODE_ASSERT);
+   Error_Handler();
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
@@ -118,28 +84,11 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  My_RtosInit();
-  /* USER CODE END RTOS_QUEUES */
-
   /* Create the thread(s) */
   /* creation of Status_Task */
   Status_TaskHandle = osThreadNew(Status_Task, NULL, &Status_Task_attributes);
 
-  /* creation of Chassis_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
-
-  /* creation of Climb_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
-
-  /* creation of SuctionCup_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
-
-  /* creation of Arm_Task */
-  Arm_TaskHandle = osThreadNew(Arm_Task, NULL, &Arm_Task_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
-  /* All application threads are created above. */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -170,4 +119,3 @@ __weak void Status_Task(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

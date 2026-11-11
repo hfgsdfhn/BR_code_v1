@@ -4,8 +4,9 @@
 
 #include "main.h"
 
-static HAL_StatusTypeDef CAN_Transmit(CAN_HandleTypeDef *hcan, uint8_t Header,
-                                      uint32_t Id, uint8_t *data, uint8_t len);
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length);
 
 
 static float AkMotor_Clamp(float value, float minimum, float maximum)
@@ -64,8 +65,24 @@ HAL_StatusTypeDef AkMotor_SendServoSpeedCommand(const ak_motor_t *motor)
                                        AK_MOTOR_SPEED_MAX);
     can_id = motor->id | ((uint32_t)CAN_PACKET_SET_RPM << 8U);
     AkMotor_WriteI32Be(data, speed_raw);
-    return CAN_Transmit(motor->hcan, 1, can_id, data,
-                               AK_MOTOR_SERVO_SPEED_DATA_LENGTH);
+    return Can_Transmit(motor->hcan, 1U, can_id, data,
+                        AK_MOTOR_SERVO_SPEED_DATA_LENGTH);
+}
+
+HAL_StatusTypeDef AkMotor_SendCurrentCommand(const ak_motor_t *motor,
+                                             int32_t current)
+{
+    uint8_t data[4];
+    uint32_t can_id;
+
+    if ((motor == NULL) || (motor->hcan == NULL))
+    {
+        return HAL_ERROR;
+    }
+
+    can_id = motor->id | ((uint32_t)CAN_PACKET_SET_CURRENT << 8U);
+    AkMotor_WriteI32Be(data, current);
+    return Can_Transmit(motor->hcan, 1U, can_id, data, sizeof(data));
 }
 
 bool AkMotor_Init(ak_motor_t *motor, CAN_HandleTypeDef *hcan, uint8_t id)
@@ -107,6 +124,17 @@ bool AkMotor_SetSpeed(ak_motor_t *motor, float speed)
     return AkMotor_SendServoSpeedCommand(motor) == HAL_OK;
 }
 
+bool AkMotor_SetCurrent(ak_motor_t *motor, int16_t current)
+{
+    if ((motor == NULL) || (motor->hcan == NULL))
+    {
+        return false;
+    }
+
+    motor->step.step_started = false;
+    return AkMotor_SendCurrentCommand(motor, (int32_t)current) == HAL_OK;
+}
+
 bool AkMotor_SetSpeedStep(ak_motor_t *motor, float target_rpm,
                           float step_rpm, uint32_t interval_ms)
 {
@@ -138,61 +166,72 @@ bool AkMotor_SetSpeedStep(ak_motor_t *motor, float target_rpm,
     return true;
 }
 
-bool AkMotor_ParseFeedback(ak_motor_t *motor, const BSP_CAN_Frame_t *frame)
+bool AkMotor_ParseFeedback(ak_motor_t *motor,
+                           const CAN_RxHeaderTypeDef *header,
+                           const uint8_t data[8])
 {
-    if ((motor == NULL) || (frame == NULL) || ((frame->id & 0xFFU) != motor->id)
-        || (frame->dlc != AK_MOTOR_SERVO_FEEDBACK_LENGTH))
+    uint32_t id;
+
+    if ((motor == NULL) || (header == NULL) || (data == NULL)
+        || (header->IDE != CAN_ID_EXT) || (header->DLC != 8U))
     {
         return false;
     }
 
-    motor->feedback.position = (float)AkMotor_ReadI16Be(&frame->data[0]) * 0.1f;
-    motor->feedback.speed = (float)AkMotor_ReadI16Be(&frame->data[2]) * 10.0f;
-    motor->feedback.torque = (float)AkMotor_ReadI16Be(&frame->data[4]) * 0.01f;
-    motor->feedback.temperature = frame->data[6];
-    motor->feedback.error_code = frame->data[7];
+    id = header->ExtId & 0xFFU;
+    if (id != motor->id)
+    {
+        return false;
+    }
+
+    motor->feedback.position = (float)AkMotor_ReadI16Be(&data[0]) * 0.1f;
+    motor->feedback.speed = (float)AkMotor_ReadI16Be(&data[2]) * 10.0f;
+    motor->feedback.torque = (float)AkMotor_ReadI16Be(&data[4]) * 0.01f;
+    motor->feedback.temperature = data[6];
+    motor->feedback.error_code = data[7];
     motor->feedback.valid = true;
     return true;
 }
 
-static HAL_StatusTypeDef CAN_Transmit(CAN_HandleTypeDef *hcan, uint8_t Header,
-                                      uint32_t Id, uint8_t *data, uint8_t len)
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length)
 {
     CAN_TxHeaderTypeDef tx_header = {0};
     uint32_t mailbox;
-    uint32_t timeout = 0xFFFFFU;
 
-    if ((hcan == NULL) || (data == NULL) || (Header > 1U))
+    if ((hcan == NULL) || (data == NULL) || (length > 8U) || (header > 1U))
     {
         return HAL_ERROR;
     }
 
-    if (len > 8U)
+    if (header == 0U)
     {
-        len = 8U;
-    }
-
-    if (Header == 0U)
-    {
-        tx_header.StdId = Id;
+        if (id > 0x7FFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.StdId = id;
         tx_header.IDE = CAN_ID_STD;
     }
     else
     {
-        tx_header.ExtId = Id;
+        if (id > 0x1FFFFFFFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.ExtId = id;
         tx_header.IDE = CAN_ID_EXT;
     }
-    tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = len;
-    tx_header.TransmitGlobalTime = DISABLE;
 
-    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
+    if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
     {
-        if (--timeout == 0U)
-        {
-            return HAL_TIMEOUT;
-        }
+        return HAL_BUSY;
     }
 
-    return HAL_CAN_AddTxMessage(hcan, &tx_header, data, &mailbox);
+    tx_header.RTR = CAN_RTR_DATA;
+    tx_header.DLC = length;
+    tx_header.TransmitGlobalTime = DISABLE;
+
+    return HAL_CAN_AddTxMessage(hcan, &tx_header, (uint8_t *)data, &mailbox);
 }

@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "main.h"
-#include "bsp_can.h"
 
 #define AK_MOTOR_MIN_ID                  1U     /* 有效电机 ID 最小值 */
 #define AK_MOTOR_MAX_ID                  0x7FU  /* 有效电机 ID 最大值 */
@@ -58,10 +57,15 @@ typedef struct
 } ak_motor_t;
 
 HAL_StatusTypeDef AkMotor_SendServoSpeedCommand(const ak_motor_t *motor);
+HAL_StatusTypeDef AkMotor_SendCurrentCommand(const ak_motor_t *motor,
+                                             int32_t current);
 bool AkMotor_Init(ak_motor_t *motor, CAN_HandleTypeDef *hcan, uint8_t id);
 bool AkMotor_SetSpeed(ak_motor_t *motor, float speed);
+bool AkMotor_SetCurrent(ak_motor_t *motor, int16_t current);
 bool AkMotor_SetSpeedStep(ak_motor_t *motor, float target_rpm,
                           float step_rpm, uint32_t interval_ms);
-bool AkMotor_ParseFeedback(ak_motor_t *motor, const BSP_CAN_Frame_t *frame);
+bool AkMotor_ParseFeedback(ak_motor_t *motor,
+                           const CAN_RxHeaderTypeDef *header,
+                           const uint8_t data[8]);
 
 #endif

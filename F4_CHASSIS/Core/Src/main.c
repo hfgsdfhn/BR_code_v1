@@ -19,12 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
+#include "tim.h"
 #include "gpio.h"
-#include "can_board.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "my_main.h"
+#include "can_app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +57,22 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM5)
+    {
+        /* 5ms任务 */
+    }
+    else if (htim->Instance == TIM6)
+    {
 
+        /* 2ms任务 */
+    }
+    else if (htim->Instance == TIM7)
+    {
+        /* 1ms任务 */
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -90,15 +106,21 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
-  CAN_Board_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start_IT(&htim5);
+  HAL_TIM_Base_Start_IT(&htim6);
+  HAL_TIM_Base_Start_IT(&htim7);
+  My_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    My_Loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
