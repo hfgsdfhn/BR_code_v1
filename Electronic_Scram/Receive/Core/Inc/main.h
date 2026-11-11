@@ -69,28 +69,6 @@ void Error_Handler(void);
 #define LORA_M1_GPIO_Port GPIOB
 #define LORA_AUX_Pin GPIO_PIN_12
 #define LORA_AUX_GPIO_Port GPIOB
-#define U4_11_PB13_Pin GPIO_PIN_13
-#define U4_11_PB13_GPIO_Port GPIOB
-#define U4_12_PB14_Pin GPIO_PIN_14
-#define U4_12_PB14_GPIO_Port GPIOB
-#define U4_9_PB15_Pin GPIO_PIN_15
-#define U4_9_PB15_GPIO_Port GPIOB
-#define U4_10_PA8_Pin GPIO_PIN_8
-#define U4_10_PA8_GPIO_Port GPIOA
-#define U1_3_PB3_Pin GPIO_PIN_3
-#define U1_3_PB3_GPIO_Port GPIOB
-#define U1_6_PB4_Pin GPIO_PIN_4
-#define U1_6_PB4_GPIO_Port GPIOB
-#define U1_5_PB5_Pin GPIO_PIN_5
-#define U1_5_PB5_GPIO_Port GPIOB
-#define U1_8_PB6_Pin GPIO_PIN_6
-#define U1_8_PB6_GPIO_Port GPIOB
-#define U1_7_PB7_Pin GPIO_PIN_7
-#define U1_7_PB7_GPIO_Port GPIOB
-#define U1_10_PB8_Pin GPIO_PIN_8
-#define U1_10_PB8_GPIO_Port GPIOB
-#define U1_9_PB9_Pin GPIO_PIN_9
-#define U1_9_PB9_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
