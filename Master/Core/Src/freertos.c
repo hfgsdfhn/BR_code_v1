@@ -10,7 +10,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "my_main.h"
 
 /* USER CODE END Includes */
 
@@ -73,7 +72,6 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
    (void)xTask;
    (void)pcTaskName;
-
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
@@ -102,10 +100,6 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  My_RtosInit();
-  /* USER CODE END RTOS_QUEUES */
-
   /* Create the thread(s) */
   /* creation of Status_Task */
   Status_TaskHandle = osThreadNew(Status_Task, NULL, &Status_Task_attributes);
@@ -117,7 +111,6 @@ void MX_FREERTOS_Init(void) {
   Arm_TaskHandle = osThreadNew(Arm_Task, NULL, &Arm_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* All application threads are created above. */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -148,4 +141,3 @@ __weak void Status_Task(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

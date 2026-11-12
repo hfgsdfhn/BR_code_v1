@@ -27,9 +27,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "my_main.h"
-#include "bsp_can.h"
-#include "bsp_uart.h"
 /* BR: no TR down mechanism. */
 /* USER CODE END Includes */
 
@@ -51,7 +48,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-/* Application task handles are owned by User/Task/my_main.c. */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,7 +61,6 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/* User initialization helpers are implemented in my_main.c. */
 /* USER CODE END 0 */
 
 /**
@@ -136,8 +131,6 @@ int main(void)
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   (void)HAL_SPI_Init(&hspi1);
 
-  /* Initialize CAN and motor objects before starting the scheduler. */
-  My_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -314,16 +307,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  g_error_code = ERROR_CODE_HAL_HANDLER;
-  g_error_handler_file = "HAL Error_Handler";
-  g_error_handler_line = 0U;
-  g_error_handler_return_address = (uint32_t)__builtin_return_address(0);
-  g_error_handler_ipsr = __get_IPSR();
-  g_error_handler_cfsr = SCB->CFSR;
-  g_error_handler_hfsr = SCB->HFSR;
-  g_error_handler_bfar = SCB->BFAR;
-  g_error_handler_mmfar = SCB->MMFAR;
   __disable_irq();
   while (1)
   {
