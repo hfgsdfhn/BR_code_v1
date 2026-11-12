@@ -1,10 +1,12 @@
 #ifndef DJI_MOTOR_H
 #define DJI_MOTOR_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
-#include "Bsp_Can.h"
+#include "can.h"
 
+#define DJI_MOTOR_DATA_LENGTH       8U
 #define DJI_MOTOR_FEEDBACK_ID_BASE  0x201U
 #define DJI_MOTOR_CONTROL_ID_1_4    0x200U
 #define DJI_MOTOR_CONTROL_ID_5_8    0x1FFU
@@ -32,10 +34,10 @@ typedef struct
     float current;          //电流
     float temperature;      //温度
     int16_t target_current;
-    bsp_can_t *can;
+    CAN_HandleTypeDef *can;
 } dji_motor_t;
 
-void DjiMotor_Init(dji_motor_t *motor, bsp_can_t *can, uint8_t id,
+void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id,
                    dji_motor_type_t type);
 void DjiMotor_SetCurrent(dji_motor_t *motor, int16_t current);
 void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data);

@@ -25,7 +25,7 @@ static void DjiMotor_WriteI16Be(uint8_t *data, int16_t value)
  * @param id        电机ID
  * @param type      电机类型
  */
-void DjiMotor_Init(dji_motor_t *motor, bsp_can_t *can, uint8_t id,
+void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id,
                    dji_motor_type_t type)
 {
     if ((motor == NULL) || (can == NULL) || (id < DJI_MOTOR_MIN_ID)
@@ -128,9 +128,11 @@ void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data)
  */
 bool DjiMotor_SendGroup(dji_motor_t *motor, uint8_t number)
 {
-    uint8_t data[BSP_CAN_MAX_DATA_LENGTH] = {0};
+    CAN_TxHeaderTypeDef tx_header = {0};
+    uint8_t data[DJI_MOTOR_DATA_LENGTH] = {0};
     uint8_t index;
     uint32_t can_id;
+    uint32_t tx_mailbox;
 
     if ((motor == NULL) || (motor->can == NULL) || (number == 0U)
         || (number > 4U) || (motor->id < DJI_MOTOR_MIN_ID)
@@ -146,5 +148,12 @@ bool DjiMotor_SendGroup(dji_motor_t *motor, uint8_t number)
         DjiMotor_WriteI16Be(&data[index * 2U], motor[index].target_current);
     }
 
-    return BspCan_Send(motor->can, can_id, data, BSP_CAN_MAX_DATA_LENGTH);
+    tx_header.StdId = can_id;
+    tx_header.IDE = CAN_ID_STD;
+    tx_header.RTR = CAN_RTR_DATA;
+    tx_header.DLC = DJI_MOTOR_DATA_LENGTH;
+    tx_header.TransmitGlobalTime = DISABLE;
+
+    return HAL_CAN_AddTxMessage(motor->can, &tx_header, data,
+                                &tx_mailbox) == HAL_OK;
 }
