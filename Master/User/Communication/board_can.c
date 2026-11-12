@@ -86,6 +86,3 @@ HAL_StatusTypeDef Board_DJI_Send(
     return HAL_CAN_AddTxMessage(
         &hcan1, &tx_header, tx_data, &tx_mailbox);
 }
-
-
-
