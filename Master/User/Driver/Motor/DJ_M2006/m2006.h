@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * @file m2006.h
+ * @brief m2006模块的用户接口与实现。
+ */
 
 #ifndef M2006_H
 #define M2006_H
@@ -36,105 +35,118 @@
 
 typedef enum
 {
-    M2006_MODE_STOP = 0U,
-    M2006_MODE_DAMPING,
-    M2006_MODE_SPEED,
-    M2006_MODE_POSITION,
-    M2006_MODE_CURRENT
+    M2006_MODE_STOP = 0U, /* 当前工作模式或状态。 */
+    M2006_MODE_DAMPING, /* 当前工作模式或状态。 */
+    M2006_MODE_SPEED, /* 当前工作模式或状态。 */
+    M2006_MODE_POSITION, /* 当前工作模式或状态。 */
+    M2006_MODE_CURRENT /* 当前工作模式或状态。 */
 } m2006_mode_t;
 
 typedef struct
 {
-    void (*target_sink)(void *motor, int mode, float target,
+    void (*target_sink)(void *motor, int mode, float target, /* 成员变量。 */
                         float position_deg);
 
-    FDCAN_HandleTypeDef *hcan;
-    uint16_t feedback_age_cycles;
-    uint8_t id;
-    int direction;
-    uint16_t encoder;
-    uint16_t last_encoder;
-    int32_t total_encoder;
-    int16_t speed_rpm;
-    int16_t current_raw;
-    float position_rad;
-    float speed_rad_s;
-    float target;
-    float target_current_a;
-    float target_position_rad;
-    float target_speed_rad_s;
-    float reference_position_rad;
-    float reference_speed_rad_s;
-    float reference_acceleration_rad_s2;
-    float trajectory_start_rad;
-    float trajectory_delta_rad;
-    float trajectory_k0;
-    float trajectory_duration_s;
-    float trajectory_elapsed_s;
-    pid_t position_pid;
-    pid_t speed_pid;
-    m2006_mode_t mode;
-    uint8_t zero_stable_frames;
-    bool received;
-    bool feedback_online;
-    bool speed_reference_valid;
-    bool trajectory_pending;
-    bool trajectory_active;
-    bool startup_hold_active;
+    FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
+    uint16_t feedback_age_cycles; /* 成员变量。 */
+    uint8_t id; /* 成员变量。 */
+    int direction; /* 成员变量。 */
+    uint16_t encoder; /* 成员变量。 */
+    uint16_t last_encoder; /* 成员变量。 */
+    int32_t total_encoder; /* 成员变量。 */
+    int16_t speed_rpm; /* 成员变量。 */
+    int16_t current_raw; /* 成员变量。 */
+    float position_rad; /* 成员变量。 */
+    float speed_rad_s; /* 成员变量。 */
+    float target; /* 成员变量。 */
+    float target_current_a; /* 成员变量。 */
+    float target_position_rad; /* 成员变量。 */
+    float target_speed_rad_s; /* 成员变量。 */
+    float reference_position_rad; /* 成员变量。 */
+    float reference_speed_rad_s; /* 成员变量。 */
+    float reference_acceleration_rad_s2; /* 成员变量。 */
+    float trajectory_time_s; /* 成员变量。 */
+    float trajectory_start_rad; /* 成员变量。 */
+    float trajectory_delta_rad; /* 成员变量。 */
+    float trajectory_k0; /* 成员变量。 */
+    float trajectory_duration_s; /* 成员变量。 */
+    float trajectory_elapsed_s; /* 成员变量。 */
+    pid_t position_pid; /* 成员变量。 */
+    pid_t speed_pid; /* 成员变量。 */
+    m2006_mode_t mode; /* 当前工作模式或状态。 */
+    uint8_t zero_stable_frames; /* 数据缓冲区或数据帧。 */
+    bool received; /* 成员变量。 */
+    bool feedback_online; /* 状态标志。 */
+    bool speed_reference_valid; /* 状态标志。 */
+    bool trajectory_pending; /* 成员变量。 */
+    bool trajectory_active; /* 状态标志。 */
+    bool startup_hold_active; /* 状态标志。 */
 } m2006_t;
 
-extern volatile float m2006_trajectory_max_speed_rad_s;
-extern volatile float m2006_trajectory_max_acceleration_rad_s2;
-extern volatile float m2006_trajectory_time_s;
+extern volatile float m2006_trajectory_max_speed_rad_s; /* 成员变量。 */
+extern volatile float m2006_trajectory_max_acceleration_rad_s2; /* 成员变量。 */
+extern volatile float m2006_trajectory_time_s; /* 成员变量。 */
 
 
-HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
-                             FDCAN_HandleTypeDef *hcan                  ,
-                             uint8_t id                                    ,
+/* 功能：执行 M2006_Init 函数对应的模块操作。 */
+HAL_StatusTypeDef M2006_Init(m2006_t *motor                        , /* 成员变量。 */
+                             FDCAN_HandleTypeDef *hcan                  , /* 对应外设句柄。 */
+                             uint8_t id                                    , /* 成员变量。 */
                              int direction                                 );
 
 
-bool M2006_OnFrame(m2006_t *motor                         ,
+/* 功能：执行 M2006_OnFrame 函数对应的模块操作。 */
+bool M2006_OnFrame(m2006_t *motor                         , /* 成员变量。 */
                    const can_frame_t *frame                      );
 
 
-void M2006_SetTarget(m2006_t *motor                         ,
-                     m2006_mode_t mode                          ,
+/* 功能：执行 M2006_SetTarget 函数对应的模块操作。 */
+void M2006_SetTarget(m2006_t *motor                         , /* 成员变量。 */
+                     m2006_mode_t mode                          , /* 当前工作模式或状态。 */
                      float target                               );
 
 
+/* 功能：执行 M2006_Stop 函数对应的模块操作。 */
 bool M2006_Stop(m2006_t *motor                       );
 
 
-void M2006_SetPositionDegrees(m2006_t *motor                     ,
+/* 功能：执行 M2006_SetPositionDegrees 函数对应的模块操作。 */
+void M2006_SetPositionDegrees(m2006_t *motor                     , /* 成员变量。 */
                               float degrees                          );
 
 
-int16_t M2006_Calc(m2006_t *motor                             ,
+/* 功能：执行 M2006_Calc 函数对应的模块操作。 */
+int16_t M2006_Calc(m2006_t *motor                             , /* 成员变量。 */
                    float dt_s                          );
 
 
-void M2006_BuildGroupFrame(uint8_t first_id                               ,
-                           const int16_t current[4]                             ,
+/* 功能：执行 M2006_BuildGroupFrame 函数对应的模块操作。 */
+void M2006_BuildGroupFrame(uint8_t first_id                               , /* 成员变量。 */
+                           const int16_t current[4]                             , /* 成员变量。 */
                            can_frame_t *frame                              );
 
 
+/* 功能：执行 M2006_ResetFeedback 函数对应的模块操作。 */
 void M2006_ResetFeedback(m2006_t *motor                            );
 
-void M2006_Service(m2006_t *motor                             ,
+/* 功能：执行 M2006_Service 函数对应的模块操作。 */
+void M2006_Service(m2006_t *motor                             , /* 成员变量。 */
                    float dt_s                   );
 
-void M2006_GetPositionDegrees(const m2006_t *motor                         ,
+/* 功能：执行 M2006_GetPositionDegrees 函数对应的模块操作。 */
+void M2006_GetPositionDegrees(const m2006_t *motor                         , /* 成员变量。 */
                               volatile float *position_degrees                      );
 
 #ifndef M2006_BUILD_SPECIAL_DECLARED
 #define M2006_BUILD_SPECIAL_DECLARED
 
 
+/* 功能：执行 M2006_BuildSpecial 函数对应的模块操作。 */
 void M2006_BuildSpecial(m2006_t *motor                        , uint8_t command             );
 #endif
 
 
+/* 功能：执行 M2006_SetTargetDeferred 函数对应的模块操作。 */
 void M2006_SetTargetDeferred(m2006_t *motor, m2006_mode_t mode, float target);
 
 

@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * @file flash.h
+ * @brief flash模块的用户接口与实现。
+ */
 
 #ifndef USER_FLASH_H
 #define USER_FLASH_H
@@ -21,10 +20,10 @@
 
 typedef struct
 {
-    uint32_t magic;
-    uint32_t sequence;
-    float angle;
-    uint32_t crc;
+    uint32_t magic; /* 成员变量。 */
+    uint32_t sequence; /* 成员变量。 */
+    float angle; /* 成员变量。 */
+    uint32_t crc; /* 成员变量。 */
 } motor_angle_record_t;
 
 #define FLASH_CMD_WRITE_ENABLE 0x06U
@@ -35,24 +34,30 @@ typedef struct
 #define FLASH_CMD_DEVICE_ID 0x90U
 
 
+/* 功能：执行 Flash_ReadId 函数对应的模块操作。 */
 uint16_t Flash_ReadId(void);
 
 
-bool Flash_Read(uint32_t address                      , uint8_t *data                    ,
+/* 功能：执行 Flash_Read 函数对应的模块操作。 */
+bool Flash_Read(uint32_t address                      , uint8_t *data                    , /* 数据缓冲区或数据帧。 */
                 uint16_t size                );
 
 
-bool Flash_WritePage(uint32_t address                       ,
+/* 功能：执行 Flash_WritePage 函数对应的模块操作。 */
+bool Flash_WritePage(uint32_t address                       , /* 成员变量。 */
                      const uint8_t *data                  , uint16_t size                 );
 
 
+/* 功能：执行 Flash_EraseSector 函数对应的模块操作。 */
 bool Flash_EraseSector(uint32_t address                   );
 
 
-bool Flash_LoadMotorAngle(uint8_t slot                       ,
+/* 功能：执行 Flash_LoadMotorAngle 函数对应的模块操作。 */
+bool Flash_LoadMotorAngle(uint8_t slot                       , /* 成员变量。 */
                           float *angle                          );
 
-bool Flash_SaveMotorAngle(uint8_t slot                       ,
+/* 功能：执行 Flash_SaveMotorAngle 函数对应的模块操作。 */
+bool Flash_SaveMotorAngle(uint8_t slot                       , /* 成员变量。 */
                           float angle                      );
 
 #endif

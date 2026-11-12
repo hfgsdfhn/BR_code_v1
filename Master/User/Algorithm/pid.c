@@ -1,10 +1,17 @@
+/*
+ * @file pid.c
+ * @brief pid模块的用户接口与实现。
+ */
+
 #include "pid.h"
 
+/* 功能：执行 PID_Abs 函数对应的模块操作。 */
 static float PID_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
+/* 功能：执行 PID_Clamp 函数对应的模块操作。 */
 static float PID_Clamp(float value, float limit)
 {
     limit = PID_Abs(limit);
@@ -26,7 +33,7 @@ static float PID_Clamp(float value, float limit)
 
 /**
  * @brief PID初始化函数
- * 
+ *
  * @param pid 填入PID结构体指针
  * @param kp 比例增益
  * @param ki 积分增益
@@ -64,15 +71,15 @@ void PID_SetIntegralSeparation(pid_t *pid, float separation)
 }
 
 /**
- * @brief PID重置函数 
- * 
+ * @brief PID重置函数
+ *
  * @param pid 填入PID结构体指针
  */
 void PID_Reset(pid_t *pid)
 {
     if (pid != 0)
     {
-        pid->integral = 0.0f;         
+        pid->integral = 0.0f;
         pid->previous_feedback = 0.0f;
         pid->initialized = false;
     }
@@ -80,7 +87,7 @@ void PID_Reset(pid_t *pid)
 
 /**
  * @brief PID计算函数
- * 
+ *
  * @param pid 填入PID结构体指针
  * @param target 目标值
  * @param feedback 反馈值
@@ -98,7 +105,7 @@ float PID_Calc(pid_t *pid, float target, float feedback)
     {
         pid->integral = 0.0f;
     }
-    
+
     else
     {
         pid->integral += error;      //积分值累加
@@ -112,10 +119,11 @@ float PID_Calc(pid_t *pid, float target, float feedback)
         derivative = -(feedback - pid->previous_feedback) / pid->sample_time_ms;
     }
 
-    output = pid->kp * error + 
-             pid->ki * pid->integral + 
+    output = pid->kp * error +
+             pid->ki * pid->integral +
              pid->kd * derivative;
     pid->previous_feedback = feedback;
     pid->initialized = true;     //上一次返回值有效
+/* 功能：执行 PID_Clamp 函数对应的模块操作。 */
     return PID_Clamp(output, pid->output_limit);        //限幅并输出
 }

@@ -1,12 +1,17 @@
-/* theta: rad, curvature: 1/m, s: mm, velocity: m/s */
+/*
+ * @file path.h
+ * @brief path模块的用户接口与实现。
+ */
+
+/* 代码说明：相关模块实现。 */
 typedef struct
 {
-    float x;
-    float y;
-    float theta;
-    float curvature;
-    float s;
-    float velocity;
+    float x; /* 成员变量。 */
+    float y; /* 成员变量。 */
+    float theta; /* 成员变量。 */
+    float curvature; /* 成员变量。 */
+    float s; /* 成员变量。 */
+    float velocity; /* 成员变量。 */
 } PathPoint;
 
 #define PATH_SIZE 90

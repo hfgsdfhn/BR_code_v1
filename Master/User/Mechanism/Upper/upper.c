@@ -1,4 +1,11 @@
+/*
+ * @file upper.c
+ * @brief upper模块的用户接口与实现。
+ */
+
 #include "upper.h"
+#include "cup_config.h"
+#include "suction_cup.h"
 #include "my_main.h"
 #include <math.h>
 #include <string.h>
@@ -10,7 +17,7 @@ extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 
-/* Measured angles in degrees; aligned for debugger cache publication. */
+/* 代码说明：相关模块实现。 */
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
 upper_t upper_state;
 Arm_Pos Arm_larm, Arm_rarm;
@@ -21,6 +28,7 @@ static br_gravity_model_t gravity_model[2] = {
     {.link = BR_RIGHT_LINKS, .gravity_base = BR_RIGHT_GRAVITY_BASE, .payload_mass_kg = BR_PAYLOAD_MASS_KG,
      .payload_com_m = BR_PAYLOAD_COM_M, .calibrated = BR_RIGHT_MODEL_CALIBRATED}};
 
+/* 功能：执行 Upper_ZeroCalibrationRequest 函数对应的模块操作。 */
 static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
 {
     uint8_t active = arm_joint_zero_calibration[arm][joint] != 0U;
@@ -40,6 +48,7 @@ static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
     zero_calibration_previous[arm][joint] = active;
 }
 
+/* 功能：执行 Upper_ZeroCalibrationComplete 函数对应的模块操作。 */
 static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
 {
     bool at_zero = false;
@@ -69,11 +78,13 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
         zero_calibration_previous[arm][joint] = 0U;
     }
 }
+/* 代码说明：相关模块实现。 */
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+/* 代码说明：相关模块实现。 */
 static void telemetry(upper_board_t *board, unsigned joint, float p, float v, float t, float temp, unsigned fault,
                       uint32_t now)
 {
@@ -86,16 +97,58 @@ static void telemetry(upper_board_t *board, unsigned joint, float p, float v, fl
     board->frame_count++;
 }
 
+/* Override gains after M2006_Init; retain each 电机's PID 状态 and limits. */
+static void Upper_ConfigurePidGains(pid_t *pid, float kp, float ki, float kd)
+{
+    pid->kp = kp;
+    pid->ki = ki;
+    pid->kd = kd;
+}
+
+/* 功能：执行 Upper_ConfigureM2006Gains 函数对应的模块操作。 */
+static void Upper_ConfigureM2006Gains(void)
+{
+    Upper_ConfigurePidGains(&m2006_dcup[0].position_pid, BR_M2006_CUP0_POSITION_KP, BR_M2006_CUP0_POSITION_KI, BR_M2006_CUP0_POSITION_KD);
+    Upper_ConfigurePidGains(&m2006_dcup[0].speed_pid, BR_M2006_CUP0_SPEED_KP, BR_M2006_CUP0_SPEED_KI, BR_M2006_CUP0_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_ucup[0].position_pid, BR_M2006_CUP0_POSITION_KP, BR_M2006_CUP0_POSITION_KI, BR_M2006_CUP0_POSITION_KD);
+    Upper_ConfigurePidGains(&m2006_ucup[0].speed_pid, BR_M2006_CUP0_SPEED_KP, BR_M2006_CUP0_SPEED_KI, BR_M2006_CUP0_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_dcup[1].position_pid, BR_M2006_CUP1_POSITION_KP, BR_M2006_CUP1_POSITION_KI, BR_M2006_CUP1_POSITION_KD);
+    Upper_ConfigurePidGains(&m2006_dcup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_ucup[1].position_pid, BR_M2006_CUP1_POSITION_KP, BR_M2006_CUP1_POSITION_KI, BR_M2006_CUP1_POSITION_KD);
+    Upper_ConfigurePidGains(&m2006_ucup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_larm.position_pid, BR_M2006_ROOT_POSITION_KP, BR_M2006_ROOT_POSITION_KI, BR_M2006_ROOT_POSITION_KD);
+    Upper_ConfigurePidGains(&m2006_larm.speed_pid, BR_M2006_ROOT_SPEED_KP, BR_M2006_ROOT_SPEED_KI, BR_M2006_ROOT_SPEED_KD);
+}
+
+/* 功能：执行 Upper_BindMotors 函数对应的模块操作。 */
 void Upper_BindMotors(upper_t *upper)
 {
     if (upper == NULL)
         return;
+    /* 代码说明：相关模块实现。 */
+    m2006_larm.trajectory_time_s = BR_ROOT_M2006_TRAJECTORY_TIME_S;
+    rs01_rarm.trajectory_time_s = BR_ROOT_RS01_TRAJECTORY_TIME_S;
+    rs00_larm[0].trajectory_time_s = BR_BIG_ARM_RS00_TRAJECTORY_TIME_S;
+    rs00_rarm[0].trajectory_time_s = BR_BIG_ARM_RS00_TRAJECTORY_TIME_S;
+    rs00_larm[1].trajectory_time_s = BR_SMALL_ARM_RS00_TRAJECTORY_TIME_S;
+    rs00_rarm[1].trajectory_time_s = BR_SMALL_ARM_RS00_TRAJECTORY_TIME_S;
+    j4310_larm.trajectory_time_s = BR_J4310_TRAJECTORY_TIME_S;
+    j4310_rarm.trajectory_time_s = BR_J4310_TRAJECTORY_TIME_S;
+    rs05_larm.trajectory_time_s = BR_RS05_TRAJECTORY_TIME_S;
+    rs05_rarm.trajectory_time_s = BR_RS05_TRAJECTORY_TIME_S;
+    m3508_dcup[0].trajectory_time_s = BR_AUX_M3508_TRAJECTORY_TIME_S;
+    m2006_dcup[0].trajectory_time_s = BR_M2006_CUP0_TRAJECTORY_TIME_S;
+    m2006_ucup[0].trajectory_time_s = BR_M2006_CUP0_TRAJECTORY_TIME_S;
+    m2006_dcup[1].trajectory_time_s = BR_M2006_CUP1_TRAJECTORY_TIME_S;
+    m2006_ucup[1].trajectory_time_s = BR_M2006_CUP1_TRAJECTORY_TIME_S;
+    Upper_ConfigureM2006Gains();
     upper->arm[0] = (arm_group_t){&rs05_larm, &j4310_larm, &rs00_larm[1], &rs00_larm[0], &m2006_larm, NULL};
     upper->arm[1] = (arm_group_t){&rs05_rarm, &j4310_rarm, &rs00_rarm[1], &rs00_rarm[0], NULL, &rs01_rarm};
     last_service_tick = 0U;
     memset(zero_calibration_previous, 0, sizeof(zero_calibration_previous));
 }
 
+/* 功能：执行 Upper_OnFrame 函数对应的模块操作。 */
 void Upper_OnFrame(upper_t *upper, const can_frame_t *frame)
 {
     uint32_t now = HAL_GetTick();
@@ -127,6 +180,7 @@ void Upper_OnFrame(upper_t *upper, const can_frame_t *frame)
     }
 }
 
+/* 功能：执行 Upper_ToRsMode 函数对应的模块操作。 */
 static rs_mode_t Upper_ToRsMode(arm_mode_t mode)
 {
     switch (mode)
@@ -140,6 +194,7 @@ static rs_mode_t Upper_ToRsMode(arm_mode_t mode)
     }
 }
 
+/* 功能：执行 Upper_ToJ4310Mode 函数对应的模块操作。 */
 static j4310_mode_t Upper_ToJ4310Mode(arm_mode_t mode)
 {
     switch (mode)
@@ -153,18 +208,19 @@ static j4310_mode_t Upper_ToJ4310Mode(arm_mode_t mode)
     }
 }
 
+/* 功能：执行 apply_arm 函数对应的模块操作。 */
 static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
 {
     arm_mode_t mode = arm_mode[arm][joint];
-    float target = arm_target[arm][joint]; /* unified joint target: degrees */
-    /* joint 0 is the root: left arm uses M2006, right arm uses RS01. */
+    float target = arm_target[arm][joint]; /* 代码说明：相关模块实现。 */
+    /* 代码说明：相关模块实现。 */
     if (joint == ARM_JOINT_ROOT)
     {
         tau = mode == ARM_MODE_MIT ? br_mit_tau[arm][joint] : 0.0f;
         if (arm == ARM_LARM_INDEX)
         {
             m2006_t *root = (m2006_t *)motor;
-            /* The left root is a DJI M2006: it never uses RS/DM MIT.
+            /* 代码说明：相关模块实现。 */
              * Keep the unified target array, but always run the motor in its
              * position-speed cascade. */
             (void)mode;
@@ -189,12 +245,14 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         rs00_t *m = (rs00_t *)motor;
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS00_SetTargetMIT(m, RS_MODE_MIT, tau, target);
+/* 功能：执行 RS00_SetTargetBasic 函数对应的模块操作。 */
         else RS00_SetTargetBasic(m, Upper_ToRsMode(mode), target);
     }
     else if (joint == ARM_JOINT_WRIST)
     {
         j4310_t *m = (j4310_t *)motor;
         if (mode == ARM_MODE_MIT) J4310_SetTargetMIT(m, J4310_MODE_MIT, tau, target);
+/* 功能：执行 J4310_SetTargetBasic 函数对应的模块操作。 */
         else J4310_SetTargetBasic(m, Upper_ToJ4310Mode(mode), target);
     }
     else if (joint == ARM_JOINT_ROTATION)
@@ -202,9 +260,11 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         rs05_t *m = (rs05_t *)motor;
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS05_SetTargetMIT(m, RS_MODE_MIT, tau, target);
+/* 功能：执行 RS05_SetTargetBasic 函数对应的模块操作。 */
         else RS05_SetTargetBasic(m, Upper_ToRsMode(mode), target);
     }
 }
+/* 功能：执行 Upper_Service 函数对应的模块操作。 */
 void Upper_Service(uint32_t now)
 {
     float dt = last_service_tick == 0U ? 0.002f : (now - last_service_tick) * 0.001f;
@@ -237,6 +297,7 @@ void Upper_Service(uint32_t now)
             RS00_SetTargetBasic(&rs00[0], RS_MODE_STOP, 0); RS00_SetTargetBasic(&rs00[1], RS_MODE_STOP, 0);
             RS05_SetTargetBasic(rs05, RS_MODE_STOP, 0); J4310_SetTargetBasic(j4310, J4310_MODE_STOP, 0);
             if (a == 1U) RS01_SetTargetBasic(&rs01_rarm, RS_MODE_STOP, 0);
+/* 功能：执行 M2006_SetTargetDeferred 函数对应的模块操作。 */
             else M2006_SetTargetDeferred(&m2006_larm, M2006_MODE_STOP, 0);
         }
         else

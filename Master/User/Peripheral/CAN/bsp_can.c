@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * @file bsp_can.c
+ * @brief bsp_can模块的用户接口与实现。
+ */
 
 #include "bsp_can.h"
 
@@ -27,9 +26,11 @@ static volatile bsp_can_diagnostics_t *BspCan_Diagnostics(const FDCAN_HandleType
 }
 
 static osMessageQueueId_t can_rx_queue;
+/* 功能：执行 BspCan_Start 函数对应的模块操作。 */
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          );
 
 
+/* 功能：执行 BspCan_SendStartupZero 函数对应的模块操作。 */
 static void BspCan_SendStartupZero(void)
 {
     can_frame_t frame = {0};
@@ -50,12 +51,14 @@ static void BspCan_SendStartupZero(void)
 }
 
 
+/* 功能：执行 BspCan_IsBusOff 函数对应的模块操作。 */
 static bool BspCan_IsBusOff(const FDCAN_HandleTypeDef *hfdcan)
 {
     return (hfdcan != NULL) && (hfdcan->Instance != NULL) && ((hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0U);
 }
 
 
+/* 功能：执行 BspCan_RxQueueInit 函数对应的模块操作。 */
 bool BspCan_RxQueueInit(void)
 {
     if (can_rx_queue != NULL)
@@ -67,6 +70,7 @@ bool BspCan_RxQueueInit(void)
 }
 
 
+/* 功能：执行 BspCan_RxTask 函数对应的模块操作。 */
 void BspCan_RxTask(void *argument)
 {
     can_frame_t frame;
@@ -102,6 +106,7 @@ void BspCan_RxTask(void *argument)
 }
 
 
+/* 功能：执行 BspCan_Init 函数对应的模块操作。 */
 HAL_StatusTypeDef BspCan_Init(void)
 {
     static bool startup_zero_sent;
@@ -119,6 +124,7 @@ HAL_StatusTypeDef BspCan_Init(void)
 }
 
 
+/* 功能：执行 BspCan_Start 函数对应的模块操作。 */
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          )
 {
     FDCAN_FilterTypeDef filter = {0};
@@ -158,6 +164,7 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan               
 }
 
 
+/* 功能：执行 BspCan_Send 函数对应的模块操作。 */
 bool BspCan_Send(const can_frame_t *frame                               )
 {
     FDCAN_HandleTypeDef *hfdcan;
@@ -215,12 +222,15 @@ bool BspCan_Send(const can_frame_t *frame                               )
 }
 
 
+/* 功能：执行 BspCan_HasBusOff 函数对应的模块操作。 */
 bool BspCan_HasBusOff(void)
 {
+/* 功能：执行 BspCan_IsBusOff 函数对应的模块操作。 */
     return BspCan_IsBusOff(&hfdcan1) || BspCan_IsBusOff(&hfdcan2) || BspCan_IsBusOff(&hfdcan3);
 }
 
 
+/* 功能：执行 BspCan_Recover 函数对应的模块操作。 */
 bool BspCan_Recover(void)
 {
     if (!BspCan_HasBusOff())
@@ -262,12 +272,13 @@ bool BspCan_Recover(void)
 }
 
 
+/* 功能：执行 HAL_FDCAN_RxFifo0Callback 函数对应的模块操作。 */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                          ,
                                uint32_t rx_fifo0_its                             )
 {
     FDCAN_RxHeaderTypeDef header;
     can_frame_t frame;
-    uint8_t rx_data[64]; /* HAL copies the DLC payload before we can validate it. */
+    uint8_t rx_data[64]; /* 代码说明：相关模块实现。 */
     volatile bsp_can_diagnostics_t *diag = BspCan_Diagnostics(hfdcan);
     if (diag == NULL)
     {

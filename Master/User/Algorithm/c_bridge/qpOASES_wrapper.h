@@ -1,25 +1,9 @@
 /*
- *	This file is part of qpOASES.
- *
- *	qpOASES -- An Implementation of the Online Active Set Strategy.
- *	Copyright (C) 2007-2017 by Hans Joachim Ferreau, Andreas Potschka,
- *	Christian Kirches et al. All rights reserved.
- *
- *	qpOASES is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation; either
- *	version 2.1 of the License, or (at your option) any later version.
- *
- *	qpOASES is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *	See the GNU Lesser General Public License for more details.
- *
- *	You should have received a copy of the GNU Lesser General Public
- *	License along with qpOASES; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * @file qpOASES_wrapper.h
+ * @brief qpOASES_wrapper模块的用户接口与实现。
  */
+
+/* 代码说明：相关模块实现。 */
 
 
 /**
@@ -39,11 +23,7 @@
 
 #ifndef QPOASES_TYPES_HPP
 
-	/**
-	 * Defined integer type for calling BLAS/LAPACK. Should usually be
-	 * "(unsigned) int", currently set to "(unsigned) long" for backwards
-	 * compatibility. This will change in a future release.
-	 */
+	/* 代码说明：相关模块实现。 */
 	typedef long la_int_t;
 	typedef unsigned long la_uint_t;
 
@@ -63,7 +43,7 @@
 	typedef unsigned int uint_t;
 	#endif /* __USE_LONG_INTEGERS__ */
 
-	/** Defines FORTRAN integer type. Might be platform dependent! */
+	/* 代码说明：相关模块实现。 */
 	#ifdef __USE_LONG_FINTS__
 	typedef long fint_t;
 	#else
@@ -78,12 +58,12 @@
 	 */
 	typedef int_t sparse_int_t;
 
-	/* dummy definitions, not used when calling from C */
+	/* 代码说明：相关模块实现。 */
 	#define QProblemBClass int_t
 	#define OptionsClass int_t
 	#define returnValue int_t
 
-	/* HessianType */
+	/* 代码说明：相关模块实现。 */
 	#define HST_ZERO             0
 	#define HST_IDENTITY         1
 	#define HST_POSDEF           2
@@ -92,7 +72,7 @@
 	#define HST_INDEF            5
 	#define HST_UNKNOWN	         6
 
-	/* SubjectToStatus */
+	/* 代码说明：相关模块实现。 */
 	#define ST_LOWER            -1
 	#define ST_INACTIVE          0
 	#define ST_UPPER             1
@@ -100,7 +80,7 @@
 	#define ST_INFEASIBLE_UPPER  3
 	#define ST_UNDEFINED         4
 
-	/* PrintLevel */
+	/* 代码说明：相关模块实现。 */
 	#define PL_DEBUG_ITER       -2
 	#define PL_TABULAR          -1
 	#define PL_NONE              0
@@ -108,12 +88,12 @@
 	#define PL_MEDIUM            2
 	#define PL_HIGH              3
 
-#else 
+#else
 
 	#define QProblemBClass QProblemB
-	#define OptionsClass REFER_NAMESPACE_QPOASES Options 
+	#define OptionsClass REFER_NAMESPACE_QPOASES Options
 
-	/* only declare when compiling C++ library */
+	/* 代码说明：相关模块实现。 */
 	static QProblem*  globalQProblemObject  = 0;
 	static QProblemB* globalQProblemBObject = 0;
 	static SQProblem* globalSQProblemObject = 0;
@@ -123,194 +103,197 @@
 
 
 
-/**
- *	\brief Manages all user-specified options for solving QPs.
- *
- *	This struct manages all user-specified options used for solving
- *	quadratic programs.
- *
- *	\author Hans Joachim Ferreau
- *	\version 3.2
- *	\date 2014-2017
- */
+/* 代码说明：相关模块实现。 */
 typedef struct
 {
-	int_t printLevel;						/**< Print level. */
+	int_t printLevel;						/* 代码说明：相关模块实现。 */
 
-	int_t enableRamping;					/**< Specifies whether ramping shall be enabled or not. */
-	int_t enableFarBounds;					/**< Specifies whether far bounds shall be used or not. */
-	int_t enableFlippingBounds;				/**< Specifies whether flipping bounds shall be used or not. */
-	int_t enableRegularisation;				/**< Specifies whether Hessian matrix shall be regularised in case semi-definiteness is detected. */
-	int_t enableFullLITests;				/**< Specifies whether condition-hardened LI test shall be used or not. */
-	int_t enableNZCTests;					/**< Specifies whether nonzero curvature tests shall be used. */
-	int_t enableDriftCorrection;			/**< Specifies the frequency of drift corrections (0 = off). */
-	int_t enableCholeskyRefactorisation;	/**< Specifies the frequency of full refactorisation of proj. Hessian (otherwise updates). */
-	int_t enableEqualities;					/**< Specifies whether equalities shall be always treated as active constraints. */
+	int_t enableRamping;					/* 代码说明：相关模块实现。 */
+	int_t enableFarBounds;					/* 代码说明：相关模块实现。 */
+	int_t enableFlippingBounds;				/* 代码说明：相关模块实现。 */
+	int_t enableRegularisation;				/* 代码说明：相关模块实现。 */
+	int_t enableFullLITests;				/* 代码说明：相关模块实现。 */
+	int_t enableNZCTests;					/* 代码说明：相关模块实现。 */
+	int_t enableDriftCorrection;			/* 代码说明：相关模块实现。 */
+	int_t enableCholeskyRefactorisation;	/* 代码说明：相关模块实现。 */
+	int_t enableEqualities;					/* 代码说明：相关模块实现。 */
 
-	real_t terminationTolerance;			/**< Termination tolerance. */
-	real_t boundTolerance;					/**< Lower/upper (constraints') bound tolerance (an inequality constraint whose lower and 
-												 upper bounds differ by less is regarded to be an equality constraint). */
-	real_t boundRelaxation;					/**< Offset for relaxing (constraints') bounds at beginning of an initial homotopy. It is also as initial value for far bounds. */
-	real_t epsNum;							/**< Numerator tolerance for ratio tests. */
-	real_t epsDen;							/**< Denominator tolerance for ratio tests. */
-	real_t maxPrimalJump;					/**< Maximum allowed jump in primal variables in nonzero curvature tests. */
-	real_t maxDualJump;						/**< Maximum allowed jump in dual variables in linear independence tests. */
+	real_t terminationTolerance;			/* 代码说明：相关模块实现。 */
+	real_t boundTolerance;					/* 代码说明：相关模块实现。 */
+	real_t boundRelaxation;					/* 代码说明：相关模块实现。 */
+	real_t epsNum;							/* 代码说明：相关模块实现。 */
+	real_t epsDen;							/* 代码说明：相关模块实现。 */
+	real_t maxPrimalJump;					/* 代码说明：相关模块实现。 */
+	real_t maxDualJump;						/* 代码说明：相关模块实现。 */
 
-	real_t initialRamping;					/**< Start value for Ramping Strategy. */
-	real_t finalRamping;					/**< Final value for Ramping Strategy. */
-	real_t initialFarBounds;				/**< Initial size of Far Bounds. */
-	real_t growFarBounds;					/**< Factor to grow Far Bounds. */
-	int_t initialStatusBounds;				/**< Initial status of bounds at first iteration. */
-	real_t epsFlipping;						/**< Tolerance of squared Cholesky diagonal factor which triggers flipping bound. */
-	int_t numRegularisationSteps;			/**< Maximum number of successive regularisation steps. */
-	real_t epsRegularisation;				/**< Scaling factor of identity matrix used for Hessian regularisation. */
-	int_t numRefinementSteps;				/**< Maximum number of iterative refinement steps. */
-	real_t epsIterRef;						/**< Early termination tolerance for iterative refinement. */
-	real_t epsLITests;						/**< Tolerance for linear independence tests. */
-	real_t epsNZCTests;						/**< Tolerance for nonzero curvature tests. */
+	real_t initialRamping;					/* 代码说明：相关模块实现。 */
+	real_t finalRamping;					/* 代码说明：相关模块实现。 */
+	real_t initialFarBounds;				/* 代码说明：相关模块实现。 */
+	real_t growFarBounds;					/* 代码说明：相关模块实现。 */
+	int_t initialStatusBounds;				/* 代码说明：相关模块实现。 */
+	real_t epsFlipping;						/* 代码说明：相关模块实现。 */
+	int_t numRegularisationSteps;			/* 代码说明：相关模块实现。 */
+	real_t epsRegularisation;				/* 代码说明：相关模块实现。 */
+	int_t numRefinementSteps;				/* 代码说明：相关模块实现。 */
+	real_t epsIterRef;						/* 代码说明：相关模块实现。 */
+	real_t epsLITests;						/* 代码说明：相关模块实现。 */
+	real_t epsNZCTests;						/* 代码说明：相关模块实现。 */
 
-	real_t rcondSMin;						/**< Minimum reciprocal condition number of S before refactorization is triggered */
-	int_t enableInertiaCorrection;			/**< Specifies whether the working set should be repaired when negative curvature is discovered during hotstart. */
+	real_t rcondSMin;						/* 代码说明：相关模块实现。 */
+	int_t enableInertiaCorrection;			/* 代码说明：相关模块实现。 */
 
 	int_t enableDropInfeasibles;			/**< ... */
 	int_t dropBoundPriority;				/**< ... */
 	int_t dropEqConPriority;				/**< ... */
 	int_t dropIneqConPriority;				/**< ... */
-	int_t printResiduals;					/**< If true, it will print the internal qpOASES residuals and other information per iteration */
+	int_t printResiduals;					/* 代码说明：相关模块实现。 */
 
 } qpOASES_Options;
 
 
-int_t qpOASES_Options_init(	qpOASES_Options* const options,
+/* 功能：执行 qpOASES_Options_init 函数对应的模块操作。 */
+int_t qpOASES_Options_init(	qpOASES_Options* const options, /* 成员变量。 */
 							int_t mode
 							);
 
-int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
+/* 功能：执行 qpOASES_Options_copy 函数对应的模块操作。 */
+int_t qpOASES_Options_copy(	const qpOASES_Options* const from, /* 成员变量。 */
 							OptionsClass* const to
 							);
 
 
-int_t qpOASES_obtainOutputs(	const QProblemBClass* const globalQpObject,
-								returnValue returnvalue,
-								real_t* const x,
-								real_t* const y,
-								real_t* const obj,
+/* 功能：执行 qpOASES_obtainOutputs 函数对应的模块操作。 */
+int_t qpOASES_obtainOutputs(	const QProblemBClass* const globalQpObject, /* 成员变量。 */
+								returnValue returnvalue, /* 成员变量。 */
+								real_t* const x, /* 成员变量。 */
+								real_t* const y, /* 成员变量。 */
+								real_t* const obj, /* 成员变量。 */
 								int_t* const status
 								);
 
 
-int_t QProblem_setup(	int_t nV,
-						int_t nC,
+/* 功能：执行 QProblem_setup 函数对应的模块操作。 */
+int_t QProblem_setup(	int_t nV, /* 成员变量。 */
+						int_t nC, /* 成员变量。 */
 						int_t hessianType
 						);
 
-int_t QProblem_init(	const real_t* const H,
-						const real_t* const g,
-						const real_t* const A,
-						const real_t* const lb,
-						const real_t* const ub,
-						const real_t* const lbA,
-						const real_t* const ubA,
-						int_t* const nWSR,
-						real_t* const cputime,
-						const qpOASES_Options* const options,
-						real_t* const x,
-						real_t* const y,
-						real_t* const obj,
+/* 功能：执行 QProblem_init 函数对应的模块操作。 */
+int_t QProblem_init(	const real_t* const H, /* 成员变量。 */
+						const real_t* const g, /* 成员变量。 */
+						const real_t* const A, /* 成员变量。 */
+						const real_t* const lb, /* 成员变量。 */
+						const real_t* const ub, /* 成员变量。 */
+						const real_t* const lbA, /* 成员变量。 */
+						const real_t* const ubA, /* 成员变量。 */
+						int_t* const nWSR, /* 成员变量。 */
+						real_t* const cputime, /* 成员变量。 */
+						const qpOASES_Options* const options, /* 成员变量。 */
+						real_t* const x, /* 成员变量。 */
+						real_t* const y, /* 成员变量。 */
+						real_t* const obj, /* 成员变量。 */
 						int_t* const status
 						);
 
-int_t QProblem_hotstart(	const real_t* const g,
-							const real_t* const lb,
-							const real_t* const ub,
-							const real_t* const lbA,
-							const real_t* const ubA,
-							int_t* const nWSR,
-							real_t* const cputime,
-							real_t* const x,
-							real_t* const y,
-							real_t* const obj,
+/* 功能：执行 QProblem_hotstart 函数对应的模块操作。 */
+int_t QProblem_hotstart(	const real_t* const g, /* 成员变量。 */
+							const real_t* const lb, /* 成员变量。 */
+							const real_t* const ub, /* 成员变量。 */
+							const real_t* const lbA, /* 成员变量。 */
+							const real_t* const ubA, /* 成员变量。 */
+							int_t* const nWSR, /* 成员变量。 */
+							real_t* const cputime, /* 成员变量。 */
+							real_t* const x, /* 成员变量。 */
+							real_t* const y, /* 成员变量。 */
+							real_t* const obj, /* 成员变量。 */
 							int_t* const status
 							);
 
+/* 功能：执行 QProblem_cleanup 函数对应的模块操作。 */
 int_t QProblem_cleanup( );
 
 
 
-int_t QProblemB_setup(	int_t nV,
+/* 功能：执行 QProblemB_setup 函数对应的模块操作。 */
+int_t QProblemB_setup(	int_t nV, /* 成员变量。 */
 						int_t hessianType
 						);
 
-int_t QProblemB_init(	const real_t* const H,
-						const real_t* const g,
-						const real_t* const lb,
-						const real_t* const ub,
-						int_t* const nWSR,
-						real_t* const cputime,
-						const qpOASES_Options* const options,
-						real_t* const x,
-						real_t* const y,
-						real_t* const obj,
+/* 功能：执行 QProblemB_init 函数对应的模块操作。 */
+int_t QProblemB_init(	const real_t* const H, /* 成员变量。 */
+						const real_t* const g, /* 成员变量。 */
+						const real_t* const lb, /* 成员变量。 */
+						const real_t* const ub, /* 成员变量。 */
+						int_t* const nWSR, /* 成员变量。 */
+						real_t* const cputime, /* 成员变量。 */
+						const qpOASES_Options* const options, /* 成员变量。 */
+						real_t* const x, /* 成员变量。 */
+						real_t* const y, /* 成员变量。 */
+						real_t* const obj, /* 成员变量。 */
 						int_t* const status
 						);
 
-int_t QProblemB_hotstart(	const real_t* const g,
-							const real_t* const lb,
-							const real_t* const ub,
-							int_t* const nWSR,
-							real_t* const cputime,
-							real_t* const x,
-							real_t* const y,
-							real_t* const obj,
+/* 功能：执行 QProblemB_hotstart 函数对应的模块操作。 */
+int_t QProblemB_hotstart(	const real_t* const g, /* 成员变量。 */
+							const real_t* const lb, /* 成员变量。 */
+							const real_t* const ub, /* 成员变量。 */
+							int_t* const nWSR, /* 成员变量。 */
+							real_t* const cputime, /* 成员变量。 */
+							real_t* const x, /* 成员变量。 */
+							real_t* const y, /* 成员变量。 */
+							real_t* const obj, /* 成员变量。 */
 							int_t* const status
 							);
 
+/* 功能：执行 QProblemB_cleanup 函数对应的模块操作。 */
 int_t QProblemB_cleanup( );
 
 
 
-int_t SQProblem_setup(	int_t nV,
-						int_t nC,
+/* 功能：执行 SQProblem_setup 函数对应的模块操作。 */
+int_t SQProblem_setup(	int_t nV, /* 成员变量。 */
+						int_t nC, /* 成员变量。 */
 						int_t hessianType
 						);
 
-int_t SQProblem_init(	const real_t* const H,
-						const real_t* const g,
-						const real_t* const A,
-						const real_t* const lb,
-						const real_t* const ub,
-						const real_t* const lbA,
-						const real_t* const ubA,
-						int_t* const nWSR,
-						real_t* const cputime,
-						const qpOASES_Options* const options,
-						real_t* const x,
-						real_t* const y,
-						real_t* const obj,
+/* 功能：执行 SQProblem_init 函数对应的模块操作。 */
+int_t SQProblem_init(	const real_t* const H, /* 成员变量。 */
+						const real_t* const g, /* 成员变量。 */
+						const real_t* const A, /* 成员变量。 */
+						const real_t* const lb, /* 成员变量。 */
+						const real_t* const ub, /* 成员变量。 */
+						const real_t* const lbA, /* 成员变量。 */
+						const real_t* const ubA, /* 成员变量。 */
+						int_t* const nWSR, /* 成员变量。 */
+						real_t* const cputime, /* 成员变量。 */
+						const qpOASES_Options* const options, /* 成员变量。 */
+						real_t* const x, /* 成员变量。 */
+						real_t* const y, /* 成员变量。 */
+						real_t* const obj, /* 成员变量。 */
 						int_t* const status
 						);
 
-int_t SQProblem_hotstart(	const real_t* const H,
-							const real_t* const g,
-							const real_t* const A,
-							const real_t* const lb,
-							const real_t* const ub,
-							const real_t* const lbA,
-							const real_t* const ubA,
-							int_t* const nWSR,
-							real_t* const cputime,
-							real_t* const x,
-							real_t* const y,
-							real_t* const obj,
+/* 功能：执行 SQProblem_hotstart 函数对应的模块操作。 */
+int_t SQProblem_hotstart(	const real_t* const H, /* 成员变量。 */
+							const real_t* const g, /* 成员变量。 */
+							const real_t* const A, /* 成员变量。 */
+							const real_t* const lb, /* 成员变量。 */
+							const real_t* const ub, /* 成员变量。 */
+							const real_t* const lbA, /* 成员变量。 */
+							const real_t* const ubA, /* 成员变量。 */
+							int_t* const nWSR, /* 成员变量。 */
+							real_t* const cputime, /* 成员变量。 */
+							real_t* const x, /* 成员变量。 */
+							real_t* const y, /* 成员变量。 */
+							real_t* const obj, /* 成员变量。 */
 							int_t* const status
 							);
 
+/* 功能：执行 SQProblem_cleanup 函数对应的模块操作。 */
 int_t SQProblem_cleanup( );
 
 
 #endif /* QPOASES_WRAPPER_H */
 
 
-/*
- *	end of file
- */
+/* 代码说明：相关模块实现。 */
