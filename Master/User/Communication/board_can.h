@@ -6,7 +6,7 @@
 #ifndef BOARD_CAN_H
 #define BOARD_CAN_H
 
-#include "main.h"
+#include "bsp_can.h"
 #include <stdint.h>
 
 /* 底盘小板通信ID */

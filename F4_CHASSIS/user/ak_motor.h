@@ -10,8 +10,8 @@
 #define AK_MOTOR_MAX_ID                  0x7FU  /* 有效电机 ID 最大值 */
 
 //速度限幅
-#define AK_MOTOR_SPEED_MIN               (-100000.0f) /* 允许的最小电机转速，单位 eRPM */
-#define AK_MOTOR_SPEED_MAX               100000.0f    /* 允许的最大电机转速，单位 eRPM */
+#define AK_MOTOR_SPEED_MIN               (-38000.0f) /* 允许的最小电机转速，单位 eRPM */
+#define AK_MOTOR_SPEED_MAX               38000.0f    /* 允许的最大电机转速，单位 eRPM */
 #define AK_MOTOR_SERVO_SPEED_DATA_LENGTH 4U
 #define AK_MOTOR_SERVO_FEEDBACK_LENGTH 8U
 

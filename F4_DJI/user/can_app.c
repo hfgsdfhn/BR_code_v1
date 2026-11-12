@@ -82,20 +82,20 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         return;
     }
 
-    if (hcan->Instance == CAN1)
+    while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
     {
-        Board_DJI_Rx(hcan);
-    }
-    else if (hcan->Instance == CAN2)
-    {
-        while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
+        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0,
+                                 &rx_header, rx_data) != HAL_OK)
         {
-            if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0,
-                                     &rx_header, rx_data) != HAL_OK)
-            {
-                break;
-            }
+            break;
+        }
 
+        if (hcan->Instance == CAN1)
+        {
+            Board_DJI_Rx(&rx_header, rx_data);
+        }
+        else if (hcan->Instance == CAN2)
+        {
             DJI_OnData(&rx_header, rx_data);
         }
     }

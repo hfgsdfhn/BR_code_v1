@@ -71,9 +71,6 @@ void My_Loop(void)
 {
         if(HAL_GetTick() - time_loader >= 5)
         {
-            up_ = (up_stpe)dji_action_mode;
-            m2006_current = dji_target_speed;
-
             if(is_debug)
             {
                 for (int i = 0; i < 4; i++)

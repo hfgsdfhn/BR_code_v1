@@ -4,14 +4,28 @@
  */
 
 #include "board_can.h"
-#include <string.h>
 
-extern CAN_HandleTypeDef hcan1;
+#include <stddef.h>
+#include <string.h>
 
 /* 底盘目标数据 */
 int16_t target_speed[BOARD_MOTOR_NUM] = {0};
 int16_t target_current[BOARD_MOTOR_NUM] = {0};
 volatile board_mode_e target_mode_flag = BOARD_MODE_SPEED;
+
+static HAL_StatusTypeDef Board_CAN1_SendFrame(uint32_t can_id,
+                                               const uint8_t data[8])
+{
+    can_frame_t frame = {0};
+
+    frame.hfdcan = &hfdcan1;
+    frame.id = can_id;
+    frame.id_type = FDCAN_STANDARD_ID;
+    frame.length = 8U;
+    memcpy(frame.data, data, sizeof(frame.data));
+
+    return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
+}
 
 /**
  * @brief 主控CAN1发送底盘数据
@@ -20,22 +34,18 @@ HAL_StatusTypeDef Board_CAN1_Send(
     uint16_t can_id,
     const int16_t data[BOARD_MOTOR_NUM])
 {
-    CAN_TxHeaderTypeDef tx_header = {0};
-    uint8_t tx_data[8];
-    uint32_t tx_mailbox;
+    uint8_t tx_data[8] = {0};
 
     if (data == NULL)
+    {
         return HAL_ERROR;
+    }
 
     if (can_id != BOARD_ID_SPEED &&
         can_id != BOARD_ID_CURRENT)
+    {
         return HAL_ERROR;
-
-    tx_header.StdId = can_id;
-    tx_header.IDE = CAN_ID_STD;
-    tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = 8U;
-    tx_header.TransmitGlobalTime = DISABLE;
+    }
 
     for (uint8_t i = 0U; i < BOARD_MOTOR_NUM; i++)
     {
@@ -62,19 +72,11 @@ HAL_StatusTypeDef Board_DJI_Send(
     uint8_t action_mode,
     float target_speed)
 {
-    CAN_TxHeaderTypeDef tx_header = {0};
     uint8_t tx_data[8] = {0};
-    uint32_t tx_mailbox;
     uint32_t speed_raw;
 
     /* 限制升降控制为低四位 */
     lift_mode &= 0x0FU;
-
-    tx_header.StdId = DJI_ID_CONTROL;
-    tx_header.IDE = CAN_ID_STD;
-    tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = 8U;
-    tx_header.TransmitGlobalTime = DISABLE;
 
     tx_data[0] = lift_mode;
     tx_data[1] = action_mode;

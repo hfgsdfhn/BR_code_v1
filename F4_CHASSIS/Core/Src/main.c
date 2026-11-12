@@ -46,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint32_t t = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -104,6 +104,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		t=__get_PRIMASK();
     My_Loop();
     /* USER CODE END WHILE */
 

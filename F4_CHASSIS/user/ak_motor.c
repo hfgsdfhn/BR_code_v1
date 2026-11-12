@@ -199,6 +199,7 @@ static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
 {
     CAN_TxHeaderTypeDef tx_header = {0};
     uint32_t mailbox;
+    uint32_t start_tick;
 
     if ((hcan == NULL) || (data == NULL) || (length > 8U) || (header > 1U))
     {
@@ -224,9 +225,15 @@ static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
         tx_header.IDE = CAN_ID_EXT;
     }
 
-    if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
+    /* 最多等待2ms，直到发送邮箱空闲 */
+    start_tick = HAL_GetTick();
+
+    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
     {
-        return HAL_BUSY;
+        if ((HAL_GetTick() - start_tick) >= 2U)
+        {
+            return HAL_TIMEOUT;
+        }
     }
 
     tx_header.RTR = CAN_RTR_DATA;

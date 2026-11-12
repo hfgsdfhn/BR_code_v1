@@ -718,6 +718,16 @@
               <FileType>5</FileType>
               <FilePath>..\user\ak_motor.h</FilePath>
             </File>
+            <File>
+              <FileName>chassis_kinematics.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\chassis_kinematics.c</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_kinematics.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\chassis_kinematics.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

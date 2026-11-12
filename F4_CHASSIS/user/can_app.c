@@ -5,16 +5,12 @@
 #include "can.h"
 #include "my_main.h"
 
-
 /**
  * @brief CAN1 初始化
  */
 HAL_StatusTypeDef CAN1_init(void)
 {
     CAN_FilterTypeDef filter = {0};
-
-    /* 初始化 CAN1 外设 */
-    MX_CAN1_Init();
 
     /* 配置 CAN1 过滤器 */
     filter.FilterBank           = 0;
@@ -51,8 +47,6 @@ HAL_StatusTypeDef CAN2_init(void)
 {
     CAN_FilterTypeDef filter = {0};
 
-    /* 初始化 CAN2 外设 */
-    MX_CAN2_Init();
 
     /* 配置 CAN2 过滤器 */
     filter.FilterBank           = 14;
@@ -83,25 +77,35 @@ HAL_StatusTypeDef CAN2_init(void)
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-    CAN_RxHeaderTypeDef header = {0};
-    uint8_t data[8] = {0};
+ {
+    CAN_RxHeaderTypeDef rx_header;
+    uint8_t rx_data[8];
 
-    if ((hcan == NULL)
-        || (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &header, data) != HAL_OK))
+    if (hcan == NULL)
     {
         return;
     }
 
-    if (hcan->Instance == CAN1)
+    while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
     {
-        Chassis_rx(&header, data);
-    }
-    else if (hcan->Instance == CAN2)
-    {
-        for (uint8_t i = 0U; i < 4U; ++i)
+        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0,
+                                 &rx_header, rx_data) != HAL_OK)
         {
-            (void)AkMotor_ParseFeedback(&g_chassis_motors[i], &header, data);
+            break;
+        }
+
+        if (hcan->Instance == CAN1)
+        {
+            Chassis_rx(&rx_header, rx_data);
+        }
+        else if (hcan->Instance == CAN2)
+        {
+            for (uint8_t i = 0U; i < 4U; ++i)
+            {
+                AkMotor_ParseFeedback(&g_chassis_motors[i],
+                                            &rx_header, rx_data);
+                
+            }
         }
     }
 }
