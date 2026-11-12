@@ -1,52 +1,85 @@
 #include "can_app.h"
 
+#include "ak_motor.h"
 #include "board_can.h"
 #include "can.h"
+#include "my_main.h"
 
-static bool CAN_ConfigureFilter(CAN_HandleTypeDef *hcan, uint32_t filter_bank)
+
+/**
+ * @brief CAN1 初始化
+ */
+HAL_StatusTypeDef CAN1_init(void)
 {
     CAN_FilterTypeDef filter = {0};
 
-    filter.FilterBank = filter_bank;
-    filter.FilterMode = CAN_FILTERMODE_IDMASK;
-    filter.FilterScale = CAN_FILTERSCALE_32BIT;
-    filter.FilterIdHigh = 0U;
-    filter.FilterIdLow = 0U;
-    filter.FilterMaskIdHigh = 0U;
-    filter.FilterMaskIdLow = 0U;
-    filter.FilterFIFOAssignment = CAN_RX_FIFO0;
-    filter.FilterActivation = ENABLE;
-    filter.SlaveStartFilterBank = 14U;
+    /* 初始化 CAN1 外设 */
+    MX_CAN1_Init();
 
-    return HAL_CAN_ConfigFilter(hcan, &filter) == HAL_OK;
+    /* 配置 CAN1 过滤器 */
+    filter.FilterBank           = 0;
+    filter.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filter.FilterScale          = CAN_FILTERSCALE_32BIT;
+    filter.FilterIdHigh         = 0x0000;
+    filter.FilterIdLow          = 0x0000;
+    filter.FilterMaskIdHigh     = 0x0000;
+    filter.FilterMaskIdLow      = 0x0000;
+    filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    filter.FilterActivation     = ENABLE;
+    filter.SlaveStartFilterBank  = 14;
+
+    if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK)
+        return HAL_ERROR;
+
+        
+        /* 启动 CAN1 */
+        if (HAL_CAN_Start(&hcan1) != HAL_OK)
+        return HAL_ERROR;
+        
+        /* 开启 FIFO0 接收中断 */
+        if (HAL_CAN_ActivateNotification(
+                &hcan1,
+                CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+            return HAL_ERROR;
+    return HAL_OK;
 }
 
-void CAN1_Start(void)
+/**
+ * @brief CAN2 初始化
+ */ 
+HAL_StatusTypeDef CAN2_init(void)
 {
-    if (!CAN_ConfigureFilter(&hcan1, 0U)
-        || (HAL_CAN_Start(&hcan1) != HAL_OK)
-        || (HAL_CAN_ActivateNotification(
-                &hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK))
-    {
-        Error_Handler();
-    }
+    CAN_FilterTypeDef filter = {0};
 
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0U, 0U);
-    HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-}
+    /* 初始化 CAN2 外设 */
+    MX_CAN2_Init();
 
-void CAN2_Start(void)
-{
-    if (!CAN_ConfigureFilter(&hcan2, 14U)
-        || (HAL_CAN_Start(&hcan2) != HAL_OK)
-        || (HAL_CAN_ActivateNotification(
-                &hcan2, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK))
-    {
-        Error_Handler();
-    }
+    /* 配置 CAN2 过滤器 */
+    filter.FilterBank           = 14;
+    filter.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filter.FilterScale          = CAN_FILTERSCALE_32BIT;
+    filter.FilterIdHigh         = 0x0000;
+    filter.FilterIdLow          = 0x0000;
+    filter.FilterMaskIdHigh     = 0x0000;
+    filter.FilterMaskIdLow      = 0x0000;
+    filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    filter.FilterActivation     = ENABLE;
+    filter.SlaveStartFilterBank  = 14;
 
-    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 0U, 0U);
-    HAL_NVIC_EnableIRQ(CAN2_RX0_IRQn);
+    if (HAL_CAN_ConfigFilter(&hcan2, &filter) != HAL_OK)
+        return HAL_ERROR;
+
+        
+        /* 启动 CAN2 */
+        if (HAL_CAN_Start(&hcan2) != HAL_OK)
+        return HAL_ERROR;
+        
+        /* 开启 FIFO0 接收中断 */
+        if (HAL_CAN_ActivateNotification(
+                &hcan2,
+                CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+            return HAL_ERROR;
+    return HAL_OK;
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -62,6 +95,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
     if (hcan->Instance == CAN1)
     {
-        Board_CAN_RxCallback(&header, data);
+        Chassis_rx(&header, data);
+    }
+    else if (hcan->Instance == CAN2)
+    {
+        for (uint8_t i = 0U; i < 4U; ++i)
+        {
+            (void)AkMotor_ParseFeedback(&g_chassis_motors[i], &header, data);
+        }
     }
 }

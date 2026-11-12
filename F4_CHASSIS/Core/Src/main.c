@@ -57,22 +57,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM5)
-    {
-        /* 5ms任务 */
-    }
-    else if (htim->Instance == TIM6)
-    {
-
-        /* 2ms任务 */
-    }
-    else if (htim->Instance == TIM7)
-    {
-        /* 1ms任务 */
-    }
-}
 /* USER CODE END 0 */
 
 /**

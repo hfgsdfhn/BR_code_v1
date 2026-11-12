@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-void CAN1_Start(void);
-void CAN2_Start(void);
+HAL_StatusTypeDef CAN1_init(void);
+HAL_StatusTypeDef CAN2_init(void);
 
 #endif
