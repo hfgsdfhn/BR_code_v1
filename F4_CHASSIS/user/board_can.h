@@ -3,6 +3,7 @@
 #define BOARD_CAN_H
 
 #include "main.h"
+#include "chassis_kinematics.h"
 #include <stdint.h>
 
 /* 底盘小板通信ID */
@@ -35,6 +36,7 @@ extern volatile board_mode_e target_mode_flag;
 /* 底盘接收数据 */
 extern int16_t target_speed[BOARD_MOTOR_NUM];
 extern int16_t target_current[BOARD_MOTOR_NUM];
+extern chassis_speed_t chassis_target_speed;
 
 /* DJI接收数据 */
 extern uint8_t dji_lift_mode;

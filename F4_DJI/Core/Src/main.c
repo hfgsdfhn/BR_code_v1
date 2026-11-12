@@ -23,7 +23,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can_app.h"
+#include "my_main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,16 +88,19 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_CAN1_Init();
-  MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
-
+  My_Init();
+  if ((CAN1_init() != HAL_OK) || (CAN2_init() != HAL_OK))
+  {
+    Error_Handler();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    My_Loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

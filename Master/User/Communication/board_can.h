@@ -2,7 +2,7 @@
 #ifndef BOARD_CAN_H
 #define BOARD_CAN_H
 
-#include "main.h"
+#include "bsp_can.h"
 #include <stdint.h>
 
 /* 底盘小板通信ID */
@@ -36,14 +36,6 @@ extern volatile board_mode_e target_mode_flag;
 extern int16_t target_speed[BOARD_MOTOR_NUM];
 extern int16_t target_current[BOARD_MOTOR_NUM];
 
-/* DJI接收数据 */
-extern uint8_t dji_lift_mode;
-extern uint8_t dji_action_mode;
-extern float dji_target_speed;
-
-/* 底盘CAN接收 */
-void Chassis_rx(CAN_RxHeaderTypeDef *header, uint8_t data[8]);
-
 /* 底盘CAN发送 */
 HAL_StatusTypeDef Board_CAN1_Send(
     uint16_t can_id,
@@ -54,8 +46,5 @@ HAL_StatusTypeDef Board_DJI_Send(
     uint8_t lift_mode,
     uint8_t action_mode,
     float target_speed);
-
-/* DJI CAN接收 */
-void Board_DJI_Rx(CAN_HandleTypeDef *hcan);
 
 #endif

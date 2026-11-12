@@ -158,7 +158,7 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan               
 }
 
 
-bool BspCan_Send(const can_frame_t *frame                               )
+bool BspCan_Send(const can_frame_t *frame)
 {
     FDCAN_HandleTypeDef *hfdcan;
     FDCAN_TxHeaderTypeDef header = {0};
