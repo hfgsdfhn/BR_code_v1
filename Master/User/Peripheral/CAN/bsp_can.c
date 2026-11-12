@@ -26,11 +26,11 @@ static volatile bsp_can_diagnostics_t *BspCan_Diagnostics(const FDCAN_HandleType
 }
 
 static osMessageQueueId_t can_rx_queue;
-/* 功能：执行 BspCan_Start 函数对应的模块操作。 */
+/* 功能：启动异步传输或设备动作。 */
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          );
 
 
-/* 功能：执行 BspCan_SendStartupZero 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 static void BspCan_SendStartupZero(void)
 {
     can_frame_t frame = {0};
@@ -51,14 +51,14 @@ static void BspCan_SendStartupZero(void)
 }
 
 
-/* 功能：执行 BspCan_IsBusOff 函数对应的模块操作。 */
+/* 功能：执行 BspCan_IsBusOff 模块操作并维护相关状态。 */
 static bool BspCan_IsBusOff(const FDCAN_HandleTypeDef *hfdcan)
 {
     return (hfdcan != NULL) && (hfdcan->Instance != NULL) && ((hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0U);
 }
 
 
-/* 功能：执行 BspCan_RxQueueInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool BspCan_RxQueueInit(void)
 {
     if (can_rx_queue != NULL)
@@ -70,7 +70,7 @@ bool BspCan_RxQueueInit(void)
 }
 
 
-/* 功能：执行 BspCan_RxTask 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void BspCan_RxTask(void *argument)
 {
     can_frame_t frame;
@@ -106,7 +106,7 @@ void BspCan_RxTask(void *argument)
 }
 
 
-/* 功能：执行 BspCan_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef BspCan_Init(void)
 {
     static bool startup_zero_sent;
@@ -124,7 +124,7 @@ HAL_StatusTypeDef BspCan_Init(void)
 }
 
 
-/* 功能：执行 BspCan_Start 函数对应的模块操作。 */
+/* 功能：启动异步传输或设备动作。 */
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          )
 {
     FDCAN_FilterTypeDef filter = {0};
@@ -164,7 +164,7 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan               
 }
 
 
-/* 功能：执行 BspCan_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 bool BspCan_Send(const can_frame_t *frame                               )
 {
     FDCAN_HandleTypeDef *hfdcan;
@@ -222,15 +222,15 @@ bool BspCan_Send(const can_frame_t *frame                               )
 }
 
 
-/* 功能：执行 BspCan_HasBusOff 函数对应的模块操作。 */
+/* 功能：执行 BspCan_HasBusOff 模块操作并维护相关状态。 */
 bool BspCan_HasBusOff(void)
 {
-/* 功能：执行 BspCan_IsBusOff 函数对应的模块操作。 */
+/* 功能：执行 BspCan_IsBusOff 模块操作并维护相关状态。 */
     return BspCan_IsBusOff(&hfdcan1) || BspCan_IsBusOff(&hfdcan2) || BspCan_IsBusOff(&hfdcan3);
 }
 
 
-/* 功能：执行 BspCan_Recover 函数对应的模块操作。 */
+/* 功能：执行通信或设备故障恢复。 */
 bool BspCan_Recover(void)
 {
     if (!BspCan_HasBusOff())
@@ -272,13 +272,13 @@ bool BspCan_Recover(void)
 }
 
 
-/* 功能：执行 HAL_FDCAN_RxFifo0Callback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                          ,
                                uint32_t rx_fifo0_its                             )
 {
     FDCAN_RxHeaderTypeDef header;
     can_frame_t frame;
-    uint8_t rx_data[64]; /* 代码说明：相关模块实现。 */
+    uint8_t rx_data[64]; /* 模块实现细节。 */
     volatile bsp_can_diagnostics_t *diag = BspCan_Diagnostics(hfdcan);
     if (diag == NULL)
     {

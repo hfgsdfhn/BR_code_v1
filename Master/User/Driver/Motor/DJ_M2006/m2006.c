@@ -18,21 +18,21 @@ volatile float m2006_trajectory_time_s = 0.0f;
 static int16_t m2006_command_current[M2006_MOTOR_COUNT];
 
 
-/* 功能：执行 M2006_ReadU16 函数对应的模块操作。 */
+/* 功能：读取设备参数。 */
 static uint16_t M2006_ReadU16(const uint8_t *data                               )
 {
     return ((uint16_t)data[0] << 8U) | data[1];
 }
 
 
-/* 功能：执行 M2006_Abs 函数对应的模块操作。 */
+/* 功能：执行 M2006_Abs 模块操作并维护相关状态。 */
 static float M2006_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
 
-/* 功能：执行 M2006_Clamp 函数对应的模块操作。 */
+/* 功能：执行 M2006_Clamp 模块操作并维护相关状态。 */
 static float M2006_Clamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -47,7 +47,7 @@ static float M2006_Clamp(float value, float minimum, float maximum)
 }
 
 
-/* 功能：执行 M2006_ResetMotion 函数对应的模块操作。 */
+/* 功能：执行 M2006_ResetMotion 模块操作并维护相关状态。 */
 static void M2006_ResetMotion(m2006_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -63,7 +63,7 @@ static void M2006_ResetMotion(m2006_t *motor)
 }
 
 
-/* 功能：执行 M2006_ResetFeedback 函数对应的模块操作。 */
+/* 功能：执行 M2006_ResetFeedback 模块操作并维护相关状态。 */
 void M2006_ResetFeedback(m2006_t *motor)
 {
     if (motor == NULL)
@@ -85,7 +85,7 @@ void M2006_ResetFeedback(m2006_t *motor)
 }
 
 
-/* 功能：执行 M2006_BeginPositionTrajectory 函数对应的模块操作。 */
+/* 功能：执行 M2006_BeginPositionTrajectory 模块操作并维护相关状态。 */
 static void M2006_BeginPositionTrajectory(m2006_t *motor)
 {
     quintic_plan_t plan;
@@ -118,7 +118,7 @@ static void M2006_BeginPositionTrajectory(m2006_t *motor)
 }
 
 
-/* 功能：执行 M2006_UpdatePositionTrajectory 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
 {
     quintic_plan_t plan;
@@ -151,7 +151,7 @@ static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
 }
 
 
-/* 功能：执行 M2006_UpdateSpeedRamp 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
 {
     float delta;
@@ -172,7 +172,7 @@ static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
 }
 
 
-/* 功能：执行 M2006_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
                              FDCAN_HandleTypeDef *hcan                  ,
                              uint8_t id                                    ,
@@ -196,7 +196,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
 }
 
 
-/* 功能：执行 M2006_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 bool M2006_OnFrame(m2006_t *motor                         ,
                    const can_frame_t *frame                      )
 {
@@ -284,7 +284,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
 }
 
 
-/* 功能：执行 M2006_SetTargetDeferred 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void M2006_SetTargetDeferred(m2006_t *motor                         ,
                      m2006_mode_t mode                          ,
                      float target                               )
@@ -365,7 +365,7 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
 }
 
 
-/* 功能：执行 M2006_SetTarget 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
 {
     if (motor && motor->target_sink) { motor->target_sink(motor, (int)mode, target, 0.0f); return; }
@@ -385,7 +385,7 @@ void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
 }
 
 
-/* 功能：执行 M2006_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void M2006_Service(m2006_t *motor, float dt_s)
 {
     can_frame_t frame;
@@ -407,7 +407,7 @@ void M2006_Service(m2006_t *motor, float dt_s)
 }
 
 
-/* 功能：执行 M2006_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 bool M2006_Stop(m2006_t *motor)
 {
     if (motor == NULL)
@@ -421,7 +421,7 @@ bool M2006_Stop(m2006_t *motor)
 }
 
 
-/* 功能：执行 M2006_SetPositionDegrees 函数对应的模块操作。 */
+/* 功能：执行 M2006_SetPositionDegrees 模块操作并维护相关状态。 */
 void M2006_SetPositionDegrees(m2006_t *motor                     ,
                               float degrees                          )
 {
@@ -429,7 +429,7 @@ void M2006_SetPositionDegrees(m2006_t *motor                     ,
 }
 
 
-/* 功能：执行 M2006_Calc 函数对应的模块操作。 */
+/* 功能：执行 M2006_Calc 模块操作并维护相关状态。 */
 int16_t M2006_Calc(m2006_t *motor                             ,
                    float dt_s                          )
 {
@@ -491,7 +491,7 @@ int16_t M2006_Calc(m2006_t *motor                             ,
 }
 
 
-/* 功能：执行 M2006_GetPositionDegrees 函数对应的模块操作。 */
+/* 功能：读取设备当前位置。 */
 void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -501,7 +501,7 @@ void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_deg
 }
 
 
-/* 功能：执行 M2006_BuildGroupFrame 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void M2006_BuildGroupFrame(uint8_t first_id                               ,
                            const int16_t current[4]                             ,
                            can_frame_t *frame                              )
@@ -519,7 +519,7 @@ void M2006_BuildGroupFrame(uint8_t first_id                               ,
 }
 
 
-/* 功能：执行 M2006_BuildSpecial 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void M2006_BuildSpecial(m2006_t *motor, uint8_t command)
 {
     if (motor == NULL)

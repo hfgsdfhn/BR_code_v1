@@ -15,7 +15,7 @@
 #define BR_RIGHT_CAN (&hfdcan3)
 #define BR_PERIOD_MS 10U
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 #define BR_ROOT_M2006_TRAJECTORY_TIME_S 0.0f
 #define BR_ROOT_RS01_TRAJECTORY_TIME_S 0.0f
 #define BR_BIG_ARM_RS00_TRAJECTORY_TIME_S 0.0f
@@ -130,7 +130,7 @@ extern rs05_t rs05_larm, rs05_rarm;
 extern j4310_t j4310_larm, j4310_rarm;
 extern rs01_t rs01_rarm;
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static inline void configure_motor_gains(void)
 {
     rs00_larm[0].mit_kp = BR_SHOULDER_KP;

@@ -19,11 +19,11 @@ typedef struct
     float quaternion[4]; /* 成员变量。 */
 } imu_t;
 
-/* 功能：执行 Mins_Imu_receive_all 函数对应的模块操作。 */
+/* 功能：执行 Mins_Imu_receive_all 模块操作并维护相关状态。 */
 uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len);
-/* 功能：执行 Mins_Imu_receive_omega 函数对应的模块操作。 */
+/* 功能：执行 Mins_Imu_receive_omega 模块操作并维护相关状态。 */
 uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len);
-/* 功能：执行 Mins_Imu_SetActiveReport 函数对应的模块操作。 */
+/* 功能：执行 Mins_Imu_SetActiveReport 模块操作并维护相关状态。 */
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart);
 
 #endif

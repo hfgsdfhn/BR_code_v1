@@ -58,16 +58,16 @@ int MPC_QPOASES_Hotstart(const float *g,
                          const float *ub,
                          float *x);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 int MPC_QPOASES_GetLastStatus(void);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 int MPC_QPOASES_GetLastNWSR(void);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 float MPC_QPOASES_GetLastObj(void);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 void MPC_QPOASES_Cleanup(void);
 
 #ifdef __cplusplus

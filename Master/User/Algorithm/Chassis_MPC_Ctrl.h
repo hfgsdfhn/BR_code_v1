@@ -73,14 +73,14 @@ struct MPC
     MpcPhysicalParams RobotParam; /* 成员变量。 */
     uint8_t i;  //运算了多少步
 };
-/* 功能：执行 MPC_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void MPC_Init(void);
-/* 功能：执行 MPC_g_figure 函数对应的模块操作。 */
+/* 功能：执行 MPC_g_figure 模块操作并维护相关状态。 */
 void MPC_g_figure(const float32_t *x0, const float32_t *X_ref, float32_t *g_data);
-/* 功能：执行 MPC_Solve 函数对应的模块操作。 */
+/* 功能：求解控制器输出。 */
 void MPC_Solve(const float32_t *x0, const float32_t *X_ref);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 const float32_t *MPC_GetH(void);
 const float32_t *MPC_GetLb(void);
 const float32_t *MPC_GetUb(void);

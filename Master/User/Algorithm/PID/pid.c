@@ -6,7 +6,7 @@
 #include "pid.h"
 
 
-/* 功能：执行 pid_clamp 函数对应的模块操作。 */
+/* 功能：执行 pid_clamp 模块操作并维护相关状态。 */
 static float pid_clamp(float value, float limit)
 {
     if (limit < 0.0f)
@@ -29,7 +29,7 @@ static float pid_clamp(float value, float limit)
 }
 
 
-/* 功能：执行 PID_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool PID_Init(pid_t *pid, float kp, float ki, float kd, float output_limit, float integral_limit)
 {
     if ((pid == 0) || (output_limit < 0.0f) || (integral_limit < 0.0f))
@@ -48,7 +48,7 @@ bool PID_Init(pid_t *pid, float kp, float ki, float kd, float output_limit, floa
 }
 
 
-/* 功能：执行 PID_SetIntegralSeparationRange 函数对应的模块操作。 */
+/* 功能：执行 PID_SetIntegralSeparationRange 模块操作并维护相关状态。 */
 void PID_SetIntegralSeparationRange(pid_t *pid, float full_separation, float separation)
 {
     if (pid == 0)
@@ -60,7 +60,7 @@ void PID_SetIntegralSeparationRange(pid_t *pid, float full_separation, float sep
 }
 
 
-/* 功能：执行 PID_Reset 函数对应的模块操作。 */
+/* 功能：执行 PID_Reset 模块操作并维护相关状态。 */
 void PID_Reset(pid_t *pid)
 {
     if (pid == 0)
@@ -73,7 +73,7 @@ void PID_Reset(pid_t *pid)
 }
 
 
-/* 功能：执行 PID_Calc 函数对应的模块操作。 */
+/* 功能：执行 PID_Calc 模块操作并维护相关状态。 */
 float PID_Calc(pid_t *pid, float target, float feedback, float dt_s)
 {
     float error;

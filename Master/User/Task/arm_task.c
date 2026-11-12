@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @file arm_task.c
  * @brief arm_task模块的用户接口与实现。
  */
@@ -24,7 +24,7 @@ volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 volatile uint8_t arm_gpio_pb6 = 0U;
 volatile uint8_t arm_gpio_pb7 = 0U;
 volatile uint8_t arm_gpio_pd7 = 0U;
@@ -36,17 +36,15 @@ volatile uint8_t arm_gpio_pd5 = 0U;
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 
 
-/* 功能：执行 Arm_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 void Arm_OnFrame(const can_frame_t *frame)
 {
     Upper_OnFrame(&upper_state, frame);
     SuctionCup_OnFrame(frame);
-    /* 代码说明：相关模块实现。 */
-     * volatile alone does not write dirty cache lines back to AXI SRAM. */
     SCB_CleanDCache_by_Addr(arm_feedback_angle, sizeof(arm_feedback_angle));
     SCB_CleanDCache_by_Addr(suction_feedback_angle, sizeof(suction_feedback_angle));
 }
-/* 功能：执行 Arm_ServiceGpio 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 static void Arm_ServiceGpio(void)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,
@@ -67,7 +65,7 @@ static void Arm_ServiceGpio(void)
                       arm_gpio_pd5 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-/* 功能：执行 Arm_TaskInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Arm_TaskInit(void)
 {
     memset(&upper_state, 0, sizeof(upper_state));
@@ -92,13 +90,13 @@ void Arm_TaskInit(void)
             arm_mode[arm][joint] = ARM_MODE_POSITION;
 }
 
-/* 功能：执行 Arm_TaskStop 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void Arm_TaskStop(void)
 {
     upper_state.enable = 0U;
 }
 
-/* 功能：执行 Arm_TxQueueInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool Arm_TxQueueInit(void)
 {
     if (br_mutex == NULL)
@@ -106,7 +104,7 @@ bool Arm_TxQueueInit(void)
     return br_mutex != NULL;
 }
 
-/* 功能：执行 Arm_TxTask 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void Arm_TxTask(void *argument)
 {
     (void)argument;
@@ -116,7 +114,7 @@ void Arm_TxTask(void *argument)
     }
 }
 
-/* 功能：执行 arm_set_command 函数对应的模块操作。 */
+/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
 static bool arm_set_command(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target, float tau)
 {
     if (arm >= 2U || joint >= ARM_JOINT_COUNT || !isfinite(target) || !isfinite(tau) || br_mutex == NULL)
@@ -129,28 +127,28 @@ static bool arm_set_command(uint8_t arm, arm_joint_t joint, arm_mode_t mode, flo
     return true;
 }
 
-/* 功能：执行 Upper_SetJointMIT 函数对应的模块操作。 */
+/* 功能：执行 Upper_SetJointMIT 模块操作并维护相关状态。 */
 bool Upper_SetJointMIT(uint8_t arm, arm_joint_t joint, float tau_nm, float output_degrees)
 {
-/* 功能：执行 arm_set_command 函数对应的模块操作。 */
+/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
     return arm_set_command(arm, joint, ARM_MODE_MIT, output_degrees, tau_nm);
 }
 
-/* 功能：执行 Upper_SetJointModeTarget 函数对应的模块操作。 */
+/* 功能：执行 Upper_SetJointModeTarget 模块操作并维护相关状态。 */
 bool Upper_SetJointModeTarget(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target_degrees)
 {
-/* 功能：执行 arm_set_command 函数对应的模块操作。 */
+/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
     return arm_set_command(arm, joint, mode, target_degrees, 0.0f);
 }
 
-/* 功能：执行 Upper_SetJointDegrees 函数对应的模块操作。 */
+/* 功能：执行 Upper_SetJointDegrees 模块操作并维护相关状态。 */
 bool Upper_SetJointDegrees(uint8_t arm, arm_joint_t joint, float degrees)
 {
-/* 功能：执行 arm_set_command 函数对应的模块操作。 */
+/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
     return arm_set_command(arm, joint, ARM_MODE_POSITION, degrees, 0.0f);
 }
 
-/* 功能：执行 Upper_QueueArmPositions 函数对应的模块操作。 */
+/* 功能：执行 Upper_QueueArmPositions 模块操作并维护相关状态。 */
 void Upper_QueueArmPositions(bool enable)
 {
     upper_state.enable = enable ? 1U : 0U;
@@ -158,7 +156,7 @@ void Upper_QueueArmPositions(bool enable)
         Arm_TaskStop();
 }
 
-/* 功能：执行 Arm_Task 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void Arm_Task(void *argument)
 {
     uint32_t next = osKernelGetTickCount();

@@ -52,7 +52,7 @@ static const osThreadAttr_t can_rx_task_attributes = {
     .priority = osPriorityNormal,
 };
 
-/* 功能：执行 Error_FaultCapture 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
 void Error_FaultCapture(Error_Code code, uint32_t *stack)
 {
     g_error_code = code;
@@ -70,14 +70,14 @@ void Error_FaultCapture(Error_Code code, uint32_t *stack)
     }
 }
 
-/* 功能：执行 HAL_UART_RxCpltCallback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     (void)huart;
 }
 
 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_Init(void)
 {
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -116,7 +116,7 @@ void My_Init(void)
     Remote_Init();
 }
 
-/* 功能：执行 My_RtosInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_RtosInit(void)
 {
 

@@ -16,7 +16,7 @@ vofa_t vofa = {
 uint8_t tx_buf[CH_COUNT * 4 + 4U];
 
 
-/* 功能：执行 vofa_send 函数对应的模块操作。 */
+/* 功能：执行 vofa_send 模块操作并维护相关状态。 */
 void vofa_send(vofa_t *vofa, UART_HandleTypeDef *huart)
 {
     memcpy(tx_buf,vofa->fdata,sizeof(vofa->fdata));

@@ -17,11 +17,11 @@ typedef enum
 extern robot_state_t robot; /* 成员变量。 */
 
 
-/* 功能：执行 Robot_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Robot_Init(void);
 
 
-/* 功能：执行 Robot_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 void Robot_Stop(void);
 
 #endif

@@ -101,15 +101,15 @@ extern volatile encoder_link_t g_encoder_link; /* 成员变量。 */
 
 
 
-/* 功能：执行 EncoderLink_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool EncoderLink_Init(void);
 
 
-/* 功能：执行 EncoderLink_Poll 函数对应的模块操作。 */
+/* 功能：轮询输入或通信状态。 */
 bool EncoderLink_Poll(float yaw_deg);
 
 
-/* 功能：执行 EncoderLink_GetYawRaw 函数对应的模块操作。 */
+/* 功能：执行 EncoderLink_GetYawRaw 模块操作并维护相关状态。 */
 uint16_t EncoderLink_GetYawRaw(void);
 
 #endif

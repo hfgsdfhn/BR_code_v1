@@ -7,7 +7,7 @@
 #define STATUS_TASK_H
 
 
-/* 功能：执行 Status_Task 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void Status_Task(void *argument);
 
 #endif

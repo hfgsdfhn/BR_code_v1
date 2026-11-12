@@ -57,27 +57,27 @@ extern "C"
     } STP23L_Stats;
 
 
-/* 功能：执行 STP23L_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
     HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle);
 
 
-/* 功能：执行 STP23L_HandleUartRxComplete 函数对应的模块操作。 */
+/* 功能：执行 STP23L_HandleUartRxComplete 模块操作并维护相关状态。 */
     void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle);
 
-/* 功能：执行 STP23L_HandleUartError 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
     void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle);
 
 
-/* 功能：执行 STP23L_GetLatestFrame 函数对应的模块操作。 */
+/* 功能：执行 STP23L_GetLatestFrame 模块操作并维护相关状态。 */
     uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame);
 
-/* 功能：执行 STP23L_GetAverageDistance 函数对应的模块操作。 */
+/* 功能：执行 STP23L_GetAverageDistance 模块操作并维护相关状态。 */
     uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance_mm);
 
-/* 功能：执行 STP23L_IsOnline 函数对应的模块操作。 */
+/* 功能：执行 STP23L_IsOnline 模块操作并维护相关状态。 */
     uint8_t STP23L_IsOnline(uint32_t timeout_ms);
 
-/* 功能：执行 STP23L_GetStats 函数对应的模块操作。 */
+/* 功能：执行 STP23L_GetStats 模块操作并维护相关状态。 */
     void STP23L_GetStats(STP23L_Stats *stats);
 
 #ifdef __cplusplus

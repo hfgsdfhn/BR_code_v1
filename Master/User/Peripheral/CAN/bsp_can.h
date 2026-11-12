@@ -45,31 +45,31 @@ typedef struct
 } can_frame_t;
 
 
-/* 功能：执行 BspCan_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef BspCan_Init(void);
 
 
-/* 功能：执行 BspCan_RxQueueInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool BspCan_RxQueueInit(void);
 
 
-/* 功能：执行 BspCan_RxTask 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void BspCan_RxTask(void *argument);
 
 
-/* 功能：执行 BspCan_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 void BspCan_OnFrame(const can_frame_t *frame                    );
 
 
-/* 功能：执行 BspCan_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 bool BspCan_Send(const can_frame_t *frame                                      );
 
 
-/* 功能：执行 BspCan_HasBusOff 函数对应的模块操作。 */
+/* 功能：执行 BspCan_HasBusOff 模块操作并维护相关状态。 */
 bool BspCan_HasBusOff(void);
 
 
-/* 功能：执行 BspCan_Recover 函数对应的模块操作。 */
+/* 功能：执行通信或设备故障恢复。 */
 bool BspCan_Recover(void);
 
 #endif

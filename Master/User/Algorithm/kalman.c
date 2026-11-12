@@ -86,7 +86,7 @@ void kalman_update(kalman_t *kalman)
     uint16_t j;
     uint16_t N = kalman->state_dim;
 
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
 
     /* H^T */
     arm_mat_trans_f32(&kalman->H, &kalman->temp_zn);
@@ -114,7 +114,7 @@ void kalman_update(kalman_t *kalman)
     arm_mat_add_f32(&kalman->x, &kalman->temp_n1_1, &kalman->x);
 
 
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
 
     /* K * H */
     arm_mat_mult_f32(&kalman->K, &kalman->H, &kalman->temp_nn_1);

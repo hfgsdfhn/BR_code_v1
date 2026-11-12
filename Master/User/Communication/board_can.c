@@ -45,7 +45,7 @@ HAL_StatusTypeDef Board_CAN1_Send(
         tx_data[2U * i + 1U] = (uint8_t)(raw >> 8);
     }
 
-/* 功能：执行 HAL_CAN_AddTxMessage 函数对应的模块操作。 */
+/* 功能：执行 HAL_CAN_AddTxMessage 模块操作并维护相关状态。 */
     return HAL_CAN_AddTxMessage(
         &hcan1, &tx_header, tx_data, &tx_mailbox);
 }
@@ -79,7 +79,7 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[0] = lift_mode;
     tx_data[1] = action_mode;
 
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     memcpy(&speed_raw, &target_speed, sizeof(float));
 
     /* 小端序排列 */
@@ -88,7 +88,7 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[4] = (uint8_t)((speed_raw >> 16) & 0xFFU);
     tx_data[5] = (uint8_t)((speed_raw >> 24) & 0xFFU);
 
-/* 功能：执行 HAL_CAN_AddTxMessage 函数对应的模块操作。 */
+/* 功能：执行 HAL_CAN_AddTxMessage 模块操作并维护相关状态。 */
     return HAL_CAN_AddTxMessage(
         &hcan1, &tx_header, tx_data, &tx_mailbox);
 }

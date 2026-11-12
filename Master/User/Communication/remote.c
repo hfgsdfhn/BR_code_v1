@@ -12,7 +12,7 @@ static remote_state_t remote_state;
 static uint32_t remote_valid_count;
 
 
-/* 功能：执行 remote_parse_byte 函数对应的模块操作。 */
+/* 功能：执行 remote_parse_byte 模块操作并维护相关状态。 */
 static void remote_parse_byte(uint8_t byte)
 {
     if (remote_parser_len == 0U)
@@ -49,7 +49,7 @@ static void remote_parse_byte(uint8_t byte)
 }
 
 
-/* 功能：执行 Remote_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Remote_Init(void)
 {
     memset(&remote_state, 0, sizeof(remote_state));
@@ -58,7 +58,7 @@ void Remote_Init(void)
 }
 
 
-/* 功能：执行 Remote_RxBytes 函数对应的模块操作。 */
+/* 功能：执行 Remote_RxBytes 模块操作并维护相关状态。 */
 void Remote_RxBytes(const uint8_t *data, uint16_t size)
 {
     while (data != NULL && size-- != 0U)
@@ -66,7 +66,7 @@ void Remote_RxBytes(const uint8_t *data, uint16_t size)
 }
 
 
-/* 功能：执行 Remote_UartError 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
 void Remote_UartError(void)
 {
 
@@ -75,7 +75,7 @@ void Remote_UartError(void)
 }
 
 
-/* 功能：执行 Remote_GetState 函数对应的模块操作。 */
+/* 功能：执行 Remote_GetState 模块操作并维护相关状态。 */
 uint8_t Remote_GetState(remote_state_t *state)
 {
     uint32_t primask;
@@ -94,7 +94,7 @@ uint8_t Remote_GetState(remote_state_t *state)
 }
 
 
-/* 功能：执行 Remote_IsOnline 函数对应的模块操作。 */
+/* 功能：执行 Remote_IsOnline 模块操作并维护相关状态。 */
 uint8_t Remote_IsOnline(uint32_t timeout_ms)
 {
     return (uint8_t)(remote_state.valid != 0U &&
@@ -102,7 +102,7 @@ uint8_t Remote_IsOnline(uint32_t timeout_ms)
 }
 
 
-/* 功能：执行 Remote_GetValidFrameCount 函数对应的模块操作。 */
+/* 功能：执行 Remote_GetValidFrameCount 模块操作并维护相关状态。 */
 uint32_t Remote_GetValidFrameCount(void)
 {
     return remote_valid_count;

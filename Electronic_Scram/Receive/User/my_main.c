@@ -8,7 +8,7 @@
 #include "remote_link.h"
 
 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_Init(void)
 {
     HAL_GPIO_WritePin(LORA_M0_GPIO_Port, LORA_M0_Pin, GPIO_PIN_RESET);
@@ -25,7 +25,7 @@ void My_Init(void)
 }
 
 
-/* 功能：执行 My_Loop 函数对应的模块操作。 */
+/* 功能：执行 My_Loop 模块操作并维护相关状态。 */
 void My_Loop(void)
 {
     RemoteLink_Process();

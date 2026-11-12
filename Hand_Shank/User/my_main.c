@@ -7,14 +7,14 @@
 #include "remote.h"
 
 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_Init(void)
 {
     Remote_Init();
 }
 
 
-/* 功能：执行 My_Loop 函数对应的模块操作。 */
+/* 功能：执行 My_Loop 模块操作并维护相关状态。 */
 void My_Loop(void)
 {
     Remote_Loop();

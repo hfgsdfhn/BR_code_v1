@@ -60,7 +60,7 @@ typedef struct
     pid_t cascade_position_pid, cascade_speed_pid; /* 成员变量。 */
     uint32_t cascade_tick; /* 成员变量。 */
     bool cascade_configured; /* 成员变量。 */
-    float mit_kp, mit_kd; /* 代码说明：相关模块实现。 */
+    float mit_kp, mit_kd; /* 模块实现细节。 */
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
     uint8_t id; /* 成员变量。 */
@@ -84,8 +84,8 @@ typedef struct
     volatile uint8_t fault; /* 成员变量。 */
     volatile bool feedback_valid; /* 状态标志。 */
     volatile bool feedback_recovery_pending; /* 成员变量。 */
-    volatile bool enabled; /* 代码说明：相关模块实现。 */
-    volatile uint8_t feedback_state; /* 代码说明：相关模块实现。 */
+    volatile bool enabled; /* 模块实现细节。 */
+    volatile uint8_t feedback_state; /* 模块实现细节。 */
     float continuous_position; /* 成员变量。 */
     bool continuous_valid; /* 状态标志。 */
     bool angle_store_pending; /* 成员变量。 */
@@ -119,7 +119,7 @@ extern volatile float rs_recovery_max_speed_rad_s; /* 成员变量。 */
 extern volatile float rs_recovery_max_acceleration_rad_s2; /* 成员变量。 */
 
 
-/* 功能：执行 RS05_RecoveryVelocity 函数对应的模块操作。 */
+/* 功能：执行通信或设备故障恢复。 */
 float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_rad_s, float dt_s);
 #define RS05_POSITION_MIN (-12.57f)
 #define RS05_POSITION_MAX (12.57f)
@@ -134,36 +134,36 @@ float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_
 #define RS05_TRAJECTORY_EPSILON_RAD (0.000001f)
 
 
-/* 功能：执行 RS05_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef RS05_Init(rs05_t *motor                     , /* 成员变量。 */
                             FDCAN_HandleTypeDef *hcan                    , uint8_t id                 , /* 成员变量。 */
                             int direction                       );
 
-/* 功能：执行 RS05_BuildSpecial 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 bool RS05_BuildSpecial(rs05_t *motor                       , uint8_t command             );
 
-/* 功能：执行 RS05_SetTargetBasic 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void RS05_SetTargetBasic(rs05_t *motor                      , rs_mode_t mode              , /* 当前工作模式或状态。 */
                          float target                      );
 
-/* 功能：执行 RS05_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 bool RS05_Send(rs05_t *motor                      );
 
-/* 功能：执行 RS05_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 bool RS05_OnFrame(rs05_t *motor                      , const can_frame_t *frame                     );
 
-/* 功能：执行 RS05_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 bool RS05_Stop(rs05_t *motor                    );
 
-/* 功能：执行 RS05_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void RS05_Service(rs05_t *motor                             );
 
-/* 功能：执行 RS05_GetPositionDegrees 函数对应的模块操作。 */
+/* 功能：读取设备当前位置。 */
 void RS05_GetPositionDegrees(const rs05_t *motor                      , /* 成员变量。 */
                              volatile float *position_degrees                      );
 
 
-/* 功能：执行 RS05_SetTargetMIT 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS05_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS05_SetTarget(...) RS05_TARGET_SELECT(__VA_ARGS__, RS05_SetTargetMIT, RS05_SetTargetBasic)(__VA_ARGS__)

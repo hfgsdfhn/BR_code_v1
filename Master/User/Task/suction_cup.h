@@ -23,17 +23,17 @@ extern m3508_t m3508_dcup[1]; /* 成员变量。 */
 
 extern volatile uint8_t suction_enable; /* 状态标志。 */
 extern volatile float suction_target[5]; /* 成员变量。 */
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 extern volatile float suction_feedback_angle[5]; /* 成员变量。 */
 extern volatile float g_up_stp23l_distance_cm; /* 成员变量。 */
 extern volatile float g_down_stp23l_distance_cm; /* 成员变量。 */
 
-/* 功能：执行 SuctionCup_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void SuctionCup_Init(void);
-/* 功能：执行 SuctionCup_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 void SuctionCup_OnFrame(const can_frame_t *frame);
-/* 功能：执行 SuctionCup_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void SuctionCup_Service(void);
-/* 功能：执行 SuctionCup_Task 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void SuctionCup_Task(void *argument);
 #endif

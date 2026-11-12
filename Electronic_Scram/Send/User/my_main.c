@@ -7,7 +7,7 @@
 #include "my_main.h"
 #include "remote_link.h"
 
-/* 功能：执行 RemoteLink_UserGpioInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 static void RemoteLink_UserGpioInit(void)
 {
     GPIO_InitTypeDef gpio = {0};
@@ -19,14 +19,14 @@ static void RemoteLink_UserGpioInit(void)
     HAL_GPIO_Init(GPIOA, &gpio);
 }
 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_Init(void)
 {
     RemoteLink_UserGpioInit();
     RemoteLink_Init();
 }
 
-/* 功能：执行 My_Loop 函数对应的模块操作。 */
+/* 功能：执行 My_Loop 模块操作并维护相关状态。 */
 void My_Loop(void)
 {
     RemoteLink_PollSwitches();

@@ -27,22 +27,22 @@ typedef struct
 } remote_state_t;
 
 
-/* 功能：执行 Remote_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Remote_Init(void);
 
-/* 功能：执行 Remote_RxBytes 函数对应的模块操作。 */
+/* 功能：执行 Remote_RxBytes 模块操作并维护相关状态。 */
 void Remote_RxBytes(const uint8_t *data, uint16_t size);
 
-/* 功能：执行 Remote_UartError 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
 void Remote_UartError(void);
 
-/* 功能：执行 Remote_GetState 函数对应的模块操作。 */
+/* 功能：执行 Remote_GetState 模块操作并维护相关状态。 */
 uint8_t Remote_GetState(remote_state_t *state);
 
-/* 功能：执行 Remote_IsOnline 函数对应的模块操作。 */
+/* 功能：执行 Remote_IsOnline 模块操作并维护相关状态。 */
 uint8_t Remote_IsOnline(uint32_t timeout_ms);
 
-/* 功能：执行 Remote_GetValidFrameCount 函数对应的模块操作。 */
+/* 功能：执行 Remote_GetValidFrameCount 模块操作并维护相关状态。 */
 uint32_t Remote_GetValidFrameCount(void);
 
 #endif

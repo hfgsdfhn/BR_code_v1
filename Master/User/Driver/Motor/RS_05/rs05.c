@@ -33,14 +33,14 @@ volatile float rs_recovery_max_speed_rad_s = 2.5f;
 volatile float rs_recovery_max_acceleration_rad_s2 = 0.8333333333f;
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static uint16_t enc(float v, float lo, float hi)
 {
     v = clampf(v, lo, hi);
@@ -48,28 +48,28 @@ static uint16_t enc(float v, float lo, float hi)
 }
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static float dec(uint16_t v, float lo, float hi)
 {
     return lo + (float)v * (hi - lo) / 65535.0f;
 }
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static uint16_t rdbe(const uint8_t *p)
 {
     return ((uint16_t)p[0] << 8) | p[1];
 }
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static uint32_t pack(uint8_t cmd, uint16_t extra, uint8_t id)
 {
     return ((uint32_t)cmd << 24) | ((uint32_t)extra << 8) | id;
 }
 
 
-/* 功能：执行 RS05_PlanTrajectory 函数对应的模块操作。 */
+/* 功能：规划设备运动轨迹。 */
 static void RS05_PlanTrajectory(rs05_t *m, float start, float target)
 {
     quintic_plan_t plan;
@@ -91,7 +91,7 @@ static void RS05_PlanTrajectory(rs05_t *m, float start, float target)
 }
 
 
-/* 功能：执行 RS05_RecoveryVelocity 函数对应的模块操作。 */
+/* 功能：执行通信或设备故障恢复。 */
 float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_rad_s, float dt_s)
 {
     float speed = rs_recovery_max_speed_rad_s;
@@ -114,12 +114,12 @@ float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_
     desired = fminf(desired, 4.0f * fabsf(error_rad));
     desired = copysignf(desired, error_rad);
     step = acceleration * dt_s;
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
     return clampf(previous_rad_s + clampf(desired - previous_rad_s, -step, step), -speed, speed);
 }
 
 
-/* 功能：执行 RS05_BeginPositionTrajectory 函数对应的模块操作。 */
+/* 功能：执行 RS05_BeginPositionTrajectory 模块操作并维护相关状态。 */
 static void RS05_BeginPositionTrajectory(rs05_t *m, uint32_t now)
 {
     RS05_PlanTrajectory(m, m->position, m->target);
@@ -141,7 +141,7 @@ static void RS05_BeginPositionTrajectory(rs05_t *m, uint32_t now)
 }
 
 
-/* 功能：执行 RS05_UpdatePositionTrajectory 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 static void RS05_UpdatePositionTrajectory(rs05_t *m, uint32_t now)
 {
     quintic_plan_t plan;
@@ -168,7 +168,7 @@ static void RS05_UpdatePositionTrajectory(rs05_t *m, uint32_t now)
 }
 
 
-/* 功能：执行 tx 函数对应的模块操作。 */
+/* 功能：执行 tx 模块操作并维护相关状态。 */
 static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t extra, uint8_t id, const uint8_t *data)
 {
     can_frame_t frame = {0};
@@ -180,12 +180,12 @@ static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t ext
     frame.id = pack(cmd, extra, id);
     frame.id_type = FDCAN_EXTENDED_ID;
     frame.length = 8U;
-/* 功能：执行 BspCan_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
     return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
 }
 
 
-/* 功能：执行 RS05_PollFeedback 函数对应的模块操作。 */
+/* 功能：轮询输入或通信状态。 */
 static bool RS05_PollFeedback(rs05_t *m)
 {
     uint8_t data[8];
@@ -205,12 +205,12 @@ static bool RS05_PollFeedback(rs05_t *m)
     data[6] = (uint8_t)(enc(0.0f, RS05_KD_MIN, RS05_KD_MAX) >> 8);
     data[7] = (uint8_t)enc(0.0f, RS05_KD_MIN, RS05_KD_MAX);
     zero_torque = enc(0.0f, -RS05_TORQUE_MAX, RS05_TORQUE_MAX);
-/* 功能：执行 tx 函数对应的模块操作。 */
+/* 功能：执行 tx 模块操作并维护相关状态。 */
     return tx(m->hcan, RS05_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
 
-/* 功能：执行 RS05_SendSetZero 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 static bool RS05_SendSetZero(rs05_t *m)
 {
     uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
@@ -218,7 +218,7 @@ static bool RS05_SendSetZero(rs05_t *m)
 }
 
 
-/* 功能：执行 RS05_BuildSpecial 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 bool RS05_BuildSpecial(rs05_t *m, uint8_t command)
 {
     if (m != NULL && command == RS05_FALSE)
@@ -229,7 +229,7 @@ bool RS05_BuildSpecial(rs05_t *m, uint8_t command)
 }
 
 
-/* 功能：执行 RS05_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef RS05_Init(rs05_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, int direction)
 {
     if (m == NULL || hcan == NULL || id == 0U)
@@ -249,7 +249,7 @@ HAL_StatusTypeDef RS05_Init(rs05_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
 }
 
 
-/* 功能：执行 RS05_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 bool RS05_Stop(rs05_t *m)
 {
     bool sent;
@@ -270,7 +270,7 @@ bool RS05_Stop(rs05_t *m)
 }
 
 
-/* 功能：执行 RS05_SetTargetBasic 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void RS05_SetTargetBasic(rs05_t *m, rs_mode_t mode, float target)
 {
     if (mode == RS_MODE_MIT)
@@ -339,7 +339,7 @@ void RS05_SetTargetBasic(rs05_t *m, rs_mode_t mode, float target)
 }
 
 
-/* 功能：执行 RS05_PlanSpeed 函数对应的模块操作。 */
+/* 功能：规划设备运动轨迹。 */
 static float RS05_PlanSpeed(rs05_t *m, float target)
 {
     uint32_t now = HAL_GetTick();
@@ -358,36 +358,36 @@ static float RS05_PlanSpeed(rs05_t *m, float target)
     m->speed_planner_valid = true;
     m->speed_planner.a_acc = rs05_speed_max_acceleration_rad_s2;
     m->speed_planner.a_dec = rs05_speed_max_acceleration_rad_s2;
-/* 功能：执行 Trapezoid_Update 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
     return Trapezoid_Update(&m->speed_planner, target, dt);
 }
 
 
-/* 功能：执行 RS05_WriteParamFloat 函数对应的模块操作。 */
+/* 功能：写入设备参数。 */
 static bool RS05_WriteParamFloat(rs05_t *m, uint16_t index, float value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     memcpy(&data[4], &value, 4U);
-/* 功能：执行 tx 函数对应的模块操作。 */
+/* 功能：执行 tx 模块操作并维护相关状态。 */
     return tx(m->hcan, RS05_CMD_WRITE_PARAM, RS05_HOST_ID, m->id, data) == HAL_OK;
 }
 
 
-/* 功能：执行 RS05_WriteParamByte 函数对应的模块操作。 */
+/* 功能：写入设备参数。 */
 static bool RS05_WriteParamByte(rs05_t *m, uint16_t index, uint8_t value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     data[4] = value;
-/* 功能：执行 tx 函数对应的模块操作。 */
+/* 功能：执行 tx 模块操作并维护相关状态。 */
     return tx(m->hcan, RS05_CMD_WRITE_PARAM, RS05_HOST_ID, m->id, data) == HAL_OK;
 }
 
 
-/* 功能：执行 RS05_EnsureMitMode 函数对应的模块操作。 */
+/* 功能：执行 RS05_EnsureMitMode 模块操作并维护相关状态。 */
 static bool RS05_EnsureMitMode(rs05_t *m)
 {
     if (m->run_mode == RS05_RUN_MODE_MIT)
@@ -403,7 +403,7 @@ static bool RS05_EnsureMitMode(rs05_t *m)
 }
 
 
-/* 功能：执行 RS05_EnsureSpeedMode 函数对应的模块操作。 */
+/* 功能：执行 RS05_EnsureSpeedMode 模块操作并维护相关状态。 */
 static bool RS05_EnsureSpeedMode(rs05_t *m)
 {
     if (m->run_mode == RS05_RUN_MODE_SPEED)
@@ -421,7 +421,7 @@ static bool RS05_EnsureSpeedMode(rs05_t *m)
 }
 
 
-/* 功能：执行 RS05_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 bool RS05_Send(rs05_t *m)
 {
     uint8_t d[8];
@@ -431,13 +431,13 @@ bool RS05_Send(rs05_t *m)
     if (!m)
         return false;
     if (m->mode == RS_MODE_STOP)
-/* 功能：执行 RS05_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
         return RS05_Stop(m);
     if (m->mode == RS_MODE_SPEED)
     {
         if (!RS05_EnsureSpeedMode(m))
             return false;
-/* 功能：执行 RS05_WriteParamFloat 函数对应的模块操作。 */
+/* 功能：写入设备参数。 */
         return RS05_WriteParamFloat(m, RS05_IDX_SPD_REF, m->direction * RS05_PlanSpeed(m, m->target));
     }
     if (!RS05_EnsureMitMode(m))
@@ -497,12 +497,12 @@ bool RS05_Send(rs05_t *m)
         d[6] = damp >> 8;
         d[7] = damp;
     }
-/* 功能：执行 tx 函数对应的模块操作。 */
+/* 功能：执行 tx 模块操作并维护相关状态。 */
     return tx(m->hcan, RS05_CMD_MOTION, enc(tq, -RS05_TORQUE_MAX, RS05_TORQUE_MAX), m->id, d) == HAL_OK;
 }
 
 
-/* 功能：执行 RS05_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
 {
     uint8_t cmd;
@@ -546,7 +546,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
         m->continuous_valid = true;
         m->feedback_valid = true;
         m->feedback_recovery_pending = false;
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         m->ever_feedback_received = true;
     }
 
@@ -605,7 +605,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
 }
 
 
-/* 功能：执行 RS05_GetPositionDegrees 函数对应的模块操作。 */
+/* 功能：读取设备当前位置。 */
 void RS05_GetPositionDegrees(const rs05_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -615,7 +615,7 @@ void RS05_GetPositionDegrees(const rs05_t *m, volatile float *position_degrees)
 }
 
 
-/* 功能：执行 RS05_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void RS05_Service(rs05_t *m)
 {
     uint32_t now;
@@ -627,7 +627,7 @@ void RS05_Service(rs05_t *m)
 
     now = HAL_GetTick();
 
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     if ((uint32_t)(now - m->last_feedback_tick) > 50U)
     {
         m->feedback_valid = false;
@@ -635,7 +635,7 @@ void RS05_Service(rs05_t *m)
         m->offline_latched = true;
         m->feedback_recovery_pending = true;
     }
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 20U)
     {
         m->reconnect_retry_tick = now;
@@ -653,7 +653,7 @@ void RS05_Service(rs05_t *m)
 
         return;
     }
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     if (m->mode == RS_MODE_STOP || !m->enabled)
     {
         if ((uint32_t)(now - m->last_control_tick) >= 5U)
@@ -675,7 +675,7 @@ void RS05_Service(rs05_t *m)
 }
 
 
-/* 功能：执行 RS05_SetTargetMIT 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output_degrees)
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))

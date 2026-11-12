@@ -6,14 +6,14 @@
 #ifndef BR_CUP_CONFIG_H
 #define BR_CUP_CONFIG_H
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 #define BR_AUX_M3508_TRAJECTORY_TIME_S 0.0f
 #define BR_M2006_CUP0_TRAJECTORY_TIME_S 0.0f
 #define BR_M2006_CUP1_TRAJECTORY_TIME_S 0.0f
 
 
-/* 代码说明：相关模块实现。 */
- * Initial values follow DJ_M2006; driver limits and integral separation are preserved. */
+/* 模块实现细节。 */
+/* Initial values follow DJ_M2006; driver limits and integral separation are preserved. */
 #define BR_M2006_CUP0_POSITION_KP 94.247779608f
 #define BR_M2006_CUP0_POSITION_KI 52.359877560f
 #define BR_M2006_CUP0_POSITION_KD 0.523598776f

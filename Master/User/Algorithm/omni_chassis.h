@@ -51,13 +51,13 @@ typedef struct {
 
 extern omni_chassis_t chassis; /* 成员变量。 */
 
-/* 功能：执行 chassis_set_speed 函数对应的模块操作。 */
+/* 功能：执行 chassis_set_speed 模块操作并维护相关状态。 */
 void chassis_set_speed(void);
-/* 功能：执行 chassis_get_speed 函数对应的模块操作。 */
+/* 功能：执行 chassis_get_speed 模块操作并维护相关状态。 */
 void chassis_get_speed(void);
-/* 功能：执行 Chassis_BodyToWorld 函数对应的模块操作。 */
+/* 功能：执行 Chassis_BodyToWorld 模块操作并维护相关状态。 */
 void Chassis_BodyToWorld(void);
-/* 功能：执行 Chassis_WheelSpeedToYawRate 函数对应的模块操作。 */
+/* 功能：执行 Chassis_WheelSpeedToYawRate 模块操作并维护相关状态。 */
 float Chassis_WheelSpeedToYawRate(float wheel_speed);
 
 #endif

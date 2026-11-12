@@ -28,7 +28,7 @@ bsp_uart_t uart_list[BSP_UART_COUNT] = {
 
 static osThreadId_t uart_task_handle;
 
-/* 功能：执行 BspUart_RegisterRxCallback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback_t callback)
 {
     if ((uint32_t)channel >= BSP_UART_COUNT) return false;
@@ -36,7 +36,7 @@ bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback
     return true;
 }
 
-/* 功能：执行 BspUart_GetAlignedCacheRange 函数对应的模块操作。 */
+/* 功能：执行 BspUart_GetAlignedCacheRange 模块操作并维护相关状态。 */
 static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
                                          uint8_t **aligned_buffer, uint32_t *aligned_size)
 {
@@ -47,7 +47,7 @@ static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
     *aligned_size = (size + offset + CACHE_LINE_SIZE - 1U) & ~(CACHE_LINE_SIZE - 1U);
 }
 
-/* 功能：执行 BspUart_Invalidate 函数对应的模块操作。 */
+/* 功能：执行 BspUart_Invalidate 模块操作并维护相关状态。 */
 static void BspUart_Invalidate(uint8_t *buffer)
 {
     uint8_t *aligned_buffer;
@@ -56,7 +56,7 @@ static void BspUart_Invalidate(uint8_t *buffer)
     SCB_InvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);
 }
 
-/* 功能：执行 BspUart_StartReceive 函数对应的模块操作。 */
+/* 功能：接收并处理输入数据。 */
 static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
 {
     HAL_StatusTypeDef status;
@@ -83,14 +83,14 @@ static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
     return status;
 }
 
-/* 功能：执行 BspUart_RequestRestart 函数对应的模块操作。 */
+/* 功能：执行 BspUart_RequestRestart 模块操作并维护相关状态。 */
 static void BspUart_RequestRestart(uint32_t index)
 {
     uart_list[index].restart_requested = true;
     if (uart_task_handle != NULL) (void)osThreadFlagsSet(uart_task_handle, UART_RESTART_FLAG(index));
 }
 
-/* 功能：执行 BspUart_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void BspUart_Init(void)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -102,7 +102,7 @@ void BspUart_Init(void)
     }
 }
 
-/* 功能：执行 BspUart_Task 函数对应的模块操作。 */
+/* 功能：执行周期任务主流程。 */
 void BspUart_Task(void *argument)
 {
     (void)argument;
@@ -148,7 +148,7 @@ void BspUart_Task(void *argument)
     }
 }
 
-/* 功能：执行 BspUart_Send 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size)
 {
     if ((channel >= BSP_UART_COUNT) || (data == NULL) || (size == 0U) ||
@@ -189,7 +189,7 @@ bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size
     return true;
 }
 
-/* 功能：执行 HAL_UART_TxCpltCallback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -219,7 +219,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 功能：执行 HAL_UART_ErrorCallback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     if (huart == &huart2)
@@ -238,7 +238,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 功能：执行 HAL_UARTEx_RxEventCallback 函数对应的模块操作。 */
+/* 功能：处理外设回调事件。 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     (void)huart;

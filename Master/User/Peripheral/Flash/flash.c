@@ -11,7 +11,7 @@
 #include <string.h>
 
 
-/* 功能：执行 angle_crc 函数对应的模块操作。 */
+/* 功能：执行 angle_crc 模块操作并维护相关状态。 */
 static uint32_t angle_crc(const motor_angle_record_t *record)
 {
     const uint8_t *bytes = (const uint8_t *)record;
@@ -26,21 +26,21 @@ static uint32_t angle_crc(const motor_angle_record_t *record)
 }
 
 
-/* 功能：执行 angle_record_valid 函数对应的模块操作。 */
+/* 功能：执行 angle_record_valid 模块操作并维护相关状态。 */
 static bool angle_record_valid(const motor_angle_record_t *record)
 {
     return record->magic == FLASH_MOTOR_ANGLE_MAGIC && isfinite(record->angle) && record->crc == angle_crc(record);
 }
 
 
-/* 功能：执行 Flash_Select 函数对应的模块操作。 */
+/* 功能：执行 Flash_Select 模块操作并维护相关状态。 */
 static void Flash_Select(GPIO_PinState state)
 {
     HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, state);
 }
 
 
-/* 功能：执行 Flash_ReadStatus 函数对应的模块操作。 */
+/* 功能：读取设备参数。 */
 static bool Flash_ReadStatus(uint8_t *status)
 {
     uint8_t command = FLASH_CMD_READ_STATUS;
@@ -53,7 +53,7 @@ static bool Flash_ReadStatus(uint8_t *status)
 }
 
 
-/* 功能：执行 Flash_Wait 函数对应的模块操作。 */
+/* 功能：执行 Flash_Wait 模块操作并维护相关状态。 */
 static bool Flash_Wait(uint32_t timeout_ms)
 {
     uint32_t start = HAL_GetTick();
@@ -73,7 +73,7 @@ static bool Flash_Wait(uint32_t timeout_ms)
 }
 
 
-/* 功能：执行 Flash_WriteEnable 函数对应的模块操作。 */
+/* 功能：写入设备参数。 */
 static bool Flash_WriteEnable(void)
 {
     uint8_t command = FLASH_CMD_WRITE_ENABLE;
@@ -86,16 +86,16 @@ static bool Flash_WriteEnable(void)
 }
 
 
-/* 功能：执行 Flash_SendAddress 函数对应的模块操作。 */
+/* 功能：发送数据或控制指令。 */
 static bool Flash_SendAddress(uint8_t command, uint32_t address)
 {
     uint8_t header[4] = {command, (uint8_t)(address >> 16U), (uint8_t)(address >> 8U), (uint8_t)address};
-/* 功能：执行 HAL_SPI_Transmit 函数对应的模块操作。 */
+/* 功能：执行 HAL_SPI_Transmit 模块操作并维护相关状态。 */
     return HAL_SPI_Transmit(&hspi1, header, sizeof(header), FLASH_IO_TIMEOUT_MS) == HAL_OK;
 }
 
 
-/* 功能：执行 Flash_ReadId 函数对应的模块操作。 */
+/* 功能：读取设备参数。 */
 uint16_t Flash_ReadId(void)
 {
     uint8_t command[4] = {FLASH_CMD_DEVICE_ID, 0U, 0U, 0U};
@@ -113,7 +113,7 @@ uint16_t Flash_ReadId(void)
 }
 
 
-/* 功能：执行 Flash_Read 函数对应的模块操作。 */
+/* 功能：读取设备参数。 */
 bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
 {
     bool ok;
@@ -133,7 +133,7 @@ bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
 }
 
 
-/* 功能：执行 Flash_WritePage 函数对应的模块操作。 */
+/* 功能：写入设备参数。 */
 bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
 {
     bool ok;
@@ -154,7 +154,7 @@ bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
 }
 
 
-/* 功能：执行 Flash_EraseSector 函数对应的模块操作。 */
+/* 功能：执行 Flash_EraseSector 模块操作并维护相关状态。 */
 bool Flash_EraseSector(uint32_t address)
 {
     bool ok;
@@ -173,7 +173,7 @@ bool Flash_EraseSector(uint32_t address)
 }
 
 
-/* 功能：执行 angle_record_newer 函数对应的模块操作。 */
+/* 功能：执行 angle_record_newer 模块操作并维护相关状态。 */
 static bool angle_record_newer(const motor_angle_record_t *a, const motor_angle_record_t *b)
 {
     uint32_t delta = a->sequence - b->sequence;
@@ -181,7 +181,7 @@ static bool angle_record_newer(const motor_angle_record_t *a, const motor_angle_
 }
 
 
-/* 功能：执行 Flash_LoadMotorAngle 函数对应的模块操作。 */
+/* 功能：执行 Flash_LoadMotorAngle 模块操作并维护相关状态。 */
 bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
 {
     motor_angle_record_t a = {0}, b = {0};
@@ -203,7 +203,7 @@ bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
 }
 
 
-/* 功能：执行 Flash_SaveMotorAngle 函数对应的模块操作。 */
+/* 功能：执行 Flash_SaveMotorAngle 模块操作并维护相关状态。 */
 bool Flash_SaveMotorAngle(uint8_t slot, float angle)
 {
     motor_angle_record_t a = {0}, b = {0}, record = {0}, verify = {0};
@@ -235,7 +235,7 @@ bool Flash_SaveMotorAngle(uint8_t slot, float angle)
         address = base + FLASH_MOTOR_ANGLE_SECTOR;
     }
     record.crc = angle_crc(&record);
-/* 功能：执行 Flash_EraseSector 函数对应的模块操作。 */
+/* 功能：执行 Flash_EraseSector 模块操作并维护相关状态。 */
     return Flash_EraseSector(address) && Flash_WritePage(address, (const uint8_t *)&record, sizeof(record)) &&
            Flash_Read(address, (uint8_t *)&verify, sizeof(verify)) && memcmp(&record, &verify, sizeof(record)) == 0;
 }

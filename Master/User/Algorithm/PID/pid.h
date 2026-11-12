@@ -24,23 +24,23 @@ typedef struct
 } pid_t;
 
 
-/* 功能：执行 PID_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool PID_Init(pid_t *pid                    , float kp            , float ki            , /* 成员变量。 */
               float kd            , float output_limit               , /* 成员变量。 */
               float integral_limit                );
 
 
-/* 功能：执行 PID_SetIntegralSeparationRange 函数对应的模块操作。 */
+/* 功能：执行 PID_SetIntegralSeparationRange 模块操作并维护相关状态。 */
 void PID_SetIntegralSeparationRange(pid_t *pid                   , /* 成员变量。 */
                                     float full_separation                   , /* 成员变量。 */
                                     float separation                   );
 
 
-/* 功能：执行 PID_Reset 函数对应的模块操作。 */
+/* 功能：执行 PID_Reset 模块操作并维护相关状态。 */
 void PID_Reset(pid_t *pid                     );
 
 
-/* 功能：执行 PID_Calc 函数对应的模块操作。 */
+/* 功能：执行 PID_Calc 模块操作并维护相关状态。 */
 float PID_Calc(pid_t *pid                      , float target             , /* 成员变量。 */
                float feedback             , float dt_s                 );
 

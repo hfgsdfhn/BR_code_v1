@@ -25,12 +25,12 @@ static j4310_online_mit_state_t j4310_online_mit;
 static uint32_t j4310_feedback_sequence;
 static uint32_t j4310_online_feedback_sequence;
 
-/* 功能：执行 J4310_SetTargetRadians 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 static void J4310_SetTargetRadians(j4310_t *motor, float position_rad, float speed_rad_s, float kp, float kd,
                                    float torque_nm);
 
 
-/* 功能：执行 J4310_OnlineClamp 函数对应的模块操作。 */
+/* 功能：执行 J4310_OnlineClamp 模块操作并维护相关状态。 */
 static float J4310_OnlineClamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -45,14 +45,14 @@ static float J4310_OnlineClamp(float value, float minimum, float maximum)
 }
 
 
-/* 功能：执行 J4310_OnlineApproach 函数对应的模块操作。 */
+/* 功能：执行 J4310_OnlineApproach 模块操作并维护相关状态。 */
 static float J4310_OnlineApproach(float current, float target, float smoothing)
 {
     return current + (target - current) * smoothing;
 }
 
 
-/* 功能：执行 J4310_IsFaultState 函数对应的模块操作。 */
+/* 功能：执行 J4310_IsFaultState 模块操作并维护相关状态。 */
 static bool J4310_IsFaultState(uint8_t state)
 {
     return (state == 0x02U) || (state == 0x03U) || (state == 0x05U) || (state == 0x07U) ||
@@ -60,7 +60,7 @@ static bool J4310_IsFaultState(uint8_t state)
 }
 
 
-/* 功能：执行 J4310_WrapPositionDelta 函数对应的模块操作。 */
+/* 功能：执行 J4310_WrapPositionDelta 模块操作并维护相关状态。 */
 static float J4310_WrapPositionDelta(float delta_rad)
 {
     while (delta_rad > J4310_PI)
@@ -75,7 +75,7 @@ static float J4310_WrapPositionDelta(float delta_rad)
 }
 
 
-/* 功能：执行 J4310_OnlineMitUpdate 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 static void J4310_OnlineMitUpdate(const j4310_t *motor, float position_rad, float speed_rad_s, float kp, float kd,
                                   float *applied_kp, float *applied_kd)
 {
@@ -174,7 +174,7 @@ static void J4310_OnlineMitUpdate(const j4310_t *motor, float position_rad, floa
 }
 
 
-/* 功能：执行 J4310_GetControlId 函数对应的模块操作。 */
+/* 功能：执行 J4310_GetControlId 模块操作并维护相关状态。 */
 static uint16_t J4310_GetControlId(const j4310_t *motor                               )
 {
     if (motor->mode == J4310_MODE_SPEED)
@@ -185,7 +185,7 @@ static uint16_t J4310_GetControlId(const j4310_t *motor                         
 }
 
 
-/* 功能：执行 J4310_UintToFloat 函数对应的模块操作。 */
+/* 功能：执行 J4310_UintToFloat 模块操作并维护相关状态。 */
 static float J4310_UintToFloat(uint16_t value                          ,
                                float min                      ,
                                float max                      ,
@@ -195,7 +195,7 @@ static float J4310_UintToFloat(uint16_t value                          ,
 }
 
 
-/* 功能：执行 J4310_FloatToUint 函数对应的模块操作。 */
+/* 功能：执行 J4310_FloatToUint 模块操作并维护相关状态。 */
 static uint16_t J4310_FloatToUint(float value                           ,
                                   float min                      ,
                                   float max                      ,
@@ -213,7 +213,7 @@ static uint16_t J4310_FloatToUint(float value                           ,
 }
 
 
-/* 功能：执行 J4310_BuildSpecial 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 static void J4310_BuildSpecial(const j4310_t *motor                                    ,
                                uint8_t command                              ,
                                can_frame_t *frame                              )
@@ -230,7 +230,7 @@ static void J4310_BuildSpecial(const j4310_t *motor                             
 
 
 
-/* 功能：执行 J4310_BeginPositionTrajectory 函数对应的模块操作。 */
+/* 功能：执行 J4310_BeginPositionTrajectory 模块操作并维护相关状态。 */
 static void J4310_BeginPositionTrajectory(j4310_t *motor, uint32_t now)
 {
     quintic_plan_t plan;
@@ -276,7 +276,7 @@ static void J4310_BeginPositionTrajectory(j4310_t *motor, uint32_t now)
 }
 
 
-/* 功能：执行 J4310_SamplePositionTrajectory 函数对应的模块操作。 */
+/* 功能：执行 J4310_SamplePositionTrajectory 模块操作并维护相关状态。 */
 static void J4310_SamplePositionTrajectory(j4310_t *motor, uint32_t now)
 {
     uint32_t elapsed_ms;
@@ -305,7 +305,7 @@ static void J4310_SamplePositionTrajectory(j4310_t *motor, uint32_t now)
 }
 
 
-/* 功能：执行 J4310_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef J4310_Init(j4310_t *motor, FDCAN_HandleTypeDef *hcan,
                              uint8_t motor_id, int direction)
 {
@@ -330,14 +330,14 @@ HAL_StatusTypeDef J4310_Init(j4310_t *motor, FDCAN_HandleTypeDef *hcan,
 }
 
 
-/* 功能：执行 J4310_SetMode 函数对应的模块操作。 */
+/* 功能：执行 J4310_SetMode 模块操作并维护相关状态。 */
 void J4310_SetMode(j4310_t *motor                         , j4310_mode_t mode                    )
 {
     motor->mode = mode;
 }
 
 
-/* 功能：执行 J4310_SetTargetMode 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void J4310_SetTargetMode(j4310_t *motor, j4310_mode_t mode, float target, float speed_rad_s, float kp, float kd,
                          float torque_nm)
 {
@@ -351,7 +351,7 @@ void J4310_SetTargetMode(j4310_t *motor, j4310_mode_t mode, float target, float 
 }
 
 
-/* 功能：执行 J4310_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 bool J4310_Stop(j4310_t *motor)
 {
     if (motor == NULL)
@@ -375,7 +375,7 @@ bool J4310_Stop(j4310_t *motor)
 }
 
 
-/* 功能：执行 J4310_GetPositionDegrees 函数对应的模块操作。 */
+/* 功能：读取设备当前位置。 */
 void J4310_GetPositionDegrees(const j4310_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -385,7 +385,7 @@ void J4310_GetPositionDegrees(const j4310_t *motor, volatile float *position_deg
 }
 
 
-/* 功能：执行 J4310_RequestEnable 函数对应的模块操作。 */
+/* 功能：发送设备使能指令。 */
 void J4310_RequestEnable(j4310_t *motor)
 {
     if (motor == NULL)
@@ -407,7 +407,7 @@ void J4310_RequestEnable(j4310_t *motor)
 }
 
 
-/* 功能：执行 J4310_SetTargetRadians 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 static void J4310_SetTargetRadians(j4310_t *motor, float position_rad, float speed_rad_s, float kp, float kd,
                                    float torque_nm)
 {
@@ -439,7 +439,7 @@ static void J4310_SetTargetRadians(j4310_t *motor, float position_rad, float spe
 }
 
 
-/* 功能：执行 J4310_SetMitTarget 函数对应的模块操作。 */
+/* 功能：执行 J4310_SetMitTarget 模块操作并维护相关状态。 */
 void J4310_SetMitTarget(j4310_t *motor                              ,
                         float position_degrees                          ,
                         float speed_rad_s                             ,
@@ -455,7 +455,7 @@ void J4310_SetMitTarget(j4310_t *motor                              ,
 }
 
 
-/* 功能：执行 J4310_SetPositionDegrees 函数对应的模块操作。 */
+/* 功能：执行 J4310_SetPositionDegrees 模块操作并维护相关状态。 */
 void J4310_SetPositionDegrees(j4310_t *motor, float degrees, float kp, float kd, float torque_nm)
 {
     (void)kp;
@@ -465,7 +465,7 @@ void J4310_SetPositionDegrees(j4310_t *motor, float degrees, float kp, float kd,
 }
 
 
-/* 功能：执行 J4310_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 bool J4310_OnFrame(j4310_t *motor                         ,
                    const can_frame_t *frame                      )
 {
@@ -587,7 +587,7 @@ bool J4310_OnFrame(j4310_t *motor                         ,
 }
 
 
-/* 功能：执行 J4310_BuildEnable 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void J4310_BuildEnable(const j4310_t *motor                              ,
                        can_frame_t *frame                              )
 {
@@ -595,7 +595,7 @@ void J4310_BuildEnable(const j4310_t *motor                              ,
 }
 
 
-/* 功能：执行 J4310_BuildDisable 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void J4310_BuildDisable(const j4310_t *motor                              ,
                         can_frame_t *frame                              )
 {
@@ -603,7 +603,7 @@ void J4310_BuildDisable(const j4310_t *motor                              ,
 }
 
 
-/* 功能：执行 J4310_BuildMit 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void J4310_BuildMit(const j4310_t *motor                             ,
                     float position_rad                               ,
                     float speed_rad_s                                 ,
@@ -652,7 +652,7 @@ void J4310_BuildMit(const j4310_t *motor                             ,
 }
 
 
-/* 功能：执行 J4310_PlanSpeed 函数对应的模块操作。 */
+/* 功能：规划设备运动轨迹。 */
 static float J4310_PlanSpeed(j4310_t *motor, float target, uint32_t now)
 {
     float dt = motor->speed_planner_valid ? (float)(uint32_t)(now - motor->speed_planner_tick) * 0.001f : 0.0f;
@@ -670,12 +670,12 @@ static float J4310_PlanSpeed(j4310_t *motor, float target, uint32_t now)
     motor->speed_planner_valid = true;
     motor->speed_planner.a_acc = j4310_speed_max_acceleration_rad_s2;
     motor->speed_planner.a_dec = j4310_speed_max_acceleration_rad_s2;
-/* 功能：执行 Trapezoid_Update 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
     return Trapezoid_Update(&motor->speed_planner, target, dt);
 }
 
 
-/* 功能：执行 J4310_BuildVelocity 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 static void J4310_BuildVelocity(const j4310_t *motor, float speed_rad_s, can_frame_t *frame)
 {
     float protocol_speed_rad_s = (float)motor->direction * speed_rad_s;
@@ -693,7 +693,7 @@ static void J4310_BuildVelocity(const j4310_t *motor, float speed_rad_s, can_fra
 }
 
 
-/* 功能：执行 J4310_BuildControlFrame 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 bool J4310_BuildControlFrame(j4310_t *motor                             ,
                              float additional_torque_nm                       ,
                              uint32_t now                         ,
@@ -750,7 +750,7 @@ bool J4310_BuildControlFrame(j4310_t *motor                             ,
 
     if (motor->mode == J4310_MODE_STOP)
     {
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         J4310_BuildMit(motor, motor->feedback.position_rad, 0.0f, 0.0f, 0.0f, 0.0f, frame);
         return true;
     }
@@ -799,7 +799,7 @@ bool J4310_BuildControlFrame(j4310_t *motor                             ,
 }
 
 
-/* 功能：执行 J4310_SetTargetBasic 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void J4310_SetTargetBasic(j4310_t *motor, j4310_mode_t mode, float target)
 {
     if (!motor || !isfinite(target) || mode < J4310_MODE_STOP || mode >= J4310_MODE_MIT)
@@ -836,7 +836,7 @@ void J4310_SetTargetBasic(j4310_t *motor, j4310_mode_t mode, float target)
     motor->mode = mode;
 }
 
-/* 功能：执行 J4310_SetTargetMIT 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float output_degrees)
 {
     if (!motor || mode != J4310_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))
@@ -864,7 +864,7 @@ void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float o
     PID_Reset(&motor->cascade_speed_pid);
 }
 
-/* 功能：执行 J4310_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now)
 {
     can_frame_t frame;
@@ -874,8 +874,8 @@ void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now)
         motor->feedback.age_cycles++;
     if (motor->feedback.received && motor->feedback.age_cycles > J4310_FEEDBACK_TIMEOUT_CYCLES)
         J4310_RequestEnable(motor);
-    /* 代码说明：相关模块实现。 */
-     * Restore those flags if the FIFO rejected the frame. */
+    /* 模块实现细节。 */
+    /* Restore those flags if the FIFO rejected the frame. */
     bool disable_sent = motor->fault_disable_sent;
     uint8_t enable_countdown = motor->startup_enable_countdown;
     if (J4310_BuildControlFrame(motor, additional_torque_nm, now, &frame) && !BspCan_Send(&frame))

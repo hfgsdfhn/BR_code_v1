@@ -27,31 +27,31 @@ typedef struct
 } trapezoid_2d_t;
 
 
-/* 功能：执行 Trapezoid_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec);
 
 
-/* 功能：执行 Trapezoid_Reset 函数对应的模块操作。 */
+/* 功能：执行 Trapezoid_Reset 模块操作并维护相关状态。 */
 void Trapezoid_Reset(trapezoid_t *tp, float speed);
 
 
-/* 功能：执行 Trapezoid_Update 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 float Trapezoid_Update(trapezoid_t *tp, float target, float dt);
 
 
-/* 功能：执行 Trapezoid2D_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec);
 
 
-/* 功能：执行 Trapezoid2D_Reset 函数对应的模块操作。 */
+/* 功能：执行 Trapezoid2D_Reset 模块操作并维护相关状态。 */
 void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy);
 
 
-/* 功能：执行 Trapezoid2D_Update 函数对应的模块操作。 */
+/* 功能：更新控制状态或轨迹数据。 */
 void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float *vx, float *vy);
 
 
-/* 功能：执行 Trapezoid_BrakeSpeedLimit 函数对应的模块操作。 */
+/* 功能：执行 Trapezoid_BrakeSpeedLimit 模块操作并维护相关状态。 */
 float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec);
 
 #endif
