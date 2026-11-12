@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * @file rs01.c
+ * @brief rs01模块的用户接口与实现。
+ */
 
 #include "rs01.h"
 #include "bsp_can.h"
@@ -26,12 +25,14 @@ volatile float rs01_speed_limit_current_a = 8.0f;
 volatile float rs01_speed_accel_rad_s2 = 30.0f;
 
 
+/* 代码说明：相关模块实现。 */
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
 
+/* 代码说明：相关模块实现。 */
 static uint16_t enc(float v, float lo, float hi)
 {
     v = clampf(v, lo, hi);
@@ -39,24 +40,28 @@ static uint16_t enc(float v, float lo, float hi)
 }
 
 
+/* 代码说明：相关模块实现。 */
 static float dec(uint16_t v, float lo, float hi)
 {
     return lo + (float)v * (hi - lo) / 65535.0f;
 }
 
 
+/* 代码说明：相关模块实现。 */
 static uint16_t rdbe(const uint8_t *p)
 {
     return ((uint16_t)p[0] << 8) | p[1];
 }
 
 
+/* 代码说明：相关模块实现。 */
 static uint32_t pack(uint8_t cmd, uint16_t extra, uint8_t id)
 {
     return ((uint32_t)cmd << 24) | ((uint32_t)extra << 8) | id;
 }
 
 
+/* 功能：执行 RS01_PlanTrajectory 函数对应的模块操作。 */
 static void RS01_PlanTrajectory(rs01_t *m, float start, float target)
 {
     quintic_plan_t plan;
@@ -65,7 +70,7 @@ static void RS01_PlanTrajectory(rs01_t *m, float start, float target)
 
     Quintic_SetDefaultLimits(rs01_trajectory_max_speed_rad_s, rs01_trajectory_max_acceleration_rad_s2,
                              (float)RS01_TRAJECTORY_PERIOD_MS * 0.001f);
-    Quintic_Plan(&plan, start, target, m->velocity, rs01_trajectory_time_s);
+    Quintic_Plan(&plan, start, target, m->velocity, Quintic_DefaultDuration(target - start, m->velocity, m->trajectory_time_s));
     m->trajectory_start_position = start;
     m->trajectory_delta_position = target - start;
     m->trajectory_k0 = plan.k0;
@@ -78,6 +83,7 @@ static void RS01_PlanTrajectory(rs01_t *m, float start, float target)
 }
 
 
+/* 功能：执行 RS01_BeginPositionTrajectory 函数对应的模块操作。 */
 static void RS01_BeginPositionTrajectory(rs01_t *m, uint32_t now)
 {
     RS01_PlanTrajectory(m, m->position, m->target);
@@ -99,6 +105,7 @@ static void RS01_BeginPositionTrajectory(rs01_t *m, uint32_t now)
 }
 
 
+/* 功能：执行 RS01_UpdatePositionTrajectory 函数对应的模块操作。 */
 static void RS01_UpdatePositionTrajectory(rs01_t *m, uint32_t now)
 {
     quintic_plan_t plan;
@@ -125,6 +132,7 @@ static void RS01_UpdatePositionTrajectory(rs01_t *m, uint32_t now)
 }
 
 
+/* 功能：执行 tx 函数对应的模块操作。 */
 static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t extra, uint8_t id, const uint8_t *data)
 {
     can_frame_t frame = {0};
@@ -137,30 +145,36 @@ static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t ext
     frame.id_type = FDCAN_EXTENDED_ID;
     frame.length = 8U;
 
+/* 功能：执行 BspCan_Send 函数对应的模块操作。 */
     return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
 }
 
 
+/* 功能：执行 RS01_WriteParamFloat 函数对应的模块操作。 */
 static bool RS01_WriteParamFloat(rs01_t *m, uint16_t index, float value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     memcpy(&data[4], &value, 4U);
+/* 功能：执行 tx 函数对应的模块操作。 */
     return tx(m->hcan, RS01_CMD_WRITE_PARAM, RS01_HOST_ID, m->id, data) == HAL_OK;
 }
 
 
+/* 功能：执行 RS01_WriteParamByte 函数对应的模块操作。 */
 static bool RS01_WriteParamByte(rs01_t *m, uint16_t index, uint8_t value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     data[4] = value;
+/* 功能：执行 tx 函数对应的模块操作。 */
     return tx(m->hcan, RS01_CMD_WRITE_PARAM, RS01_HOST_ID, m->id, data) == HAL_OK;
 }
 
 
+/* 功能：执行 RS01_EnsureMitMode 函数对应的模块操作。 */
 static bool RS01_EnsureMitMode(rs01_t *m)
 {
     if (m->run_mode == RS01_RUN_MODE_MIT)
@@ -176,6 +190,7 @@ static bool RS01_EnsureMitMode(rs01_t *m)
 }
 
 
+/* 功能：执行 RS01_EnsureSpeedMode 函数对应的模块操作。 */
 static bool RS01_EnsureSpeedMode(rs01_t *m)
 {
     if (m->run_mode == RS01_RUN_MODE_SPEED)
@@ -193,6 +208,7 @@ static bool RS01_EnsureSpeedMode(rs01_t *m)
 }
 
 
+/* 功能：执行 RS01_PollFeedback 函数对应的模块操作。 */
 static bool RS01_PollFeedback(rs01_t *m)
 {
     uint8_t data[8];
@@ -213,10 +229,12 @@ static bool RS01_PollFeedback(rs01_t *m)
     data[7] = (uint8_t)enc(0.0f, 0.0f, 5.0f);
     zero_torque = enc(0.0f, -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
 
+/* 功能：执行 tx 函数对应的模块操作。 */
     return tx(m->hcan, RS01_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
 
+/* 功能：执行 RS01_SendSetZero 函数对应的模块操作。 */
 static bool RS01_SendSetZero(rs01_t *m)
 {
     uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
@@ -224,6 +242,7 @@ static bool RS01_SendSetZero(rs01_t *m)
 }
 
 
+/* 功能：执行 RS01_BuildSpecial 函数对应的模块操作。 */
 bool RS01_BuildSpecial(rs01_t *m, uint8_t command)
 {
     if (m != NULL && command == RS01_FALSE)
@@ -234,6 +253,7 @@ bool RS01_BuildSpecial(rs01_t *m, uint8_t command)
 }
 
 
+/* 功能：执行 RS01_Init 函数对应的模块操作。 */
 HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, int direction)
 {
     if (m == NULL || hcan == NULL || id == 0U)
@@ -241,6 +261,8 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
         return HAL_ERROR;
     }
     memset(m, 0, sizeof(*m));
+    m->mit_kp = RS01_MIT_POSITION_KP;
+    m->mit_kd = RS01_MIT_VELOCITY_KD;
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
@@ -251,6 +273,7 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
 }
 
 
+/* 功能：执行 RS01_Stop 函数对应的模块操作。 */
 bool RS01_Stop(rs01_t *m)
 {
     bool sent;
@@ -271,6 +294,7 @@ bool RS01_Stop(rs01_t *m)
 }
 
 
+/* 功能：执行 RS01_SetTargetBasic 函数对应的模块操作。 */
 void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
 {
     if (mode == RS_MODE_MIT)
@@ -337,6 +361,7 @@ void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
 }
 
 
+/* 功能：执行 RS01_PlanSpeed 函数对应的模块操作。 */
 static float RS01_PlanSpeed(rs01_t *m, float target)
 {
     uint32_t now = HAL_GetTick();
@@ -355,10 +380,12 @@ static float RS01_PlanSpeed(rs01_t *m, float target)
     m->speed_planner_valid = true;
     m->speed_planner.a_acc = rs01_speed_max_acceleration_rad_s2;
     m->speed_planner.a_dec = rs01_speed_max_acceleration_rad_s2;
+/* 功能：执行 Trapezoid_Update 函数对应的模块操作。 */
     return Trapezoid_Update(&m->speed_planner, target, dt);
 }
 
 
+/* 功能：执行 RS01_Send 函数对应的模块操作。 */
 bool RS01_Send(rs01_t *m)
 {
     uint8_t d[8];
@@ -368,11 +395,13 @@ bool RS01_Send(rs01_t *m)
     if (!m)
         return false;
     if (m->mode == RS_MODE_STOP)
+/* 功能：执行 RS01_Stop 函数对应的模块操作。 */
         return RS01_Stop(m);
     if (m->mode == RS_MODE_SPEED)
     {
         if (!RS01_EnsureSpeedMode(m))
             return false;
+/* 功能：执行 RS01_WriteParamFloat 函数对应的模块操作。 */
         return RS01_WriteParamFloat(m, RS01_IDX_SPD_REF, m->direction * RS01_PlanSpeed(m, m->target));
     }
     if (!RS01_EnsureMitMode(m))
@@ -407,9 +436,13 @@ bool RS01_Send(rs01_t *m)
     }
     else if (m->mode == RS_MODE_MIT)
     {
-        pos = m->target;
-        kp = RS01_MIT_POSITION_KP;
-        kd = RS01_MIT_VELOCITY_KD;
+        if (m->trajectory_pending)
+            RS01_BeginPositionTrajectory(m, now);
+        RS01_UpdatePositionTrajectory(m, now);
+        pos = m->reference_position;
+        vel = m->direction * m->reference_velocity;
+        kp = m->mit_kp;
+        kd = m->mit_kd;
         tq = m->tau_ff_nm;
     }
     else
@@ -428,10 +461,12 @@ bool RS01_Send(rs01_t *m)
         d[6] = damp >> 8;
         d[7] = damp;
     }
+/* 功能：执行 tx 函数对应的模块操作。 */
     return tx(m->hcan, RS01_CMD_MOTION, enc(tq, -RS01_TORQUE_MAX, RS01_TORQUE_MAX), m->id, d) == HAL_OK;
 }
 
 
+/* 功能：执行 RS01_OnFrame 函数对应的模块操作。 */
 bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
 {
     uint8_t cmd;
@@ -484,7 +519,7 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
         m->continuous_valid = true;
         m->feedback_valid = true;
         m->feedback_recovery_pending = false;
-        /* enabled is decoded from the motor status above. */
+        /* 代码说明：相关模块实现。 */
         m->ever_feedback_received = true;
     }
 
@@ -554,6 +589,7 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
 }
 
 
+/* 功能：执行 RS01_GetPositionDegrees 函数对应的模块操作。 */
 void RS01_GetPositionDegrees(const rs01_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -563,6 +599,7 @@ void RS01_GetPositionDegrees(const rs01_t *m, volatile float *position_degrees)
 }
 
 
+/* 功能：执行 RS01_Service 函数对应的模块操作。 */
 void RS01_Service(rs01_t *m)
 {
     uint32_t now;
@@ -576,7 +613,7 @@ void RS01_Service(rs01_t *m)
 
     now = HAL_GetTick();
 
-    /* Invalidate stale feedback; enqueueing an enable does not confirm it. */
+    /* 代码说明：相关模块实现。 */
     if ((uint32_t)(now - m->last_feedback_tick) > 50U)
     {
         m->feedback_valid = false;
@@ -584,7 +621,7 @@ void RS01_Service(rs01_t *m)
         m->offline_latched = true;
         m->feedback_recovery_pending = true;
     }
-    /* Reset/calibration feedback can keep arriving while the motor is disabled. */
+    /* 代码说明：相关模块实现。 */
     if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 20U)
     {
         m->reconnect_retry_tick = now;
@@ -604,7 +641,7 @@ void RS01_Service(rs01_t *m)
 
         return;
     }
-    /* Poll with zero torque/gains until running is confirmed, including STOP. */
+    /* 代码说明：相关模块实现。 */
     if (m->mode == RS_MODE_STOP || !m->enabled)
     {
         if ((uint32_t)(now - m->last_control_tick) >= 5U)
@@ -626,6 +663,7 @@ void RS01_Service(rs01_t *m)
 }
 
 
+/* 功能：执行 RS01_SetTargetMIT 函数对应的模块操作。 */
 void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output_degrees)
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))
@@ -637,11 +675,16 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
     }
     if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX || fabsf(tau_nm) > RS01_TORQUE_MAX)
         return;
+    float position_target = motor->direction * output_degrees * RS01_DEG_TO_RAD;
+    if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||
+        fabsf(position_target - motor->target) > RS01_TRAJECTORY_EPSILON_RAD)
+    {
+        motor->target = position_target;
+        motor->trajectory_pending = true;
+        motor->trajectory_active = false;
+    }
     motor->mode = RS_MODE_MIT;
-    motor->target = motor->direction * output_degrees * RS01_DEG_TO_RAD;
     motor->tau_ff_nm = tau_nm;
-    motor->trajectory_pending = false;
-    motor->trajectory_active = false;
     motor->startup_hold_active = true;
     motor->recovery_trajectory = false;
     PID_Reset(&motor->cascade_position_pid);

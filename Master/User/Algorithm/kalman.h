@@ -1,3 +1,8 @@
+/*
+ * @file kalman.h
+ * @brief kalman模块的用户接口与实现。
+ */
+
 /**
  * 通用线性 Kalman 滤波器
  *
@@ -56,28 +61,28 @@
 typedef struct
 {
     /* 状态变量 */
-    float32_t *x_data;
-    float32_t *P_data;
+    float32_t *x_data; /* 数据缓冲区或数据帧。 */
+    float32_t *P_data; /* 数据缓冲区或数据帧。 */
 
     /* 状态转移模型 */
-    float32_t *A_data;
-    float32_t *B_data;
-    float32_t *u_data;
-    float32_t *Q_data;
+    float32_t *A_data; /* 数据缓冲区或数据帧。 */
+    float32_t *B_data; /* 数据缓冲区或数据帧。 */
+    float32_t *u_data; /* 数据缓冲区或数据帧。 */
+    float32_t *Q_data; /* 数据缓冲区或数据帧。 */
 
     /* 观测模型 */
-    float32_t *H_data;
-    float32_t *z_data;
-    float32_t *R_data;
+    float32_t *H_data; /* 数据缓冲区或数据帧。 */
+    float32_t *z_data; /* 数据缓冲区或数据帧。 */
+    float32_t *R_data; /* 数据缓冲区或数据帧。 */
 
     /* 卡尔曼增益 */
-    float32_t *K_data;
+    float32_t *K_data; /* 数据缓冲区或数据帧。 */
 
     /* 临时矩阵工作区 */
-    float32_t *workspace;
+    float32_t *workspace; /* 成员变量。 */
 
     /* workspace 容量，单位：float32_t */
-    uint32_t workspace_size;
+    uint32_t workspace_size; /* 数据长度或数量。 */
 
 } kalman_data_t;
 
@@ -114,29 +119,29 @@ typedef struct
     /* ================= 临时矩阵 ================= */
 
     /* N×1 临时向量 */
-    arm_matrix_instance_f32 temp_n1_1;
-    arm_matrix_instance_f32 temp_n1_2;
+    arm_matrix_instance_f32 temp_n1_1; /* 成员变量。 */
+    arm_matrix_instance_f32 temp_n1_2; /* 成员变量。 */
 
     /* Z×1 临时向量 */
-    arm_matrix_instance_f32 temp_z1;
+    arm_matrix_instance_f32 temp_z1; /* 成员变量。 */
 
     /* N×N 临时矩阵 */
-    arm_matrix_instance_f32 temp_nn_1;
-    arm_matrix_instance_f32 temp_nn_2;
-    arm_matrix_instance_f32 temp_nn_3;
+    arm_matrix_instance_f32 temp_nn_1; /* 成员变量。 */
+    arm_matrix_instance_f32 temp_nn_2; /* 成员变量。 */
+    arm_matrix_instance_f32 temp_nn_3; /* 成员变量。 */
 
     /* N×Z 临时矩阵 */
-    arm_matrix_instance_f32 temp_nz;
+    arm_matrix_instance_f32 temp_nz; /* 成员变量。 */
 
     /* Z×N 临时矩阵 */
-    arm_matrix_instance_f32 temp_zn;
+    arm_matrix_instance_f32 temp_zn; /* 成员变量。 */
 
     /* Z×Z 临时矩阵 */
-    arm_matrix_instance_f32 temp_zz_1;
-    arm_matrix_instance_f32 temp_zz_2;
+    arm_matrix_instance_f32 temp_zz_1; /* 成员变量。 */
+    arm_matrix_instance_f32 temp_zz_2; /* 成员变量。 */
 
 
-    kalman_data_t data;
+    kalman_data_t data; /* 数据缓冲区或数据帧。 */
 
 } kalman_t;
 

@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file encoder_link.h
+ * @brief encoder_link模块的用户接口与实现。
+ */
 
 #ifndef ENCODER_LINK_H
 #define ENCODER_LINK_H
@@ -88,25 +88,28 @@
 
 typedef struct
 {
-    int32_t encoder1_count;
-    int32_t encoder2_count;
-    uint16_t yaw_raw;
-    uint32_t frame_count;
-    uint32_t error_count;
-    bool online;
+    int32_t encoder1_count; /* 数据长度或数量。 */
+    int32_t encoder2_count; /* 数据长度或数量。 */
+    uint16_t yaw_raw; /* 成员变量。 */
+    uint32_t frame_count; /* 数据缓冲区或数据帧。 */
+    uint32_t error_count; /* 数据长度或数量。 */
+    bool online; /* 状态标志。 */
 } encoder_link_t;
 
-extern volatile encoder_link_t g_encoder_link;
+extern volatile encoder_link_t g_encoder_link; /* 成员变量。 */
 
 
 
 
+/* 功能：执行 EncoderLink_Init 函数对应的模块操作。 */
 bool EncoderLink_Init(void);
 
 
+/* 功能：执行 EncoderLink_Poll 函数对应的模块操作。 */
 bool EncoderLink_Poll(float yaw_deg);
 
 
+/* 功能：执行 EncoderLink_GetYawRaw 函数对应的模块操作。 */
 uint16_t EncoderLink_GetYawRaw(void);
 
 #endif

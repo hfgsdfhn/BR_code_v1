@@ -1,7 +1,13 @@
-﻿#include "main.h"
+/*
+ * @file my_main.c
+ * @brief my_main模块的用户接口与实现。
+ */
+
+#include "main.h"
 #include "my_main.h"
 #include "remote_link.h"
 
+/* 功能：执行 RemoteLink_UserGpioInit 函数对应的模块操作。 */
 static void RemoteLink_UserGpioInit(void)
 {
     GPIO_InitTypeDef gpio = {0};
@@ -13,12 +19,14 @@ static void RemoteLink_UserGpioInit(void)
     HAL_GPIO_Init(GPIOA, &gpio);
 }
 
+/* 功能：执行 My_Init 函数对应的模块操作。 */
 void My_Init(void)
 {
     RemoteLink_UserGpioInit();
     RemoteLink_Init();
 }
 
+/* 功能：执行 My_Loop 函数对应的模块操作。 */
 void My_Loop(void)
 {
     RemoteLink_PollSwitches();

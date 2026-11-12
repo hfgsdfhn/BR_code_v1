@@ -56,7 +56,6 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, STATUS_LED_Pin|BUZZER_EN_Pin|GPIO_PIN_8|GPIO_PIN_9
                           |GPIO_PIN_10|GPIO_PIN_11, GPIO_PIN_RESET);
 
-  /* PA0/PA1 = UART4，PA2/PA3 = USART2；按主控底板网表保留为串口复用脚，不在 GPIO 初始化中改写。 */
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, FLASH_CS_Pin|ENCODER_CS_Pin, GPIO_PIN_SET);
 

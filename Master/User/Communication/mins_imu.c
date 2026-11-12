@@ -1,3 +1,8 @@
+/*
+ * @file mins_imu.c
+ * @brief mins_imu模块的用户接口与实现。
+ */
+
 #include "mins_imu.h"
 
 #define MINS_IMU_FRAME_HEAD       0x77U
@@ -5,6 +10,7 @@
 #define MINS_IMU_RESPONSE_2_3     0x84U
 #define MINS_IMU_YAW_SCALE        0.973f
 
+/* 功能：执行 Mins_Imu_CheckFrame 函数对应的模块操作。 */
 static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
                                    uint8_t data_len, uint8_t command)
 {
@@ -25,6 +31,7 @@ static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
     return (uint8_t)(checksum == frame[len - 1U]);
 }
 
+/* 功能：执行 Mins_Imu_DecodeBcd 函数对应的模块操作。 */
 static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decimals)
 {
     uint8_t i;
@@ -47,6 +54,7 @@ static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decim
     return (float)value / (float)divisor;
 }
 
+/* 功能：执行 Mins_Imu_receive_all 函数对应的模块操作。 */
 uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len)
 {
     uint8_t i;
@@ -54,7 +62,7 @@ uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len)
     if ((imu == NULL) || !Mins_Imu_CheckFrame(frame, len, 43U, MINS_IMU_RESPONSE_2_14))
     {
         return 0U;
-    } 
+    }
 
     imu->pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
     imu->roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
@@ -72,6 +80,7 @@ uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len)
     return 1U;
 }
 
+/* 功能：执行 Mins_Imu_receive_omega 函数对应的模块操作。 */
 uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len)
 {
     if ((imu == NULL) || !Mins_Imu_CheckFrame(frame, len, 9U, MINS_IMU_RESPONSE_2_3))
@@ -84,6 +93,7 @@ uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len)
     return 1U;
 }
 
+/* 功能：执行 Mins_Imu_SetActiveReport 函数对应的模块操作。 */
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
 {
     uint8_t command[] = {0x77U, 0x05U, 0x00U, 0x56U, 0x05U, 0x60U};
@@ -92,5 +102,6 @@ HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
     {
         return HAL_ERROR;
     }
+/* 功能：执行 HAL_UART_Transmit 函数对应的模块操作。 */
     return HAL_UART_Transmit(uart, command, sizeof(command), 100U);
 }

@@ -1,3 +1,8 @@
+/*
+ * @file suction_cup.c
+ * @brief suction_cup模块的用户接口与实现。
+ */
+
 #include "suction_cup.h"
 
 #include "cmsis_os2.h"
@@ -12,7 +17,7 @@
 
 volatile uint8_t suction_enable;
 volatile float suction_target[5];
-/* Measured angles in degrees; aligned for debugger cache publication. */
+/* 代码说明：相关模块实现。 */
 __ALIGNED(32) volatile float suction_feedback_angle[5];
 volatile float g_up_stp23l_distance_cm;
 volatile float g_down_stp23l_distance_cm;
@@ -20,11 +25,13 @@ volatile float g_down_stp23l_distance_cm;
 static suction_stp23l_parser_t up_stp23l_parser;
 static suction_stp23l_parser_t down_stp23l_parser;
 
+/* 功能：执行 SuctionCup_ReadU16 函数对应的模块操作。 */
 static uint16_t SuctionCup_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
+/* 功能：执行 SuctionCup_KeepTrailingHeader 函数对应的模块操作。 */
 static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
 {
     uint16_t trailing_count = 0U;
@@ -40,6 +47,7 @@ static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
     parser->index = trailing_count;
 }
 
+/* 功能：执行 SuctionCup_IsValidFrame 函数对应的模块操作。 */
 static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
 {
     uint8_t checksum = 0U;
@@ -54,6 +62,7 @@ static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
     return (uint8_t)(checksum == parser->frame[STP23L_CHECKSUM_OFFSET]);
 }
 
+/* 功能：执行 SuctionCup_DecodeDistanceCm 函数对应的模块操作。 */
 static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
 {
     uint32_t sum = 0U;
@@ -73,6 +82,7 @@ static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
     return (count == 0U) ? 0.0f : ((float)sum / (float)count) / 10.0f;
 }
 
+/* 功能：执行 SuctionCup_ParseBytes 函数对应的模块操作。 */
 static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
                                   const uint8_t *data, uint16_t size,
                                   volatile float *distance_cm)
@@ -106,22 +116,26 @@ static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
     }
 }
 
+/* 功能：执行 SuctionCup_UStp23lRx 函数对应的模块操作。 */
 static void SuctionCup_UStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &g_up_stp23l_distance_cm);
 }
 
+/* 功能：执行 SuctionCup_DStp23lRx 函数对应的模块操作。 */
 static void SuctionCup_DStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &g_down_stp23l_distance_cm);
 }
 
+/* 功能：执行 SuctionCup_Init 函数对应的模块操作。 */
 void SuctionCup_Init(void)
 {
     (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, SuctionCup_UStp23lRx);
     (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, SuctionCup_DStp23lRx);
 }
 
+/* 功能：执行 SuctionCup_OnFrame 函数对应的模块操作。 */
 void SuctionCup_OnFrame(const can_frame_t *frame)
 {
     unsigned i;
@@ -144,6 +158,7 @@ void SuctionCup_OnFrame(const can_frame_t *frame)
         suction_feedback_angle[4] = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
 }
 
+/* 功能：执行 SuctionCup_SendGroupFrames 函数对应的模块操作。 */
 static void SuctionCup_SendGroupFrames(void)
 {
     can_frame_t frame;
@@ -151,7 +166,7 @@ static void SuctionCup_SendGroupFrames(void)
     int16_t can3_current[4] = {0};
     int16_t can2_high_current[4] = {0};
 
-    /* CAN2 0x200: left-root M2006 ID1 and lower-cup M2006 IDs2/3. */
+    /* 代码说明：相关模块实现。 */
     can2_current[0] = M2006_Calc(&m2006_larm, 0.002f);
     can2_high_current[0] = M3508_Calc(&m3508_dcup[0], 0.002f);
     can2_current[1] = M2006_Calc(&m2006_dcup[0], 0.002f);
@@ -160,12 +175,12 @@ static void SuctionCup_SendGroupFrames(void)
     frame.hfdcan = &hfdcan2;
     (void)BspCan_Send(&frame);
 
-    /* CAN2 0x1FF: lower-cup M3508 ID5 occupies the first slot. */
+    /* 代码说明：相关模块实现。 */
     M3508_BuildGroupFrame(5U, can2_high_current, &frame);
     frame.hfdcan = &hfdcan2;
     (void)BspCan_Send(&frame);
 
-    /* CAN3: upper-cup M2006 IDs2/3 occupy slots 2/3. */
+    /* 代码说明：相关模块实现。 */
     can3_current[1] = M2006_Calc(&m2006_ucup[0], 0.002f);
     can3_current[2] = M2006_Calc(&m2006_ucup[1], 0.002f);
     M2006_BuildGroupFrame(1U, can3_current, &frame);
@@ -173,6 +188,7 @@ static void SuctionCup_SendGroupFrames(void)
     (void)BspCan_Send(&frame);
 }
 
+/* 功能：执行 SuctionCup_Service 函数对应的模块操作。 */
 void SuctionCup_Service(void)
 {
     unsigned i;
@@ -188,6 +204,7 @@ void SuctionCup_Service(void)
                             enabled ? suction_target[4] : 0.0f);
     SuctionCup_SendGroupFrames();
 }
+/* 功能：执行 SuctionCup_Task 函数对应的模块操作。 */
 void SuctionCup_Task(void *argument)
 {
     (void)argument;

@@ -1,7 +1,12 @@
+/*
+ * @file path_follow.c
+ * @brief path_follow模块的用户接口与实现。
+ */
+
 #include "path_follow.h"
 #include <math.h>
 
-/* path.h 中 PathPoint 的字段顺序和单位固定为题目给出的格式。 */
+/* 代码说明：相关模块实现。 */
 typedef struct
 {
     float x;
@@ -12,11 +17,13 @@ typedef struct
     float velocity;
 } path_point_t;
 
+/* 功能：执行 PathFollow_Abs 函数对应的模块操作。 */
 static float PathFollow_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
+/* 功能：执行 PathFollow_Clamp 函数对应的模块操作。 */
 static float PathFollow_Clamp(float value, float limit)
 {
     limit = PathFollow_Abs(limit);
@@ -31,6 +38,7 @@ static float PathFollow_Clamp(float value, float limit)
     return value;
 }
 
+/* 功能：执行 PathFollow_WrapPi 函数对应的模块操作。 */
 static float PathFollow_WrapPi(float angle)
 {
     while (angle >= 3.1415926f)
@@ -46,7 +54,7 @@ static float PathFollow_WrapPi(float angle)
 
 /**
  * @brief 路径规划初始化
- * 
+ *
  * @param follow    路径规划结构体
  * @param path      路径点
  * @param path_size 路径点大小
@@ -56,8 +64,8 @@ static float PathFollow_WrapPi(float angle)
  * @param yaw_gain          yaw增益
  * @param yaw_speed_limit   yaw速度上线
  * @param finish_distance_mm 终点停止距离
- * @return true 
- * @return false 
+ * @return true
+ * @return false
  */
 bool PathFollow_Init(path_follow_t *follow,
                      const void *path,
@@ -89,6 +97,7 @@ bool PathFollow_Init(path_follow_t *follow,
     return true;
 }
 
+/* 功能：执行 PathFollow_Reset 函数对应的模块操作。 */
 void PathFollow_Reset(path_follow_t *follow)
 {
     if (follow != 0)
@@ -98,6 +107,7 @@ void PathFollow_Reset(path_follow_t *follow)
     }
 }
 
+/* 功能：执行 PathFollow_Calc 函数对应的模块操作。 */
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,

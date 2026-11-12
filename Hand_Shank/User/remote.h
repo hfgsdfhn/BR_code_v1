@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file remote.h
+ * @brief remote模块的用户接口与实现。
+ */
 
 #ifndef HAND_REMOTE_H
 #define HAND_REMOTE_H
@@ -15,8 +15,10 @@
 #define REMOTE_TX_PERIOD_MS 20U
 #define REMOTE_TX_QUEUE_DEPTH 4U
 
+/* 功能：执行 Remote_Init 函数对应的模块操作。 */
 void Remote_Init(void);
 
+/* 功能：执行 Remote_Loop 函数对应的模块操作。 */
 void Remote_Loop(void);
 
 #endif

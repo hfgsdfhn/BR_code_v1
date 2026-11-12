@@ -1,3 +1,7 @@
+/*
+ * @file board_can.c
+ * @brief board_can模块的用户接口与实现。
+ */
 
 #include "board_can.h"
 
@@ -51,7 +55,9 @@ HAL_StatusTypeDef Board_CAN1_Send(
         tx_data[2U * i + 1U] = (uint8_t)(raw >> 8);
     }
 
-    return Board_CAN1_SendFrame(can_id, tx_data);
+/* 功能：执行 HAL_CAN_AddTxMessage 函数对应的模块操作。 */
+    return HAL_CAN_AddTxMessage(
+        &hcan1, &tx_header, tx_data, &tx_mailbox);
 }
 
 
@@ -75,7 +81,7 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[0] = lift_mode;
     tx_data[1] = action_mode;
 
-    /* float32转为32位数据 */
+    /* 代码说明：相关模块实现。 */
     memcpy(&speed_raw, &target_speed, sizeof(float));
 
     /* 小端序排列 */
@@ -84,5 +90,7 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[4] = (uint8_t)((speed_raw >> 16) & 0xFFU);
     tx_data[5] = (uint8_t)((speed_raw >> 24) & 0xFFU);
 
-    return Board_CAN1_SendFrame(DJI_ID_CONTROL, tx_data);
+/* 功能：执行 HAL_CAN_AddTxMessage 函数对应的模块操作。 */
+    return HAL_CAN_AddTxMessage(
+        &hcan1, &tx_header, tx_data, &tx_mailbox);
 }

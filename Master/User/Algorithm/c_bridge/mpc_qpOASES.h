@@ -1,3 +1,8 @@
+/*
+ * @file mpc_qpOASES.h
+ * @brief mpc_qpOASES模块的用户接口与实现。
+ */
+
 /**
  * @file    mpc_qpOASES.h
  * @brief   Thin C adapter between the chassis MPC code and qpOASES' C API.
@@ -16,7 +21,7 @@
 extern "C" {
 #endif
 
-/* nV = MPC_MAX_N * NU.  30 * 3 = 90 now; leave some headroom. */
+/* nV = MPC_MAX_N * NU. 30 * 3 = 90 now; leave some headroom. */
 #define MPC_QPOASES_MAX_NV 192
 
 /**
@@ -53,16 +58,16 @@ int MPC_QPOASES_Hotstart(const float *g,
                          const float *ub,
                          float *x);
 
-/** Last solver status (0 solved, 1 max nWSR, 2 infeasible). */
+/* 代码说明：相关模块实现。 */
 int MPC_QPOASES_GetLastStatus(void);
 
-/** Number of working-set recalculations used by the last call. */
+/* 代码说明：相关模块实现。 */
 int MPC_QPOASES_GetLastNWSR(void);
 
-/** Objective value of the last solution. */
+/* 代码说明：相关模块实现。 */
 float MPC_QPOASES_GetLastObj(void);
 
-/** Release the internal qpOASES object. */
+/* 代码说明：相关模块实现。 */
 void MPC_QPOASES_Cleanup(void);
 
 #ifdef __cplusplus

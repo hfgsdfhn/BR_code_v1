@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file remote.c
+ * @brief remote模块的用户接口与实现。
+ */
 
 #include "remote.h"
 #include <string.h>
@@ -11,6 +11,7 @@ extern UART_HandleTypeDef huart6;
 extern ADC_HandleTypeDef hadc1;
 
 
+/* 功能：执行 HAL_ADCEx_InjectedConvCpltCallback 函数对应的模块操作。 */
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     (void)hadc;
@@ -26,6 +27,7 @@ static volatile uint8_t remote_tx_error;
 static uint32_t remote_next_tick;
 
 
+/* 功能：执行 Remote_ReadAdc 函数对应的模块操作。 */
 static uint16_t Remote_ReadAdc(uint32_t channel)
 {
     ADC_ChannelConfTypeDef config = {0};
@@ -44,18 +46,21 @@ static uint16_t Remote_ReadAdc(uint32_t channel)
 }
 
 
+/* 功能：执行 Remote_AdcToNibble 函数对应的模块操作。 */
 static uint8_t Remote_AdcToNibble(uint16_t value)
 {
     return (uint8_t)((((uint32_t)value * 15U) + 2047U) / 4095U);
 }
 
 
+/* 功能：执行 Remote_Key 函数对应的模块操作。 */
 static uint8_t Remote_Key(GPIO_TypeDef *port, uint16_t pin)
 {
     return (uint8_t)(HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_RESET);
 }
 
 
+/* 功能：执行 Remote_BuildFrame 函数对应的模块操作。 */
 static void Remote_BuildFrame(uint8_t *remote_tx_frame)
 {
     static const uint16_t pd_group2[] = {
@@ -107,6 +112,7 @@ static void Remote_BuildFrame(uint8_t *remote_tx_frame)
 }
 
 
+/* 功能：执行 Remote_StartTx 函数对应的模块操作。 */
 static void Remote_StartTx(void)
 {
     uint32_t primask = __get_PRIMASK();
@@ -121,6 +127,7 @@ static void Remote_StartTx(void)
 }
 
 
+/* 功能：执行 HAL_UART_TxCpltCallback 函数对应的模块操作。 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart != &huart6 || remote_tx_active == 0U) return;
@@ -130,6 +137,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 
+/* 功能：执行 HAL_UART_ErrorCallback 函数对应的模块操作。 */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     if (huart == &huart6 && (huart->ErrorCode & HAL_UART_ERROR_DMA) != 0U)
@@ -137,6 +145,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 }
 
 
+/* 功能：执行 Remote_Init 函数对应的模块操作。 */
 void Remote_Init(void)
 {
     remote_tx_read = 0U;
@@ -148,6 +157,7 @@ void Remote_Init(void)
 }
 
 
+/* 功能：执行 Remote_Loop 函数对应的模块操作。 */
 void Remote_Loop(void)
 {
     uint8_t frame[REMOTE_FRAME_SIZE];

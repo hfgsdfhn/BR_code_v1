@@ -1,4 +1,9 @@
-﻿#include "my_main.h"
+/*
+ * @file my_main.c
+ * @brief my_main模块的用户接口与实现。
+ */
+
+#include "my_main.h"
 #include "upper.h"
 #include "arm_task.h"
 #include "bsp_can.h"
@@ -11,6 +16,8 @@
 #include "fdcan.h"
 #include "remote.h"
 #include "suction_cup.h"
+#include "../Mechanism/Upper/arm_config.h"
+#include "../Mechanism/Upper/cup_config.h"
 
 m2006_t m2006_larm;
 m2006_t m2006_ucup[2];
@@ -45,6 +52,7 @@ static const osThreadAttr_t can_rx_task_attributes = {
     .priority = osPriorityNormal,
 };
 
+/* 功能：执行 Error_FaultCapture 函数对应的模块操作。 */
 void Error_FaultCapture(Error_Code code, uint32_t *stack)
 {
     g_error_code = code;
@@ -62,11 +70,14 @@ void Error_FaultCapture(Error_Code code, uint32_t *stack)
     }
 }
 
+/* 功能：执行 HAL_UART_RxCpltCallback 函数对应的模块操作。 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     (void)huart;
 }
 
+
+/* 功能：执行 My_Init 函数对应的模块操作。 */
 void My_Init(void)
 {
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -85,6 +96,7 @@ void My_Init(void)
     M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, 1);
 
     M2006_Init(&m2006_larm, &hfdcan2, 1U, 1);
+
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
     RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
     J4310_Init(&j4310_larm, &hfdcan2, 4U, 1);
@@ -95,7 +107,7 @@ void My_Init(void)
     RS00_Init(&rs00_rarm[1], &hfdcan3, 3U, -1);
     J4310_Init(&j4310_rarm, &hfdcan3, 4U, -1);
     RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
-
+    configure_motor_gains();
     Arm_TaskInit();
     Upper_BindMotors(&upper_state);
     (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_RxBytes);
@@ -104,6 +116,7 @@ void My_Init(void)
     Remote_Init();
 }
 
+/* 功能：执行 My_RtosInit 函数对应的模块操作。 */
 void My_RtosInit(void)
 {
 

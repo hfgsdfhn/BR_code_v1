@@ -1,3 +1,8 @@
+/*
+ * @file remote_link.h
+ * @brief remote_link模块的用户接口与实现。
+ */
+
 #pragma once
 
 #include <stdint.h>
@@ -9,20 +14,20 @@
 
 typedef struct
 {
-    struct __UART_HandleTypeDef *uart;
-    uint8_t rx_buffer[REMOTE_RX_SIZE];
-    uint8_t tx_buffer[REMOTE_TX_SIZE];
-    volatile uint32_t rx_produced;
-    uint32_t rx_consumed;
-    volatile uint16_t rx_position;
-    volatile uint32_t tx_write;
-    volatile uint32_t tx_read;
-    volatile uint16_t tx_active_size;
-    volatile uint8_t tx_complete;
-    volatile uint8_t restart_requested;
-    volatile uint32_t uart_errors;
-    volatile uint32_t rx_overruns;
-    volatile uint32_t dropped_bytes;
+    struct __UART_HandleTypeDef *uart; /* 成员变量。 */
+    uint8_t rx_buffer[REMOTE_RX_SIZE]; /* 数据缓冲区或数据帧。 */
+    uint8_t tx_buffer[REMOTE_TX_SIZE]; /* 数据缓冲区或数据帧。 */
+    volatile uint32_t rx_produced; /* 成员变量。 */
+    uint32_t rx_consumed; /* 成员变量。 */
+    volatile uint16_t rx_position; /* 成员变量。 */
+    volatile uint32_t tx_write; /* 成员变量。 */
+    volatile uint32_t tx_read; /* 成员变量。 */
+    volatile uint16_t tx_active_size; /* 数据长度或数量。 */
+    volatile uint8_t tx_complete; /* 成员变量。 */
+    volatile uint8_t restart_requested; /* 成员变量。 */
+    volatile uint32_t uart_errors; /* 成员变量。 */
+    volatile uint32_t rx_overruns; /* 成员变量。 */
+    volatile uint32_t dropped_bytes; /* 成员变量。 */
 } remote_port_t;
 
 #ifdef __cplusplus
@@ -30,8 +35,10 @@ extern "C"
 {
 #endif
 
+/* 功能：执行 RemoteLink_Init 函数对应的模块操作。 */
 void RemoteLink_Init(void);
 
+/* 功能：执行 RemoteLink_Process 函数对应的模块操作。 */
 void RemoteLink_Process(void);
 
 #ifdef __cplusplus

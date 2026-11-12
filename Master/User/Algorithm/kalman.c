@@ -1,3 +1,8 @@
+/*
+ * @file kalman.c
+ * @brief kalman模块的用户接口与实现。
+ */
+
 #include "kalman.h"
 
 
@@ -81,9 +86,7 @@ void kalman_update(kalman_t *kalman)
     uint16_t j;
     uint16_t N = kalman->state_dim;
 
-    /*
-     * K = P * H^T * inverse(H * P * H^T + R)
-     */
+    /* 代码说明：相关模块实现。 */
 
     /* H^T */
     arm_mat_trans_f32(&kalman->H, &kalman->temp_zn);
@@ -111,12 +114,7 @@ void kalman_update(kalman_t *kalman)
     arm_mat_add_f32(&kalman->x, &kalman->temp_n1_1, &kalman->x);
 
 
-    /*
-     * Joseph 形式：保证更新后的 P 保持对称半正定
-     *
-     * P = (I - K * H) * P * (I - K * H)^T
-     *     + K * R * K^T
-     */
+    /* 代码说明：相关模块实现。 */
 
     /* K * H */
     arm_mat_mult_f32(&kalman->K, &kalman->H, &kalman->temp_nn_1);

@@ -1,25 +1,9 @@
 /*
- *	This file is part of qpOASES.
- *
- *	qpOASES -- An Implementation of the Online Active Set Strategy.
- *	Copyright (C) 2007-2017 by Hans Joachim Ferreau, Andreas Potschka,
- *	Christian Kirches et al. All rights reserved.
- *
- *	qpOASES is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation; either
- *	version 2.1 of the License, or (at your option) any later version.
- *
- *	qpOASES is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *	See the GNU Lesser General Public License for more details.
- *
- *	You should have received a copy of the GNU Lesser General Public
- *	License along with qpOASES; if not, write to the Free Software
- *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
+ * @file qpOASES_wrapper.cpp
+ * @brief qpOASES_wrapper模块的用户接口与实现。
  */
+
+/* 代码说明：相关模块实现。 */
 
 
 /**
@@ -59,7 +43,7 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 		return -1;
 
 
-	/* setup default */
+	/* 代码说明：相关模块实现。 */
 	options->printLevel = PL_MEDIUM;
 	#ifdef __DEBUG__
 	options->printLevel = PL_HIGH;
@@ -132,12 +116,12 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 	switch ( mode )
 	{
 		case 0:
-			/* default, already set */
+			/* 代码说明：相关模块实现。 */
 			break;
 
 
 		case 1:
-			/* reliable */
+			/* 代码说明：相关模块实现。 */
 			options->enableFullLITests             =  BT_TRUE;
 			options->enableCholeskyRefactorisation =  1;
 
@@ -147,9 +131,9 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 			options->numRefinementSteps            =  2;
 			#endif
 
-			
+
 		case 2:
-			/* MPC */
+			/* 代码说明：相关模块实现。 */
 			options->enableRamping                 =  BT_FALSE;
 			options->enableFarBounds               =  BT_TRUE;
 			options->enableFlippingBounds          =  BT_FALSE;
@@ -172,7 +156,7 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 			options->numRefinementSteps            =  0;
 			#endif
 	}
-	
+
 	return 0;
 }
 
@@ -245,8 +229,7 @@ int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 	if ( globalQpObject == 0 )
 		return -1;
 
-	/* 允许传 0：MPC 不需要对偶解和目标值。
-	   getObjVal() 每次都要做一遍 nV*nV 的稠密乘，nV=150 时在 H7 上约 0.3~0.5ms。 */
+	/* 代码说明：相关模块实现。 */
 	if ( x != 0 ) { globalQpObject->getPrimalSolution( x ); }
 	if ( y != 0 ) { globalQpObject->getDualSolution( y ); }
 	if ( obj != 0 ) { *obj = globalQpObject->getObjVal( ); }
@@ -275,7 +258,7 @@ int_t QProblem_setup(	int_t nV,
 		return -1;
 
 	globalQProblemObject = new QProblem( nV,nC,(HessianType)hessianType );
-	
+
 	return 0;
 }
 
@@ -303,17 +286,17 @@ int_t QProblem_init(	const real_t* const H,
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* adjust options if provided */
+	/* 代码说明：相关模块实现。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 }
 
@@ -338,10 +321,10 @@ int_t QProblem_hotstart(	const real_t* const g,
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalQProblemObject->hotstart( g,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -381,7 +364,7 @@ int_t QProblemB_setup(	int_t nV,
 		return -1;
 
 	globalQProblemBObject = new QProblemB( nV,(HessianType)hessianType );
-	
+
 	return 0;
 }
 
@@ -406,17 +389,17 @@ int_t QProblemB_init(	const real_t* const H,
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* adjust options if provided */
+	/* 代码说明：相关模块实现。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemBObject->setOptions( globalOptionsObject );
 	}
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalQProblemBObject->init( H,g,lb,ub, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 }
 
@@ -439,10 +422,10 @@ int_t QProblemB_hotstart(	const real_t* const g,
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalQProblemBObject->hotstart( g,lb,ub, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -483,7 +466,7 @@ int_t SQProblem_setup(	int_t nV,
 		return -1;
 
 	globalSQProblemObject = new SQProblem( nV,nC,(HessianType)hessianType );
-	
+
 	return 0;
 }
 
@@ -511,17 +494,17 @@ int_t SQProblem_init(	const real_t* const H,
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* adjust options if provided */
+	/* 代码说明：相关模块实现。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalSQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalSQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 }
 
@@ -548,10 +531,10 @@ int_t SQProblem_hotstart(	const real_t* const H,
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* actually call solver */
+	/* 代码说明：相关模块实现。 */
 	returnValue returnvalue = globalSQProblemObject->hotstart( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* assign lhs arguments */
+	/* 代码说明：相关模块实现。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -573,6 +556,4 @@ int_t SQProblem_cleanup( )
 }
 
 
-/*
- *	end of file
- */
+/* 代码说明：相关模块实现。 */

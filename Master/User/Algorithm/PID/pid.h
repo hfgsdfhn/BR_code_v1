@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file pid.h
+ * @brief pid模块的用户接口与实现。
+ */
 
 #ifndef PID_H
 #define PID_H
@@ -11,33 +11,37 @@
 
 typedef struct
 {
-    float kp;
-    float ki;
-    float kd;
-    float integral;
-    float previous_error;
-    float output_limit;
-    float integral_limit;
-    float full_integral_separation;
-    float integral_separation;
-    bool initialized;
+    float kp; /* 成员变量。 */
+    float ki; /* 成员变量。 */
+    float kd; /* 成员变量。 */
+    float integral; /* 成员变量。 */
+    float previous_error; /* 成员变量。 */
+    float output_limit; /* 成员变量。 */
+    float integral_limit; /* 成员变量。 */
+    float full_integral_separation; /* 成员变量。 */
+    float integral_separation; /* 成员变量。 */
+    bool initialized; /* 成员变量。 */
 } pid_t;
 
 
-bool PID_Init(pid_t *pid                    , float kp            , float ki            ,
-              float kd            , float output_limit               ,
+/* 功能：执行 PID_Init 函数对应的模块操作。 */
+bool PID_Init(pid_t *pid                    , float kp            , float ki            , /* 成员变量。 */
+              float kd            , float output_limit               , /* 成员变量。 */
               float integral_limit                );
 
 
-void PID_SetIntegralSeparationRange(pid_t *pid                   ,
-                                    float full_separation                   ,
+/* 功能：执行 PID_SetIntegralSeparationRange 函数对应的模块操作。 */
+void PID_SetIntegralSeparationRange(pid_t *pid                   , /* 成员变量。 */
+                                    float full_separation                   , /* 成员变量。 */
                                     float separation                   );
 
 
+/* 功能：执行 PID_Reset 函数对应的模块操作。 */
 void PID_Reset(pid_t *pid                     );
 
 
-float PID_Calc(pid_t *pid                      , float target             ,
+/* 功能：执行 PID_Calc 函数对应的模块操作。 */
+float PID_Calc(pid_t *pid                      , float target             , /* 成员变量。 */
                float feedback             , float dt_s                 );
 
 #endif

@@ -1,3 +1,8 @@
+/*
+ * @file omni_chassis.h
+ * @brief omni_chassis模块的用户接口与实现。
+ */
+
 #ifndef OMNI_CHASSIS_H
 #define OMNI_CHASSIS_H
 
@@ -11,22 +16,22 @@
 #define CHASSIS_RADIUS   ((CHASSIS_WIDTH / 2.0f + CHASSIS_LENGTH / 2.0f) * sin45)
 
 typedef struct {
-    float vx;
-    float vy;
-    float vw;
+    float vx; /* 成员变量。 */
+    float vy; /* 成员变量。 */
+    float vw; /* 成员变量。 */
 } chassis_speed_t;   // 底盘三轴速度
 
 typedef struct {
-    float lf;
-    float rf;
-    float lr;
-    float rr;
+    float lf; /* 成员变量。 */
+    float rf; /* 成员变量。 */
+    float lr; /* 成员变量。 */
+    float rr; /* 成员变量。 */
 } wheel_speed_t;     // 四轮轮速
 
 typedef struct {
-    float x;
-    float y;
-    float yaw;
+    float x; /* 成员变量。 */
+    float y; /* 成员变量。 */
+    float yaw; /* 成员变量。 */
 } chassis_position_t; // 底盘位置
 
 typedef struct {
@@ -44,11 +49,15 @@ typedef struct {
     chassis_position_t target_position; // 目标位置（由决策层下发）
 } omni_chassis_t;
 
-extern omni_chassis_t chassis;
+extern omni_chassis_t chassis; /* 成员变量。 */
 
+/* 功能：执行 chassis_set_speed 函数对应的模块操作。 */
 void chassis_set_speed(void);
+/* 功能：执行 chassis_get_speed 函数对应的模块操作。 */
 void chassis_get_speed(void);
+/* 功能：执行 Chassis_BodyToWorld 函数对应的模块操作。 */
 void Chassis_BodyToWorld(void);
+/* 功能：执行 Chassis_WheelSpeedToYawRate 函数对应的模块操作。 */
 float Chassis_WheelSpeedToYawRate(float wheel_speed);
 
 #endif

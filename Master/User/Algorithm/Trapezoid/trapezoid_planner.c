@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file trapezoid_planner.c
+ * @brief trapezoid_planner模块的用户接口与实现。
+ */
 
 #include "trapezoid_planner.h"
 
@@ -9,6 +9,7 @@
 #include <stddef.h>
 
 
+/* 功能：执行 Trapezoid_Init 函数对应的模块操作。 */
 void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec)
 {
     if (tp == NULL)
@@ -23,6 +24,7 @@ void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec)
 }
 
 
+/* 功能：执行 Trapezoid_Reset 函数对应的模块操作。 */
 void Trapezoid_Reset(trapezoid_t *tp, float speed)
 {
     if (tp == NULL)
@@ -35,6 +37,7 @@ void Trapezoid_Reset(trapezoid_t *tp, float speed)
 }
 
 
+/* 功能：执行 Trapezoid_Update 函数对应的模块操作。 */
 float Trapezoid_Update(trapezoid_t *tp, float target, float dt)
 {
     float dv;
@@ -89,6 +92,7 @@ float Trapezoid_Update(trapezoid_t *tp, float target, float dt)
 }
 
 
+/* 功能：执行 Trapezoid2D_Init 函数对应的模块操作。 */
 void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec)
 {
     if (tp == NULL)
@@ -103,6 +107,7 @@ void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec)
 }
 
 
+/* 功能：执行 Trapezoid2D_Reset 函数对应的模块操作。 */
 void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy)
 {
     if (tp == NULL)
@@ -115,6 +120,7 @@ void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy)
 }
 
 
+/* 功能：执行 Trapezoid2D_Update 函数对应的模块操作。 */
 void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float *vx, float *vy)
 {
     float dx;
@@ -186,6 +192,7 @@ void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float 
 }
 
 
+/* 功能：执行 Trapezoid_BrakeSpeedLimit 函数对应的模块操作。 */
 float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec)
 {
     if (!(remaining > 0.0f) || !(a_dec > 0.0f))
@@ -193,5 +200,6 @@ float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec)
         return 0.0f;
     }
 
+/* 代码说明：相关模块实现。 */
     return sqrtf(2.0f * a_dec * remaining);
 }

@@ -1,7 +1,7 @@
-
-
-
-
+/*
+ * @file STP-23L.c
+ * @brief STP-23L模块的用户接口与实现。
+ */
 
 #include "STP-23L.h"
 
@@ -14,17 +14,27 @@ static uint16_t stp23l_rx_index;
 static STP23L_Frame stp23l_latest_frame;
 static STP23L_Stats stp23l_stats;
 
+/* 功能：执行 STP23L_ParseByte 函数对应的模块操作。 */
 static void STP23L_ParseByte(uint8_t data);
+/* 功能：执行 STP23L_IsValidFrame 函数对应的模块操作。 */
 static uint8_t STP23L_IsValidFrame(void);
+/* 功能：执行 STP23L_DecodeFrame 函数对应的模块操作。 */
 static void STP23L_DecodeFrame(void);
+/* 功能：执行 STP23L_KeepTrailingHeader 函数对应的模块操作。 */
 static void STP23L_KeepTrailingHeader(void);
+/* 功能：执行 STP23L_ArmReceive 函数对应的模块操作。 */
 static void STP23L_ArmReceive(void);
+/* 功能：执行 STP23L_ReadU16 函数对应的模块操作。 */
 static uint16_t STP23L_ReadU16(const uint8_t *data);
+/* 功能：执行 STP23L_ReadU32 函数对应的模块操作。 */
 static uint32_t STP23L_ReadU32(const uint8_t *data);
+/* 功能：执行 STP23L_EnterCritical 函数对应的模块操作。 */
 static uint32_t STP23L_EnterCritical(void);
+/* 功能：执行 STP23L_ExitCritical 函数对应的模块操作。 */
 static void STP23L_ExitCritical(uint32_t primask);
 
 
+/* 功能：执行 STP23L_Init 函数对应的模块操作。 */
 HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle)
 {
     uint32_t primask;
@@ -49,10 +59,12 @@ HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle)
     stp23l_stats.last_frame_tick = 0U;
     STP23L_ExitCritical(primask);
 
+/* 功能：执行 HAL_UART_Receive_DMA 函数对应的模块操作。 */
     return HAL_UART_Receive_DMA(stp23l_uart, &stp23l_rx_byte, 1U);
 }
 
 
+/* 功能：执行 STP23L_HandleUartRxComplete 函数对应的模块操作。 */
 void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle)
 {
     if (uart_handle == NULL || uart_handle != stp23l_uart)
@@ -65,6 +77,7 @@ void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle)
 }
 
 
+/* 功能：执行 STP23L_HandleUartError 函数对应的模块操作。 */
 void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle)
 {
     if (uart_handle == NULL || uart_handle != stp23l_uart)
@@ -79,6 +92,7 @@ void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle)
 }
 
 
+/* 功能：执行 STP23L_GetLatestFrame 函数对应的模块操作。 */
 uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame)
 {
     uint32_t primask;
@@ -100,6 +114,7 @@ uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame)
 }
 
 
+/* 功能：执行 STP23L_GetAverageDistance 函数对应的模块操作。 */
 uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance_mm)
 {
     STP23L_Frame frame;
@@ -133,6 +148,7 @@ uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance
 }
 
 
+/* 功能：执行 STP23L_IsOnline 函数对应的模块操作。 */
 uint8_t STP23L_IsOnline(uint32_t timeout_ms)
 {
     uint32_t last_frame_tick;
@@ -148,6 +164,7 @@ uint8_t STP23L_IsOnline(uint32_t timeout_ms)
 }
 
 
+/* 功能：执行 STP23L_GetStats 函数对应的模块操作。 */
 void STP23L_GetStats(STP23L_Stats *stats)
 {
     uint32_t primask;
@@ -163,6 +180,7 @@ void STP23L_GetStats(STP23L_Stats *stats)
 }
 
 
+/* 功能：执行 STP23L_ParseByte 函数对应的模块操作。 */
 static void STP23L_ParseByte(uint8_t data)
 {
     if (stp23l_rx_index < STP23L_HEADER_SIZE)
@@ -198,6 +216,7 @@ static void STP23L_ParseByte(uint8_t data)
 }
 
 
+/* 功能：执行 STP23L_IsValidFrame 函数对应的模块操作。 */
 static uint8_t STP23L_IsValidFrame(void)
 {
     uint8_t checksum;
@@ -225,6 +244,7 @@ static uint8_t STP23L_IsValidFrame(void)
 }
 
 
+/* 功能：执行 STP23L_DecodeFrame 函数对应的模块操作。 */
 static void STP23L_DecodeFrame(void)
 {
     uint32_t index;
@@ -252,6 +272,7 @@ static void STP23L_DecodeFrame(void)
 }
 
 
+/* 功能：执行 STP23L_KeepTrailingHeader 函数对应的模块操作。 */
 static void STP23L_KeepTrailingHeader(void)
 {
     uint16_t trailing_count;
@@ -273,6 +294,7 @@ static void STP23L_KeepTrailingHeader(void)
 }
 
 
+/* 功能：执行 STP23L_ArmReceive 函数对应的模块操作。 */
 static void STP23L_ArmReceive(void)
 {
     if (HAL_UART_Receive_DMA(stp23l_uart, &stp23l_rx_byte, 1U) != HAL_OK)
@@ -282,18 +304,21 @@ static void STP23L_ArmReceive(void)
 }
 
 
+/* 功能：执行 STP23L_ReadU16 函数对应的模块操作。 */
 static uint16_t STP23L_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
 
+/* 功能：执行 STP23L_ReadU32 函数对应的模块操作。 */
 static uint32_t STP23L_ReadU32(const uint8_t *data)
 {
     return (uint32_t)data[0] | ((uint32_t)data[1] << 8U) | ((uint32_t)data[2] << 16U) | ((uint32_t)data[3] << 24U);
 }
 
 
+/* 功能：执行 STP23L_EnterCritical 函数对应的模块操作。 */
 static uint32_t STP23L_EnterCritical(void)
 {
     uint32_t primask;
@@ -304,6 +329,7 @@ static uint32_t STP23L_EnterCritical(void)
 }
 
 
+/* 功能：执行 STP23L_ExitCritical 函数对应的模块操作。 */
 static void STP23L_ExitCritical(uint32_t primask)
 {
     if (primask == 0U)

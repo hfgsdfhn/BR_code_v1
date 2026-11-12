@@ -1,14 +1,28 @@
-
-
-
-
+/*
+ * @file arm_config.h
+ * @brief arm_config模块的用户接口与实现。
+ */
 
 #ifndef BR_ARM_CONFIG_H
 #define BR_ARM_CONFIG_H
+#include "../../Driver/Motor/DM_J4310/j4310.h"
+#include "../../Driver/Motor/RS_00/rs00.h"
+#include "../../Driver/Motor/RS_01/rs01.h"
+#include "../../Driver/Motor/RS_05/rs05.h"
+
 
 #define BR_LEFT_CAN (&hfdcan2)
 #define BR_RIGHT_CAN (&hfdcan3)
 #define BR_PERIOD_MS 10U
+
+/* 代码说明：相关模块实现。 */
+#define BR_ROOT_M2006_TRAJECTORY_TIME_S 0.0f
+#define BR_ROOT_RS01_TRAJECTORY_TIME_S 0.0f
+#define BR_BIG_ARM_RS00_TRAJECTORY_TIME_S 0.0f
+#define BR_SMALL_ARM_RS00_TRAJECTORY_TIME_S 0.0f
+#define BR_J4310_TRAJECTORY_TIME_S 0.0f
+#define BR_RS05_TRAJECTORY_TIME_S 0.0f
+
 #define BR_FEEDBACK_TIMEOUT_MS 100U
 #define BR_COMMAND_TIMEOUT_MS 100U
 #define BR_ENABLE_RETRY_MS 20U
@@ -26,16 +40,17 @@
 #define BR_RIGHT_ZERO_RAD {0.0f, 0.0f, 0.0f, 0.0f}
 #define BR_LEFT_JOINT_PER_MOTOR {1.0f, 1.0f, 1.0f, 1.0f}
 #define BR_RIGHT_JOINT_PER_MOTOR {1.0f, 1.0f, 1.0f, 1.0f}
-#define BR_SHOULDER_KP 30.0f
+#define BR_SHOULDER_KP 20.0f
 #define BR_SHOULDER_KD 1.0f
-#define BR_ELBOW_KP 25.0f
-#define BR_ELBOW_KD 0.8f
-#define BR_WRIST_KP 15.0f
-#define BR_WRIST_KD 0.5f
-#define BR_ROTATION_KP 10.0f
-#define BR_ROTATION_KD 0.4f
+#define BR_ELBOW_KP 20.0f
+#define BR_ELBOW_KD 1.0f
+#define BR_WRIST_KP 20.0f
+#define BR_WRIST_KD 1.0f
+#define BR_ROTATION_KP 20.0f
+#define BR_ROTATION_KD 1.0f
 #define BR_ROOT_RS01_KP 20.0f
-#define BR_ROOT_RS01_KD 0.8f
+#define BR_ROOT_RS01_KD 1.0f
+
 #define BR_ROOT_RS01_DIRECTION 1.0f
 #define BR_JOINT_MIN_RAD {-3.14159265f, -3.14159265f, -3.14159265f, -3.14159265f}
 #define BR_JOINT_MAX_RAD {3.14159265f, 3.14159265f, 3.14159265f, 3.14159265f}
@@ -109,4 +124,33 @@
 #define BR_RIGHT_ROOT_ZERO_RAD 0.0f
 #define BR_RIGHT_ROOT_JOINT_PER_MOTOR 1.0f
 #define BR_ROOT_FF_LIMIT_NM 10.0f
+
+extern rs00_t rs00_larm[2], rs00_rarm[2];
+extern rs05_t rs05_larm, rs05_rarm;
+extern j4310_t j4310_larm, j4310_rarm;
+extern rs01_t rs01_rarm;
+
+/* 代码说明：相关模块实现。 */
+static inline void configure_motor_gains(void)
+{
+    rs00_larm[0].mit_kp = BR_SHOULDER_KP;
+    rs00_larm[0].mit_kd = BR_SHOULDER_KD;
+    rs00_rarm[0].mit_kp = BR_SHOULDER_KP;
+    rs00_rarm[0].mit_kd = BR_SHOULDER_KD;
+    rs00_larm[1].mit_kp = BR_ELBOW_KP;
+    rs00_larm[1].mit_kd = BR_ELBOW_KD;
+    rs00_rarm[1].mit_kp = BR_ELBOW_KP;
+    rs00_rarm[1].mit_kd = BR_ELBOW_KD;
+    j4310_larm.mit_kp = BR_WRIST_KP;
+    j4310_larm.mit_kd = BR_WRIST_KD;
+    j4310_rarm.mit_kp = BR_WRIST_KP;
+    j4310_rarm.mit_kd = BR_WRIST_KD;
+    rs05_larm.mit_kp = BR_ROTATION_KP;
+    rs05_larm.mit_kd = BR_ROTATION_KD;
+    rs05_rarm.mit_kp = BR_ROTATION_KP;
+    rs05_rarm.mit_kd = BR_ROTATION_KD;
+    rs01_rarm.mit_kp = BR_ROOT_RS01_KP;
+    rs01_rarm.mit_kd = BR_ROOT_RS01_KD;
+}
+
 #endif

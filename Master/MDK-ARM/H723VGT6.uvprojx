@@ -10,8 +10,8 @@
       <TargetName>H723VGT6</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pArmCC>6180000::V6.18::ARMCLANG</pArmCC>
-      <pCCUsed>6180000::V6.18::ARMCLANG</pCCUsed>
+      <pArmCC>6240000::V6.24::ARMCLANG</pArmCC>
+      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -38,6 +38,7 @@
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
+          <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;../Drivers/CMSIS/RTOS2/Include;../User/Algorithm/PID;../User/Algorithm;../User/Algorithm/Gravity;../User/Algorithm/Quintic;../User/Algorithm/Trapezoid;../User/Algorithm/World_Path;../User/Communication;../User/Docx;../User/Driver;../User/Driver/Motor;../User/Driver/Motor/AK60;../User/Driver/Motor/DJ_M2006;../User/Driver/Motor/DJ_M3508;../User/Driver/Motor/DM_J4310;../User/Driver/Motor/RS_00;../User/Driver/Motor/RS_05;../User/Driver/Motor/VESC;../User/Driver/Verison;../User/mechanism;../User/mechanism/Down;../User/mechanism/Chassis;../User/mechanism/Robot;../User/mechanism/Upper;../User/Peripheral;../User/Peripheral/CAN;../User/Peripheral/Encoder;../User/Peripheral/Flash;../User/Peripheral/UART;../User/Procedure;../User/Task;../User/Task/My_main</IncludePath>
           <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Drivers/CMSIS/DSP/Include;../Drivers/CMSIS/RTOS2/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;../User/Algorithm/PID;../User/Algorithm;../User/Algorithm/Gravity;../User/Algorithm/Quintic;../User/Algorithm/Trapezoid;../User/Algorithm/c_bridge;../User/Algorithm/qpOASES/include;../User/Communication;../User/Driver;../User/Driver/Verison;../User/Driver/Motor;../User/Driver/Motor/DJ_M2006;../User/Driver/Motor/DJ_M3508;../User/Driver/Motor/DM_J4310;../User/Driver/Motor/RS_00;../User/Driver/Motor/RS_01;../User/Driver/Motor/RS_05;../User/Peripheral/CAN;../User/Peripheral/UART;../User/Peripheral/Encoder;../User/Peripheral/Flash;../User/Mechanism/Upper;../User/Mechanism/Robot;../User/Task;../User/App</IncludePath>
           <LibPath></LibPath>
           <RegisterFilePath></RegisterFilePath>
@@ -82,7 +83,7 @@
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
-            <RunUserProg2>0</RunUserProg2>
+            <RunUserProg2>1</RunUserProg2>
             <UserProg1Name></UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
@@ -135,11 +136,11 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4096</DriverSelection>
+            <DriverSelection>4101</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
-          <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash2>BIN\UL2V8M.DLL</Flash2>
+          <Flash3></Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -191,7 +192,7 @@
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>1</useUlib>
+            <useUlib>0</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -357,7 +358,7 @@
             <ClangAsOpt>1</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>__MICROLIB</Define>
+              <Define></Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Drivers/CMSIS/DSP/Include;../Drivers/CMSIS/RTOS2/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;../User/Algorithm/PID;../User/Algorithm;../User/Algorithm/Gravity;../User/Algorithm/Quintic;../User/Algorithm/Trapezoid;../User/Algorithm/c_bridge;../User/Algorithm/qpOASES/include;../User/Communication;../User/Driver;../User/Driver/Verison;../User/Driver/Motor;../User/Driver/Motor/DJ_M2006;../User/Driver/Motor/DJ_M3508;../User/Driver/Motor/DM_J4310;../User/Driver/Motor/RS_00;../User/Driver/Motor/RS_01;../User/Driver/Motor/RS_05;../User/Peripheral/CAN;../User/Peripheral/UART;../User/Peripheral/Encoder;../User/Peripheral/Flash;../User/Mechanism/Upper;../User/Mechanism/Robot;../User/Task;../User/App</IncludePath>
             </VariousControls>
@@ -751,29 +752,29 @@
           <GroupName>Driver</GroupName>
           <Files>
             <File>
-              <FileName>mins_imu.c</FileName>
+              <FileName>m2006.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Communication\mins_imu.c</FilePath>
+              <FilePath>..\User\Driver\Motor\DJ_M2006\m2006.c</FilePath>
             </File>
             <File>
-              <FileName>mins_imu.h</FileName>
+              <FileName>m2006.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\User\Communication\mins_imu.h</FilePath>
+              <FilePath>..\User\Driver\Motor\DJ_M2006\m2006.h</FilePath>
             </File>
             <File>
-              <FileName>vofa.c</FileName>
+              <FileName>m3508.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Communication\vofa.c</FilePath>
+              <FilePath>..\User\Driver\Motor\DJ_M3508\m3508.c</FilePath>
             </File>
             <File>
-              <FileName>vofa.h</FileName>
+              <FileName>m3508.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\User\Communication\vofa.h</FilePath>
+              <FilePath>..\User\Driver\Motor\DJ_M3508\m3508.h</FilePath>
             </File>
             <File>
-              <FileName>board_can.c</FileName>
+              <FileName>j4310.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Communication\board_can.c</FilePath>
+              <FilePath>..\User\Driver\Motor\DM_J4310\j4310.c</FilePath>
             </File>
             <File>
               <FileName>board_can.h</FileName>

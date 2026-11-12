@@ -1,12 +1,17 @@
+/*
+ * @file omni_chassis.c
+ * @brief omni_chassis模块的用户接口与实现。
+ */
+
 /**
  * @file omni_chassis.c
  * @author wmy
  * @brief 全向轮底盘解算，逆解算
  * @version 0.1
  * @date 2026-09-05
- * 
+ *
  * @copyright 版权所有 (c) 2026
- * 
+ *
  */
 #include "omni_chassis.h"
 #include "Chassis_Task.h"

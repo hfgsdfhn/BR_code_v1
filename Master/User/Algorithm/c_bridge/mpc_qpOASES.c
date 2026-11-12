@@ -1,3 +1,8 @@
+/*
+ * @file mpc_qpOASES.c
+ * @brief mpc_qpOASES模块的用户接口与实现。
+ */
+
 /**
  * @file    mpc_qpOASES.c
  * @brief   C adapter for qpOASES 3.2 (QProblemB, single precision).
@@ -37,6 +42,7 @@ static qpOASES_Options s_options;
 #define MPC_QPOASES_OBJ_PTR    ((real_t *)0)
 #endif
 
+/* 功能：执行 MPC_QPOASES_Init 函数对应的模块操作。 */
 int MPC_QPOASES_Init(int nV)
 {
     if ((nV < 1) || (nV > MPC_QPOASES_MAX_NV))
@@ -45,11 +51,11 @@ int MPC_QPOASES_Init(int nV)
     if (QProblemB_setup((int_t)nV, HST_UNKNOWN) != 0)
         return -2;
 
-    /* mode 2 = qpOASES' recommended preset for MPC / warm-started QPs. */
+    /* 代码说明：相关模块实现。 */
     if (qpOASES_Options_init(&s_options, 2) != 0)
         return -3;
 
-    s_options.printLevel = PL_NONE;   /* no printf on the target */
+    s_options.printLevel = PL_NONE;   /* 代码说明：相关模块实现。 */
     s_nV     = (int_t)nV;
     s_status = -1;
     s_nWSR   = 0;
@@ -58,6 +64,7 @@ int MPC_QPOASES_Init(int nV)
     return 0;
 }
 
+/* 功能：执行 MPC_QPOASES_Solve 函数对应的模块操作。 */
 int MPC_QPOASES_Solve(const float *H,
                       const float *g,
                       const float *lb,
@@ -70,14 +77,14 @@ int MPC_QPOASES_Solve(const float *H,
     if ((s_nV < 1) || (H == 0) || (g == 0) || (lb == 0) || (ub == 0) || (x == 0))
         return -1;
 
-    nWSR = 200;   /* max working-set recalculations; tune for your deadline */
+    nWSR = 200;   /* 代码说明：相关模块实现。 */
 
     ret = QProblemB_init((const real_t *)H,
                          (const real_t *)g,
                          (const real_t *)lb,
                          (const real_t *)ub,
                          &nWSR,
-                         0,                 /* cputime = NULL: no clock needed */
+                         0,                 /* 代码说明：相关模块实现。 */
                          &s_options,
                          (real_t *)x,
                          s_y,
@@ -86,12 +93,13 @@ int MPC_QPOASES_Solve(const float *H,
 
     s_nWSR = nWSR;
 
-    if (ret != 0)   /* wrapper-level error, not a solver status */
+    if (ret != 0)   /* 代码说明：相关模块实现。 */
         return (int)ret;
 
     return (int)s_status;
 }
 
+/* 功能：执行 MPC_QPOASES_Hotstart 函数对应的模块操作。 */
 int MPC_QPOASES_Hotstart(const float *g,
                          const float *lb,
                          const float *ub,
@@ -123,21 +131,25 @@ int MPC_QPOASES_Hotstart(const float *g,
     return (int)s_status;
 }
 
+/* 功能：执行 MPC_QPOASES_GetLastStatus 函数对应的模块操作。 */
 int MPC_QPOASES_GetLastStatus(void)
 {
     return (int)s_status;
 }
 
+/* 功能：执行 MPC_QPOASES_GetLastNWSR 函数对应的模块操作。 */
 int MPC_QPOASES_GetLastNWSR(void)
 {
     return (int)s_nWSR;
 }
 
+/* 功能：执行 MPC_QPOASES_GetLastObj 函数对应的模块操作。 */
 float MPC_QPOASES_GetLastObj(void)
 {
     return (float)s_obj;
 }
 
+/* 功能：执行 MPC_QPOASES_Cleanup 函数对应的模块操作。 */
 void MPC_QPOASES_Cleanup(void)
 {
     QProblemB_cleanup();
