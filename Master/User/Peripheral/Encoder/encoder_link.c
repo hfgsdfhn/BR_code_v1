@@ -1,7 +1,7 @@
-/*
- * @file encoder_link.c
- * @brief 主机通过 SPI 接收从机的两路码盘累计计数，并更新全场定位。
- */
+
+
+
+
 
 #include "encoder_link.h"
 #include "down.h"
@@ -18,6 +18,7 @@ static uint32_t s_consecutive_errors;
 static bool s_attempted;
 static bool s_ready;
 
+
 static void EncoderLink_Cs(GPIO_PinState level)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -27,6 +28,7 @@ static void EncoderLink_Cs(GPIO_PinState level)
 #endif
 
 }
+
 
 bool EncoderLink_Init(void)
 {
@@ -42,8 +44,7 @@ bool EncoderLink_Init(void)
     EncoderLink_Cs(GPIO_PIN_SET);
 #endif
 
-    /* CubeMX 中 SPI6 配置为 4 位数据宽度，这里改为标准 8 位、最高位先行，
-     * 并降低时钟频率，以便与从机正常收发。 */
+
     hspi6.Init.DataSize = SPI_DATASIZE_8BIT;
     hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
     hspi6.Init.BaudRatePrescaler = ENCODER_LINK_SPI_PRESCALER;
@@ -67,7 +68,7 @@ bool EncoderLink_Init(void)
     return true;
 }
 
-/* 记录一次坏帧；连续坏帧达到阈值后判定为离线。 */
+
 static void EncoderLink_RecordError(void)
 {
     g_encoder_link.error_count++;
@@ -77,6 +78,7 @@ static void EncoderLink_RecordError(void)
         g_encoder_link.online = false;
     }
 }
+
 
 bool EncoderLink_Poll(float yaw_deg)
 {
@@ -93,7 +95,7 @@ bool EncoderLink_Poll(float yaw_deg)
         return false;
     }
 
-    /* 离线时降低重试频率，避免从机未连接时每个周期都等待超时。 */
+
     now = HAL_GetTick();
     if ((!g_encoder_link.online) && s_attempted && ((now - s_last_attempt_ms) < ENCODER_LINK_RETRY_MS))
     {
@@ -115,7 +117,7 @@ bool EncoderLink_Poll(float yaw_deg)
         return false;
     }
 
-    /* 从机未连接时，MISO 通常被拉高，整帧均为 0xFF，直接判为坏帧。 */
+
     {
         bool all_ff = true;
 
@@ -134,7 +136,7 @@ bool EncoderLink_Poll(float yaw_deg)
         }
     }
 
-    /* 将字节流按大端顺序拼成 16 位字，下标与参考主机的 SPI1_Buffer_Tx[] 一致。 */
+
     for (i = 0U; i < ENCODER_LINK_FRAME_WORDS; i++)
     {
         s_words[i] = (uint16_t)(((uint16_t)rx[2U * i] << 8) | (uint16_t)rx[2U * i + 1U]);
@@ -143,7 +145,7 @@ bool EncoderLink_Poll(float yaw_deg)
     c1 = (int32_t)(((uint32_t)s_words[ENCODER_LINK_IDX_C1_H] << 16) | (uint32_t)s_words[ENCODER_LINK_IDX_C1_L]);
     c2 = (int32_t)(((uint32_t)s_words[ENCODER_LINK_IDX_C2_H] << 16) | (uint32_t)s_words[ENCODER_LINK_IDX_C2_L]);
 
-    /* 在线状态下检查计数增量的合理性，过滤乱码帧。 */
+
     if (g_encoder_link.online)
     {
         int32_t d1 = (int32_t)((uint32_t)c1 - (uint32_t)g_encoder_link.encoder1_count);
@@ -161,7 +163,7 @@ bool EncoderLink_Poll(float yaw_deg)
     g_encoder_link.encoder2_count = c2;
     g_encoder_link.yaw_raw = s_words[ENCODER_LINK_IDX_YAW];
     g_encoder_link.frame_count++;
-    /* 重新连接的从机可能已重置累计计数器。 */
+
     if (!g_encoder_link.online)
     {
         const whole_position_t pose = Whole_GetPosition();
@@ -173,6 +175,7 @@ bool EncoderLink_Poll(float yaw_deg)
 
     return true;
 }
+
 
 uint16_t EncoderLink_GetYawRaw(void)
 {

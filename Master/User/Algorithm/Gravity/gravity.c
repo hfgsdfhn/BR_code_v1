@@ -1,12 +1,19 @@
+
+
+
+
+
 #include "gravity.h"
 #include <math.h>
 #include <string.h>
+
 static void mv(const float r[3][3], const float v[3], float out[3])
 {
     unsigned i;
     for (i = 0; i < 3; i++)
         out[i] = r[i][0] * v[0] + r[i][1] * v[1] + r[i][2] * v[2];
 }
+
 static void mm(const float a[3][3], const float b[3][3], float out[3][3])
 {
     unsigned i, j, k;
@@ -18,10 +25,12 @@ static void mm(const float a[3][3], const float b[3][3], float out[3][3])
                 out[i][j] += a[i][k] * b[k][j];
         }
 }
+
 static bool vec_ok(const float v[3])
 {
     return isfinite(v[0]) && isfinite(v[1]) && isfinite(v[2]);
 }
+
 static bool rotation_ok(const float r[3][3])
 {
     unsigned i, j, k;
@@ -38,6 +47,7 @@ static bool rotation_ok(const float r[3][3])
                r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]) >
            0.999f;
 }
+
 static void add_mass(float mass, const float c[3], unsigned last, const float origins[BR_ARM_DOF][3],
                      const float axes[BR_ARM_DOF][3], const float g[3], float tau[BR_ARM_DOF], float *u)
 {
@@ -47,11 +57,12 @@ static void add_mass(float mass, const float c[3], unsigned last, const float or
     {
         float d[3] = {c[0] - origins[j][0], c[1] - origins[j][1], c[2] - origins[j][2]};
         const float *a = axes[j];
-        /* -m g dot (axis cross (COM-origin)) == dU/dq */
+
         tau[j] -= mass * (g[0] * (a[1] * d[2] - a[2] * d[1]) + g[1] * (a[2] * d[0] - a[0] * d[2]) +
                           g[2] * (a[0] * d[1] - a[1] * d[0]));
     }
 }
+
 bool BR_GravityEvaluate(const br_gravity_model_t *m, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF],
                         float *potential)
 {

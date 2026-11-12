@@ -1,21 +1,27 @@
-/* 主控应用初始化、故障信息记录及通信任务创建。 */
-#include "my_main.h"
+﻿#include "my_main.h"
 #include "upper.h"
-#include "status_task.h"
+#include "arm_task.h"
 #include "bsp_can.h"
 #include "bsp_uart.h"
 #include "cmsis_os2.h"
-#include "can_board.h"
+#include "scram.h"
 #include "flash.h"
-#include "gpio.h"
-#include "STP-23L.h"
 #include "usart.h"
 #include "spi.h"
+#include "fdcan.h"
 #include "remote.h"
+#include "suction_cup.h"
 
-volatile uint8_t g_motor_control_enable = 0U;
-volatile uint8_t g_motor_power_recovery_enable = 1U;
-volatile uint8_t g_rs_recovery_motion_release = 1U;
+m2006_t m2006_larm;
+m2006_t m2006_ucup[2];
+m2006_t m2006_dcup[2];
+m3508_t m3508_dcup[1];
+rs00_t rs00_larm[2], rs00_rarm[2];
+rs05_t rs05_larm, rs05_rarm;
+j4310_t j4310_larm, j4310_rarm;
+rs01_t rs01_rarm;
+volatile uint8_t g_rs_recovery_motion_release = 0U;
+
 volatile Error_Code g_error_code = ERROR_CODE_NONE;
 volatile const char *g_error_handler_file = NULL;
 volatile uint32_t g_error_handler_line = 0U;
@@ -39,23 +45,6 @@ static const osThreadAttr_t can_rx_task_attributes = {
     .priority = osPriorityNormal,
 };
 
-void Error_Handler_Set(Error_Code code, const char *file, uint32_t line)
-{
-    g_error_code = code;
-    g_error_handler_file = file;
-    g_error_handler_line = line;
-    g_error_handler_return_address = (uint32_t)__builtin_return_address(0);
-    g_error_handler_ipsr = __get_IPSR();
-    g_error_handler_cfsr = SCB->CFSR;
-    g_error_handler_hfsr = SCB->HFSR;
-    g_error_handler_bfar = SCB->BFAR;
-    g_error_handler_mmfar = SCB->MMFAR;
-    __disable_irq();
-    while (1)
-    {
-    }
-}
-
 void Error_FaultCapture(Error_Code code, uint32_t *stack)
 {
     g_error_code = code;
@@ -73,84 +62,61 @@ void Error_FaultCapture(Error_Code code, uint32_t *stack)
     }
 }
 
-/* 将 UART9 接收完成事件交给遥控模块，其余事件交由 STP-23L 驱动判断处理。 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart == &huart9)
-    {
-        Remote_RxByte();
-        return;
-    }
-    STP23L_HandleUartRxComplete(huart);
+    (void)huart;
 }
 
 void My_Init(void)
 {
-    /* 将 PC4、PC5 置为高电平，并将 SPI1 配置为 Flash 命令使用的 8 位帧格式。 */
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
-    /* Flash commands use 8-bit SPI frames. */
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-    if (HAL_SPI_Init(&hspi1) != HAL_OK)
-    {
-      ERROR_HANDLER(ERROR_CODE_W25Q128_INIT);
-    }
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+    (void)HAL_SPI_Init(&hspi1);
+
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 
-    if (BspCan_Init() != HAL_OK)
-    {
-        ERROR_HANDLER(ERROR_CODE_CAN_INIT);
-    }
+    BspCan_Init();
 
-    Upper_Init(&upper_state);
-    Arm_Init();
+    M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, -1);
+    M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, 1);
+    M3508_Init(&m3508_dcup[0], &hfdcan2, 5U, 1);
 
-    if (Flash_ReadId() == 0U)
-    {
-        ERROR_HANDLER(ERROR_CODE_W25Q128_INIT);
-    }
+    M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, -1);
+    M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, 1);
 
-    /* 初始化 USART2 上的 STP-23L，并注册小板遥控数据回调、初始化遥控接收模块。 */
-    (void)STP23L_Init(&huart2);
-    (void)BspUart_RegisterRxCallback(BSP_UART_SMALL_BOARD, Remote_RxBytes);
+    M2006_Init(&m2006_larm, &hfdcan2, 1U, 1);
+    RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
+    RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
+    J4310_Init(&j4310_larm, &hfdcan2, 4U, 1);
+    RS05_Init(&rs05_larm, &hfdcan2, 5U, 1);
+
+    RS01_Init(&rs01_rarm, &hfdcan3, 1U, -1);
+    RS00_Init(&rs00_rarm[0], &hfdcan3, 2U, -1);
+    RS00_Init(&rs00_rarm[1], &hfdcan3, 3U, -1);
+    J4310_Init(&j4310_rarm, &hfdcan3, 4U, -1);
+    RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
+
+    Arm_TaskInit();
+    Upper_BindMotors(&upper_state);
+    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_RxBytes);
+    SuctionCup_Init();
+    Scram_Init();
     Remote_Init();
-
 }
 
 void My_RtosInit(void)
 {
-    /* 创建 CAN 接收队列及任务，再创建机械臂发送队列、发送任务和 UART 任务。 */
-    if (!BspCan_RxQueueInit())
-    {
-        ERROR_HANDLER(ERROR_CODE_CAN_INIT);
-    }
+
+    (void)BspCan_RxQueueInit();
     can_rx_task_handle = osThreadNew(BspCan_RxTask, NULL, &can_rx_task_attributes);
-    if (can_rx_task_handle == NULL)
-    {
-        ERROR_HANDLER(ERROR_CODE_CAN_INIT);
-    }
-    if (!Upper_TxQueueInit())
-    {
-        ERROR_HANDLER(ERROR_CODE_CAN_INIT);
-    }
+    (void)Arm_TxQueueInit();
     {
         const osThreadAttr_t attributes = {
             .name = "Arm_Can_Tx_Task",
             .stack_size = 2048U,
             .priority = osPriorityNormal,
         };
-        if (osThreadNew(Upper_TxTask, NULL, &attributes) == NULL)
-        {
-            ERROR_HANDLER(ERROR_CODE_CAN_INIT);
-        }
+        (void)osThreadNew(Arm_TxTask, NULL, &attributes);
     }
     uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
-    if (uart_task_handle == NULL)
-    {
-        ERROR_HANDLER(ERROR_CODE_USART_INIT);
-    }
 }

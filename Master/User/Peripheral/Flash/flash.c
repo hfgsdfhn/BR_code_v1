@@ -1,10 +1,16 @@
-/* W25Qxx 的 SPI 访问；数据传输和忙等待均设有超时限制。 */
+
+
+
+
+
+
 #include "flash.h"
 #include "main.h"
 #include "spi.h"
 #include <math.h>
 #include <stddef.h>
 #include <string.h>
+
 
 static uint32_t angle_crc(const motor_angle_record_t *record)
 {
@@ -19,15 +25,18 @@ static uint32_t angle_crc(const motor_angle_record_t *record)
     return crc;
 }
 
+
 static bool angle_record_valid(const motor_angle_record_t *record)
 {
     return record->magic == FLASH_MOTOR_ANGLE_MAGIC && isfinite(record->angle) && record->crc == angle_crc(record);
 }
 
+
 static void Flash_Select(GPIO_PinState state)
 {
     HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, state);
 }
+
 
 static bool Flash_ReadStatus(uint8_t *status)
 {
@@ -39,6 +48,7 @@ static bool Flash_ReadStatus(uint8_t *status)
     Flash_Select(GPIO_PIN_SET);
     return ok && *status != 0xFFU;
 }
+
 
 static bool Flash_Wait(uint32_t timeout_ms)
 {
@@ -58,6 +68,7 @@ static bool Flash_Wait(uint32_t timeout_ms)
     return false;
 }
 
+
 static bool Flash_WriteEnable(void)
 {
     uint8_t command = FLASH_CMD_WRITE_ENABLE;
@@ -69,11 +80,13 @@ static bool Flash_WriteEnable(void)
     return ok && Flash_ReadStatus(&status) && (status & 2U) != 0U;
 }
 
+
 static bool Flash_SendAddress(uint8_t command, uint32_t address)
 {
     uint8_t header[4] = {command, (uint8_t)(address >> 16U), (uint8_t)(address >> 8U), (uint8_t)address};
     return HAL_SPI_Transmit(&hspi1, header, sizeof(header), FLASH_IO_TIMEOUT_MS) == HAL_OK;
 }
+
 
 uint16_t Flash_ReadId(void)
 {
@@ -90,6 +103,7 @@ uint16_t Flash_ReadId(void)
     }
     return ((uint16_t)id[0] << 8U) | id[1];
 }
+
 
 bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
 {
@@ -108,6 +122,7 @@ bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
     Flash_Select(GPIO_PIN_SET);
     return ok;
 }
+
 
 bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
 {
@@ -128,6 +143,7 @@ bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
     return ok && Flash_Wait(FLASH_PROGRAM_TIMEOUT_MS);
 }
 
+
 bool Flash_EraseSector(uint32_t address)
 {
     bool ok;
@@ -145,11 +161,13 @@ bool Flash_EraseSector(uint32_t address)
     return ok && Flash_Wait(FLASH_ERASE_TIMEOUT_MS);
 }
 
+
 static bool angle_record_newer(const motor_angle_record_t *a, const motor_angle_record_t *b)
 {
     uint32_t delta = a->sequence - b->sequence;
     return delta != 0U && delta < 0x80000000UL;
 }
+
 
 bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
 {
@@ -171,6 +189,7 @@ bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
     return true;
 }
 
+
 bool Flash_SaveMotorAngle(uint8_t slot, float angle)
 {
     motor_angle_record_t a = {0}, b = {0}, record = {0}, verify = {0};
@@ -181,7 +200,7 @@ bool Flash_SaveMotorAngle(uint8_t slot, float angle)
         return false;
     }
     base = FLASH_MOTOR_ANGLE_BASE + (uint32_t)slot * 2U * FLASH_MOTOR_ANGLE_SECTOR;
-    /* 不得将传输失败误判为空记录。 */
+
     if (!Flash_Read(base, (uint8_t *)&a, sizeof(a)) ||
         !Flash_Read(base + FLASH_MOTOR_ANGLE_SECTOR, (uint8_t *)&b, sizeof(b)))
     {

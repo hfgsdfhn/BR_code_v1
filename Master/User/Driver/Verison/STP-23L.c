@@ -1,3 +1,8 @@
+
+
+
+
+
 #include "STP-23L.h"
 
 #include <stddef.h>
@@ -18,6 +23,7 @@ static uint16_t STP23L_ReadU16(const uint8_t *data);
 static uint32_t STP23L_ReadU32(const uint8_t *data);
 static uint32_t STP23L_EnterCritical(void);
 static void STP23L_ExitCritical(uint32_t primask);
+
 
 HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle)
 {
@@ -46,6 +52,7 @@ HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle)
     return HAL_UART_Receive_DMA(stp23l_uart, &stp23l_rx_byte, 1U);
 }
 
+
 void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle)
 {
     if (uart_handle == NULL || uart_handle != stp23l_uart)
@@ -56,6 +63,7 @@ void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle)
     STP23L_ParseByte(stp23l_rx_byte);
     STP23L_ArmReceive();
 }
+
 
 void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle)
 {
@@ -69,6 +77,7 @@ void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle)
     stp23l_rx_index = 0U;
     STP23L_ArmReceive();
 }
+
 
 uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame)
 {
@@ -89,6 +98,7 @@ uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame)
     STP23L_ExitCritical(primask);
     return 1U;
 }
+
 
 uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance_mm)
 {
@@ -122,6 +132,7 @@ uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance
     return 1U;
 }
 
+
 uint8_t STP23L_IsOnline(uint32_t timeout_ms)
 {
     uint32_t last_frame_tick;
@@ -136,6 +147,7 @@ uint8_t STP23L_IsOnline(uint32_t timeout_ms)
     return (uint8_t)(valid_frame_count != 0U && (uint32_t)(HAL_GetTick() - last_frame_tick) <= timeout_ms);
 }
 
+
 void STP23L_GetStats(STP23L_Stats *stats)
 {
     uint32_t primask;
@@ -149,6 +161,7 @@ void STP23L_GetStats(STP23L_Stats *stats)
     *stats = stp23l_stats;
     STP23L_ExitCritical(primask);
 }
+
 
 static void STP23L_ParseByte(uint8_t data)
 {
@@ -184,6 +197,7 @@ static void STP23L_ParseByte(uint8_t data)
     }
 }
 
+
 static uint8_t STP23L_IsValidFrame(void)
 {
     uint8_t checksum;
@@ -209,6 +223,7 @@ static uint8_t STP23L_IsValidFrame(void)
 
     return 1U;
 }
+
 
 static void STP23L_DecodeFrame(void)
 {
@@ -236,6 +251,7 @@ static void STP23L_DecodeFrame(void)
     stp23l_latest_frame.frame_number = stp23l_stats.valid_frame_count;
 }
 
+
 static void STP23L_KeepTrailingHeader(void)
 {
     uint16_t trailing_count;
@@ -256,6 +272,7 @@ static void STP23L_KeepTrailingHeader(void)
     stp23l_rx_index = trailing_count;
 }
 
+
 static void STP23L_ArmReceive(void)
 {
     if (HAL_UART_Receive_DMA(stp23l_uart, &stp23l_rx_byte, 1U) != HAL_OK)
@@ -264,15 +281,18 @@ static void STP23L_ArmReceive(void)
     }
 }
 
+
 static uint16_t STP23L_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
+
 static uint32_t STP23L_ReadU32(const uint8_t *data)
 {
     return (uint32_t)data[0] | ((uint32_t)data[1] << 8U) | ((uint32_t)data[2] << 16U) | ((uint32_t)data[3] << 24U);
 }
+
 
 static uint32_t STP23L_EnterCritical(void)
 {
@@ -283,6 +303,7 @@ static uint32_t STP23L_EnterCritical(void)
     return primask;
 }
 
+
 static void STP23L_ExitCritical(uint32_t primask)
 {
     if (primask == 0U)
@@ -290,4 +311,3 @@ static void STP23L_ExitCritical(uint32_t primask)
         __enable_irq();
     }
 }
-

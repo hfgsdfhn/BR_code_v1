@@ -1,14 +1,14 @@
-/*
- * @file quintic_planner.c
- * @brief 五次多项式位置规划器的实现；所有电机的位置控制共用这一份。
- */
+
+
+
+
 
 #include "quintic_planner.h"
 
 #include <math.h>
 #include <stddef.h>
 
-/* 默认限幅：只在 时长 == 0 时用来反解时长，或做安全校验。 */
+
 static float s_max_speed = 0.0f;
 static float s_max_accel = 0.0f;
 static float s_min_duration = 0.0f;
@@ -18,7 +18,7 @@ volatile float quintic_last_peak_speed = 0.0f;
 volatile float quintic_last_peak_accel = 0.0f;
 volatile uint8_t quintic_last_limited = 0U;
 
-/* 采样归一化曲线：给出位置比例、速度比例和加速度比例。 */
+
 static void Quintic_Shape(float k0, float tau, float *s, float *ds, float *dds)
 {
     float tau2 = tau * tau;
@@ -43,7 +43,7 @@ static void Quintic_Shape(float k0, float tau, float *s, float *ds, float *dds)
     }
 }
 
-/* 扫描归一化曲线的速度、加速度峰值（不含安全余量）。 */
+
 static void Quintic_Peaks(float k0, float *peak_ds, float *peak_dds)
 {
     float max_ds = 0.0f;
@@ -76,14 +76,14 @@ static void Quintic_Peaks(float k0, float *peak_ds, float *peak_dds)
     }
 }
 
-/* 限幅优先：反解满足默认限幅的最短时长，并给出对应的 k0。 */
+
 static float Quintic_SolveDuration(float delta, float adelta, float v0, float *k0_out)
 {
     float t;
     float k0 = 0.0f;
     int i;
 
-    /* 静止到静止解析解：1.875 是 10t^3-15t^4+6t^5 的速度峰值，5.7735 是加速度峰值。 */
+
     t = 1.875f * adelta / s_max_speed;
     {
         float ta = sqrtf(5.7735027f * adelta / s_max_accel);
@@ -149,7 +149,7 @@ static float Quintic_SolveDuration(float delta, float adelta, float v0, float *k
     return t;
 }
 
-/* 用已确定的时长和 k0 填满 plan，并算出该时长需要的峰值。 */
+
 static void Quintic_Fill(quintic_plan_t *plan, float start, float delta, float k0, float t)
 {
     float peak_ds;
@@ -171,12 +171,14 @@ static void Quintic_Fill(quintic_plan_t *plan, float start, float delta, float k
     quintic_last_limited = plan->limited;
 }
 
+
 void Quintic_SetDefaultLimits(float max_speed, float max_accel, float min_duration)
 {
     s_max_speed = max_speed;
     s_max_accel = max_accel;
     s_min_duration = min_duration;
 }
+
 
 float Quintic_MinDuration(float delta, float v0)
 {
@@ -188,6 +190,7 @@ float Quintic_MinDuration(float delta, float v0)
     }
     return Quintic_SolveDuration(delta, adelta, v0, NULL);
 }
+
 
 void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, float duration)
 {
@@ -221,7 +224,7 @@ void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, flo
 
     if (duration > QUINTIC_EPS)
     {
-        /* 时间优先：直接采用给定时长。 */
+
         t = duration;
         if (s_min_duration > 0.0f && t < s_min_duration)
         {
@@ -243,7 +246,7 @@ void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, flo
             Quintic_Peaks(k0, &peak_ds, &peak_dds);
             if ((adelta * peak_ds / t > s_max_speed) || (adelta * peak_dds / (t * t) > s_max_accel))
             {
-                /* 时长太短，电机跟不上：延长到最小可行时长。 */
+
                 t = Quintic_SolveDuration(plan->delta, adelta, v0, &k0);
                 plan->limited = 1U;
             }
@@ -251,18 +254,19 @@ void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, flo
     }
     else if (has_limits)
     {
-        /* 时长 == 0：用默认限幅反解时长。 */
+
         t = Quintic_SolveDuration(plan->delta, adelta, v0, &k0);
     }
     else
     {
-        /* 时长和默认限幅都没有，无法规划。 */
+
         quintic_last_limited = 0U;
         return;
     }
 
     Quintic_Fill(plan, start, plan->delta, k0, t);
 }
+
 
 void Quintic_Sample(const quintic_plan_t *plan, float elapsed, float *pos, float *vel, float *acc)
 {

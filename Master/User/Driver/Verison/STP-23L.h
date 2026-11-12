@@ -1,3 +1,8 @@
+
+
+
+
+
 #ifndef STP23L_H
 #define STP23L_H
 
@@ -51,20 +56,25 @@ extern "C"
         uint32_t last_frame_tick;
     } STP23L_Stats;
 
-    /* 所选 UART 必须已初始化为 230400 波特率、8 位数据位、无校验、1 位停止位。 */
+
     HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle);
 
-    /* 将对应的 HAL UART 回调转发至这两个函数。 */
+
     void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle);
+
     void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle);
 
+
     uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame);
+
     uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance_mm);
+
     uint8_t STP23L_IsOnline(uint32_t timeout_ms);
+
     void STP23L_GetStats(STP23L_Stats *stats);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* 头文件保护结束。 */
+#endif

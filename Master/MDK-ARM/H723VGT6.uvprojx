@@ -363,7 +363,7 @@
             </VariousControls>
           </Aads>
           <LDads>
-            <umfTarg>1</umfTarg>
+            <umfTarg>0</umfTarg>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <noStLib>0</noStLib>
@@ -372,7 +372,7 @@
             <TextAddressRange></TextAddressRange>
             <DataAddressRange></DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>.\uart_dma.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -685,12 +685,6 @@
               <FileType>5</FileType>
               <FilePath>..\User\Algorithm\Trapezoid\trapezoid_planner.h</FilePath>
             </File>
-            
-            
-            
-            
-            
-            
           </Files>
         </Group>
         <Group>
@@ -706,8 +700,6 @@
               <FileType>5</FileType>
               <FilePath>..\User\Peripheral\CAN\bsp_can.h</FilePath>
             </File>
-            
-            
             <File>
               <FileName>flash.c</FileName>
               <FileType>1</FileType>
@@ -734,20 +726,15 @@
           <GroupName>Communication</GroupName>
           <Files>
             <File>
-              <FileName>can_board.c</FileName>
+              <FileName>scram.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Communication\can_board.c</FilePath>
+              <FilePath>..\User\Communication\scram.c</FilePath>
             </File>
             <File>
-              <FileName>can_board.h</FileName>
+              <FileName>scram.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\User\Communication\can_board.h</FilePath>
+              <FilePath>..\User\Communication\scram.h</FilePath>
             </File>
-            
-
-
-
-            
             <File>
               <FileName>remote.c</FileName>
               <FileType>1</FileType>
@@ -763,8 +750,6 @@
         <Group>
           <GroupName>Driver</GroupName>
           <Files>
-            
-            
             <File>
               <FileName>m2006.c</FileName>
               <FileType>1</FileType>
@@ -815,10 +800,16 @@
               <FileType>5</FileType>
               <FilePath>..\User\Driver\Motor\RS_05\rs05.h</FilePath>
             </File>
-            
-            
-            
-            
+            <File>
+              <FileName>rs01.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Driver\Motor\RS_01\rs01.c</FilePath>
+            </File>
+            <File>
+              <FileName>rs01.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\Driver\Motor\RS_01\rs01.h</FilePath>
+            </File>
             <File>
               <FileName>STP-23L.c</FileName>
               <FileType>1</FileType>
@@ -834,8 +825,6 @@
         <Group>
           <GroupName>Mechanism</GroupName>
           <Files>
-            
-            
             <File>
               <FileName>robot.c</FileName>
               <FileType>1</FileType>
@@ -856,7 +845,11 @@
               <FileType>5</FileType>
               <FilePath>..\User\mechanism\Upper\upper.h</FilePath>
             </File>
-<File><FileName>arm_config.h</FileName><FileType>5</FileType><FilePath>..\User\Mechanism\Upper\arm_config.h</FilePath></File>
+            <File>
+              <FileName>arm_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\Mechanism\Upper\arm_config.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -872,10 +865,6 @@
               <FileType>5</FileType>
               <FilePath>..\User\Task\arm_task.h</FilePath>
             </File>
-            
-            
-            
-            
             <File>
               <FileName>my_main.c</FileName>
               <FileType>1</FileType>
@@ -896,8 +885,16 @@
               <FileType>5</FileType>
               <FilePath>..\User\Task\status_task.h</FilePath>
             </File>
-            
-            
+            <File>
+              <FileName>suction_cup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Task\suction_cup.c</FilePath>
+            </File>
+            <File>
+              <FileName>suction_cup.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\Task\suction_cup.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

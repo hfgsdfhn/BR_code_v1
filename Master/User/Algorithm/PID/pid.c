@@ -1,6 +1,11 @@
+
+
+
+
+
 #include "pid.h"
 
-/* 将数值限制在正负 limit 范围内，limit 为 0 时不进行限幅。 */
+
 static float pid_clamp(float value, float limit)
 {
     if (limit < 0.0f)
@@ -22,7 +27,7 @@ static float pid_clamp(float value, float limit)
     return value;
 }
 
-/* 写入 PID 增益和限幅参数，并将控制器状态复位到初始值。 */
+
 bool PID_Init(pid_t *pid, float kp, float ki, float kd, float output_limit, float integral_limit)
 {
     if ((pid == 0) || (output_limit < 0.0f) || (integral_limit < 0.0f))
@@ -40,7 +45,7 @@ bool PID_Init(pid_t *pid, float kp, float ki, float kd, float output_limit, floa
     return true;
 }
 
-/* 设置积分完全分离和渐进分离的误差范围。 */
+
 void PID_SetIntegralSeparationRange(pid_t *pid, float full_separation, float separation)
 {
     if (pid == 0)
@@ -51,7 +56,7 @@ void PID_SetIntegralSeparationRange(pid_t *pid, float full_separation, float sep
     pid->integral_separation = (separation < 0.0f) ? -separation : separation;
 }
 
-/* 清除积分项、历史误差和首次微分计算状态。 */
+
 void PID_Reset(pid_t *pid)
 {
     if (pid == 0)
@@ -63,7 +68,7 @@ void PID_Reset(pid_t *pid)
     pid->initialized = false;
 }
 
-/* 计算带积分分离和抗饱和处理的 PID 输出。 */
+
 float PID_Calc(pid_t *pid, float target, float feedback, float dt_s)
 {
     float error;
@@ -109,7 +114,7 @@ float PID_Calc(pid_t *pid, float target, float feedback, float dt_s)
     unsaturated_output = pid->kp * error + pid->ki * candidate_integral + pid->kd * derivative;
     output = pid_clamp(unsaturated_output, pid->output_limit);
 
-    /* 输出沿误差方向饱和时，保持积分项，避免继续累积。 */
+
     if ((integration_weight > 0.0f) && (unsaturated_output != output) && ((error * unsaturated_output) > 0.0f))
     {
         candidate_integral = previous_integral;

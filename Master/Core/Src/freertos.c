@@ -40,20 +40,6 @@ const osThreadAttr_t Status_Task_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-/* Definitions for Chassis_Task */
-osThreadId_t Chassis_TaskHandle;
-const osThreadAttr_t Chassis_Task_attributes = {
-  .name = "Chassis_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for Climb_Task */
-osThreadId_t Climb_TaskHandle;
-const osThreadAttr_t Climb_Task_attributes = {
-  .name = "Climb_Task",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for SuctionCup_Task */
 osThreadId_t SuctionCup_TaskHandle;
 const osThreadAttr_t SuctionCup_Task_attributes = {
@@ -74,8 +60,6 @@ const osThreadAttr_t Arm_Task_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 extern void Status_Task(void *argument);
-extern void Chassis_Task(void *argument);
-extern void Climb_Task(void *argument);
 extern void SuctionCup_Task(void *argument);
 extern void Arm_Task(void *argument);
 
@@ -89,7 +73,7 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
    (void)xTask;
    (void)pcTaskName;
-   ERROR_HANDLER(ERROR_CODE_ASSERT);
+
    /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
@@ -126,14 +110,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of Status_Task */
   Status_TaskHandle = osThreadNew(Status_Task, NULL, &Status_Task_attributes);
 
-  /* creation of Chassis_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
-
-  /* creation of Climb_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
-
   /* creation of SuctionCup_Task */
-  /* BR: auxiliary motors are serviced by Upper_TxTask. */
+  SuctionCup_TaskHandle = osThreadNew(SuctionCup_Task, NULL, &SuctionCup_Task_attributes);
 
   /* creation of Arm_Task */
   Arm_TaskHandle = osThreadNew(Arm_Task, NULL, &Arm_Task_attributes);

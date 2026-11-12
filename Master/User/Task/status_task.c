@@ -1,8 +1,13 @@
-﻿#include "status_task.h"
+
+
+
+
+
+#include "status_task.h"
 #include "bsp_can.h"
 #include "cmsis_os2.h"
 #include "my_main.h"
-/* BR has no TR chassis/world-path task. Motor feedback watchdogs run in Upper_TxTask. */
+
 void Status_Task(void *argument)
 {
     (void)argument;

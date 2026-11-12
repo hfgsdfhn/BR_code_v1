@@ -53,8 +53,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, STATUS_LED_Pin|BUZZER_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, STATUS_LED_Pin|BUZZER_EN_Pin|GPIO_PIN_8|GPIO_PIN_9
+                          |GPIO_PIN_10|GPIO_PIN_11, GPIO_PIN_RESET);
 
+  /* PA0/PA1 = UART4，PA2/PA3 = USART2；按主控底板网表保留为串口复用脚，不在 GPIO 初始化中改写。 */
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, FLASH_CS_Pin|ENCODER_CS_Pin, GPIO_PIN_SET);
 
@@ -62,10 +64,20 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, RS485_DE_Pin|RS485_RE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, RS485_DE_Pin|RS485_RE_Pin|GPIO_PIN_0|GPIO_PIN_1
+                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6
+                          |GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : STATUS_LED_Pin BUZZER_EN_Pin */
-  GPIO_InitStruct.Pin = STATUS_LED_Pin|BUZZER_EN_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : STATUS_LED_Pin BUZZER_EN_Pin PC8 PC9
+                           PC10 PC11 */
+  GPIO_InitStruct.Pin = STATUS_LED_Pin|BUZZER_EN_Pin|GPIO_PIN_8|GPIO_PIN_9
+                          |GPIO_PIN_10|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -85,12 +97,30 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RS485_DE_Pin RS485_RE_Pin */
-  GPIO_InitStruct.Pin = RS485_DE_Pin|RS485_RE_Pin;
+  /*Configure GPIO pins : RS485_DE_Pin RS485_RE_Pin PD0 PD1
+                           PD3 PD4 PD5 PD6
+                           PD7 */
+  GPIO_InitStruct.Pin = RS485_DE_Pin|RS485_RE_Pin|GPIO_PIN_0|GPIO_PIN_1
+                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6
+                          |GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB6 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 

@@ -134,10 +134,7 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-    ERROR_HANDLER(ERROR_CODE_W25Q128_INIT);
-  }
+  (void)HAL_SPI_Init(&hspi1);
 
   /* Initialize CAN and motor objects before starting the scheduler. */
   My_Init();
