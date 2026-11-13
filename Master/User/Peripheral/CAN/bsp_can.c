@@ -1,6 +1,6 @@
 /*
  * @file bsp_can.c
- * @brief bsp_can模块的用户接口与实现。
+ * @brief bsp_can模块的用户接口与实现�?
  */
 
 #include "bsp_can.h"
@@ -13,10 +13,28 @@
 volatile uint32_t can1_cnt = 0U;
 volatile uint32_t can2_cnt = 0U;
 volatile uint32_t can3_cnt = 0U;
+volatile uint32_t can1_tx_cnt = 0U;
+volatile uint32_t can2_tx_cnt = 0U;
+volatile uint32_t can3_tx_cnt = 0U;
 volatile uint32_t can1_rx_overflow_count = 0U;
 volatile uint32_t can2_rx_overflow_count = 0U;
 volatile uint32_t can3_rx_overflow_count = 0U;
 volatile bsp_can_diagnostics_t can1_diag, can2_diag, can3_diag;
+
+/* 模块实现细节�?*/
+typedef struct
+{
+    FDCAN_HandleTypeDef *handle; /* 模块实现细节�?*/
+    IRQn_Type irq; /* 模块实现细节�?*/
+    uint32_t last_attempt_tick; /* 模块实现细节�?*/
+} bsp_can_recover_t;
+
+static bsp_can_recover_t can_recover[BSP_CAN_CHANNEL_COUNT] =
+{
+    {&hfdcan1, FDCAN1_IT0_IRQn, 0U},
+    {&hfdcan2, FDCAN2_IT0_IRQn, 0U},
+    {&hfdcan3, FDCAN3_IT0_IRQn, 0U},
+};
 static volatile bsp_can_diagnostics_t *BspCan_Diagnostics(const FDCAN_HandleTypeDef *hfdcan)
 {
     if (hfdcan == &hfdcan1) return &can1_diag;
@@ -26,39 +44,105 @@ static volatile bsp_can_diagnostics_t *BspCan_Diagnostics(const FDCAN_HandleType
 }
 
 static osMessageQueueId_t can_rx_queue;
-/* 功能：启动异步传输或设备动作。 */
+/* 模块实现细节�?*/
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          );
 
 
-/* 功能：发送数据或控制指令。 */
+/* 模块实现细节�?*/
 static void BspCan_SendStartupZero(void)
 {
     can_frame_t frame = {0};
     uint8_t repeat;
+    frame.hfdcan = &hfdcan2;
     frame.id_type = FDCAN_STANDARD_ID;
     frame.length = 8U;
     for (repeat = 0U; repeat < 2U; repeat++)
     {
-        frame.hfdcan = &hfdcan2;
         frame.id = 0x200U;
         (void)BspCan_Send(&frame);
         frame.id = 0x1FFU;
         (void)BspCan_Send(&frame);
-        frame.hfdcan = &hfdcan3;
-        frame.id = 0x200U;
-        (void)BspCan_Send(&frame);
     }
 }
 
-
-/* 功能：执行 BspCan_IsBusOff 模块操作并维护相关状态。 */
 static bool BspCan_IsBusOff(const FDCAN_HandleTypeDef *hfdcan)
 {
     return (hfdcan != NULL) && (hfdcan->Instance != NULL) && ((hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0U);
 }
 
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 模块实现细节�?*/
+static bool BspCan_RestartChannel(bsp_can_recover_t *channel)
+{
+    if (channel == NULL)
+    {
+        return false;
+    }
+    HAL_NVIC_DisableIRQ(channel->irq);
+    (void)HAL_FDCAN_DeInit(channel->handle); /* 模块实现细节�?*/
+
+    if (channel->handle == &hfdcan1)
+    {
+        MX_FDCAN1_Init();
+    }
+    else if (channel->handle == &hfdcan2)
+    {
+        MX_FDCAN2_Init();
+    }
+    else
+    {
+        MX_FDCAN3_Init();
+    }
+
+    if (BspCan_Start(channel->handle) != HAL_OK)
+    {
+        HAL_NVIC_EnableIRQ(channel->irq);
+        return false;
+    }
+    return true;
+}
+
+
+/* 模块实现细节�?*/
+void BspCan_Service(void)
+{
+    uint32_t now = HAL_GetTick();
+    uint32_t index;
+
+    for (index = 0U; index < BSP_CAN_CHANNEL_COUNT; index++)
+    {
+        bsp_can_recover_t *channel = &can_recover[index];
+        volatile bsp_can_diagnostics_t *diag = BspCan_Diagnostics(channel->handle);
+
+        if ((diag == NULL) || (channel->handle == NULL))
+        {
+            continue;
+        }
+        { uint32_t ecr = channel->handle->Instance->ECR; uint32_t tec = (ecr & FDCAN_ECR_TEC) >> FDCAN_ECR_TEC_Pos; uint32_t rec = (ecr & FDCAN_ECR_REC) >> FDCAN_ECR_REC_Pos; if (!BspCan_IsBusOff(channel->handle) && tec < BSP_CAN_ERROR_RECOVER_TEC && rec < BSP_CAN_ERROR_RECOVER_REC) { continue; } }
+        if ((now - channel->last_attempt_tick) < BSP_CAN_RECOVER_INTERVAL_MS)
+        {
+            continue;
+        }
+        channel->last_attempt_tick = now;
+        diag->recover_last_tick = now;
+        diag->recover_attempts++;
+
+        /* 鎭㈠浼氶噸閰嶆湰閫氶亾澶栬锛岀敤鍐呮牳閿侀伩鍏嶄笌鍏跺畠浠诲姟閲岀殑鍙戦€佸姩浣滀氦鍙夛拷?*/
+        (void)osKernelLock();
+        if (BspCan_RestartChannel(channel))
+        {
+            diag->recover_success++;
+        }
+        else
+        {
+            diag->recover_failed++;
+        }
+        (void)osKernelUnlock();
+    }
+}
+
+
+/* 模块实现细节�?*/
 bool BspCan_RxQueueInit(void)
 {
     if (can_rx_queue != NULL)
@@ -70,7 +154,7 @@ bool BspCan_RxQueueInit(void)
 }
 
 
-/* 功能：执行周期任务主流程。 */
+/* 模块实现细节�?*/
 void BspCan_RxTask(void *argument)
 {
     can_frame_t frame;
@@ -106,28 +190,44 @@ void BspCan_RxTask(void *argument)
 }
 
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 模块实现细节�?*/
 HAL_StatusTypeDef BspCan_Init(void)
 {
     static bool startup_zero_sent;
 
-    if (BspCan_Start(&hfdcan1) != HAL_OK || BspCan_Start(&hfdcan2) != HAL_OK || BspCan_Start(&hfdcan3) != HAL_OK)
+    HAL_StatusTypeDef status = HAL_OK;
+
+    /* 模块实现细节�?*/
+    if (BspCan_Start(&hfdcan1) != HAL_OK)
     {
-        return HAL_ERROR;
+        status = HAL_ERROR;
+    }
+    if (BspCan_Start(&hfdcan2) != HAL_OK)
+    {
+        status = HAL_ERROR;
+    }
+    if (BspCan_Start(&hfdcan3) != HAL_OK)
+    {
+        status = HAL_ERROR;
     }
     if (!startup_zero_sent)
     {
         BspCan_SendStartupZero();
         startup_zero_sent = true;
     }
-    return HAL_OK;
+    return status;
 }
 
 
-/* 功能：启动异步传输或设备动作。 */
+/* 模块实现细节�?*/
 static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          )
 {
     FDCAN_FilterTypeDef filter = {0};
+
+    /* 模块实现细节�?*/
+       /* 模块实现细节�?*/
+    hfdcan->Init.AutoRetransmission = DISABLE;
+    SET_BIT(hfdcan->Instance->CCCR, FDCAN_CCCR_DAR);
 
     filter.IdType = FDCAN_STANDARD_ID;
     filter.FilterIndex = 0U;
@@ -164,7 +264,7 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan               
 }
 
 
-/* 功能：发送数据或控制指令。 */
+/* 模块实现细节�?*/
 bool BspCan_Send(const can_frame_t *frame                               )
 {
     FDCAN_HandleTypeDef *hfdcan;
@@ -182,6 +282,17 @@ bool BspCan_Send(const can_frame_t *frame                               )
     }
 
     diag = BspCan_Diagnostics(hfdcan);
+    if (diag == NULL)
+    {
+        return false;
+    }
+
+    if (BspCan_IsBusOff(hfdcan))
+    {
+        /* 模块实现细节�?*/
+        return false;
+    }
+
     header.Identifier = frame->id;
     header.IdType = frame->id_type;
     if ((header.IdType != FDCAN_STANDARD_ID && header.IdType != FDCAN_EXTENDED_ID) ||
@@ -210,7 +321,12 @@ bool BspCan_Send(const can_frame_t *frame                               )
 
         ret = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &header, (uint8_t *)frame->data);
         if (ret == HAL_OK)
+        {
             diag->tx_enqueued++;
+            if (hfdcan == &hfdcan1) can1_tx_cnt++;
+            else if (hfdcan == &hfdcan2) can2_tx_cnt++;
+            else if (hfdcan == &hfdcan3) can3_tx_cnt++;
+        }
         else
         {
             diag->tx_hal_error++;
@@ -222,63 +338,30 @@ bool BspCan_Send(const can_frame_t *frame                               )
 }
 
 
-/* 功能：执行 BspCan_HasBusOff 模块操作并维护相关状态。 */
+/* 模块实现细节�?*/
 bool BspCan_HasBusOff(void)
 {
-/* 功能：执行 BspCan_IsBusOff 模块操作并维护相关状态。 */
+/* 模块实现细节�?*/
     return BspCan_IsBusOff(&hfdcan1) || BspCan_IsBusOff(&hfdcan2) || BspCan_IsBusOff(&hfdcan3);
 }
 
 
-/* 功能：执行通信或设备故障恢复。 */
+/* 模块实现细节�?*/
 bool BspCan_Recover(void)
 {
-    if (!BspCan_HasBusOff())
-    {
-        return true;
-    }
-
-    if (BspCan_IsBusOff(&hfdcan1))
-    {
-        (void)HAL_FDCAN_Stop(&hfdcan1);
-        (void)HAL_FDCAN_DeInit(&hfdcan1);
-        MX_FDCAN1_Init();
-        if (BspCan_Start(&hfdcan1) != HAL_OK)
-        {
-            return false;
-        }
-    }
-    if (BspCan_IsBusOff(&hfdcan2))
-    {
-        (void)HAL_FDCAN_Stop(&hfdcan2);
-        (void)HAL_FDCAN_DeInit(&hfdcan2);
-        MX_FDCAN2_Init();
-        if (BspCan_Start(&hfdcan2) != HAL_OK)
-        {
-            return false;
-        }
-    }
-    if (BspCan_IsBusOff(&hfdcan3))
-    {
-        (void)HAL_FDCAN_Stop(&hfdcan3);
-        (void)HAL_FDCAN_DeInit(&hfdcan3);
-        MX_FDCAN3_Init();
-        if (BspCan_Start(&hfdcan3) != HAL_OK)
-        {
-            return false;
-        }
-    }
+    /* 模块实现细节�?*/
+    BspCan_Service();
     return !BspCan_HasBusOff();
 }
 
 
-/* 功能：处理外设回调事件。 */
+/* 模块实现细节�?*/
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                          ,
                                uint32_t rx_fifo0_its                             )
 {
     FDCAN_RxHeaderTypeDef header;
     can_frame_t frame;
-    uint8_t rx_data[64]; /* 模块实现细节。 */
+    uint8_t rx_data[64]; /* 模块实现细节�?*/
     volatile bsp_can_diagnostics_t *diag = BspCan_Diagnostics(hfdcan);
     if (diag == NULL)
     {

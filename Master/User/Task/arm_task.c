@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @file arm_task.c
  * @brief arm_task模块的用户接口与实现。
  */
@@ -87,7 +87,9 @@ void Arm_TaskInit(void)
     /* Prepare 位置 commands; upper_state.使能 gates 电机 输出. */
     for (unsigned arm = 0; arm < 2U; arm++)
         for (unsigned joint = 0; joint < ARM_JOINT_COUNT; joint++)
-            arm_mode[arm][joint] = ARM_MODE_POSITION;
+            arm_mode[arm][joint] = (arm == ARM_LARM_INDEX && joint == ARM_JOINT_ROOT)
+                                        ? ARM_MODE_POSITION
+                                        : ARM_MODE_MIT;
 }
 
 /* 功能：执行周期任务主流程。 */

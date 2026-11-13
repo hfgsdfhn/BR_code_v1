@@ -9,6 +9,11 @@
 #include <stdint.h>
 #include "stm32h7xx_hal.h"
 
+/* E34-2G4H27D 由上位机预配置；固件只使用串口透明传输。 */
+#define REMOTE_LORA_MODULE        "E34-2G4H27D"
+#define REMOTE_LORA_TRANSPARENT   1U
+#define REMOTE_LORA_M0_LEVEL      0U
+#define REMOTE_LORA_M1_LEVEL      0U
 #define REMOTE_FRAME_HEADER_0 0xA5U
 #define REMOTE_FRAME_HEADER_1 0x5AU
 #define REMOTE_FRAME_SIZE 8U

@@ -4,6 +4,7 @@
  */
 
 #include "remote.h"
+/* E34-2G4H27D：M0=0、M1=0 为透明传输；模块参数由上位机配置，固件不发送配置命令。 */
 #include <string.h>
 
 static uint8_t remote_parser[REMOTE_FRAME_SIZE];

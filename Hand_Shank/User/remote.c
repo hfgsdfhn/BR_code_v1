@@ -1,8 +1,9 @@
-﻿/*
+/*
  * @file remote.c
  * @brief remote妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆? */
 
 #include "remote.h"
+/* E34-2G4H27D：M0=0、M1=0 为透明传输；模块参数由上位机配置，固件不发送配置命令。 */
 #include <string.h>
 
 

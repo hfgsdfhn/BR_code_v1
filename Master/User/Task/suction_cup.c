@@ -1,6 +1,6 @@
 /*
  * @file suction_cup.c
- * @brief suction_cup模块的用户接口与实现。
+ * @brief suction_cupģ����û��ӿ���ʵ�֡�
  */
 
 #include "suction_cup.h"
@@ -17,7 +17,12 @@
 
 volatile uint8_t suction_enable;
 volatile float suction_target[5];
-/* 模块实现细节。 */
+/* ģ��ʵ��ϸ�ڡ� */
+/* 电机心跳统计：掉线立即停输出，重新上线由驱动自动重锚并恢复使能�?*/
+volatile uint32_t cup_motor_offline_count = 0U;
+volatile uint32_t cup_motor_recover_count = 0U;
+static bool cup_motor_online_prev[5];
+/* ģ��ʵ��ϸ�ڡ� */
 __ALIGNED(32) volatile float suction_feedback_angle[5];
 volatile float g_up_stp23l_distance_cm;
 volatile float g_down_stp23l_distance_cm;
@@ -25,13 +30,13 @@ volatile float g_down_stp23l_distance_cm;
 static suction_stp23l_parser_t up_stp23l_parser;
 static suction_stp23l_parser_t down_stp23l_parser;
 
-/* 功能：读取设备参数。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static uint16_t SuctionCup_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
-/* 功能：执行 SuctionCup_KeepTrailingHeader 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
 {
     uint16_t trailing_count = 0U;
@@ -47,7 +52,7 @@ static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
     parser->index = trailing_count;
 }
 
-/* 功能：执行 SuctionCup_IsValidFrame 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
 {
     uint8_t checksum = 0U;
@@ -62,7 +67,7 @@ static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
     return (uint8_t)(checksum == parser->frame[STP23L_CHECKSUM_OFFSET]);
 }
 
-/* 功能：执行 SuctionCup_DecodeDistanceCm 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
 {
     uint32_t sum = 0U;
@@ -82,7 +87,7 @@ static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
     return (count == 0U) ? 0.0f : ((float)sum / (float)count) / 10.0f;
 }
 
-/* 功能：执行 SuctionCup_ParseBytes 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
                                   const uint8_t *data, uint16_t size,
                                   volatile float *distance_cm)
@@ -116,26 +121,26 @@ static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
     }
 }
 
-/* 功能：执行 SuctionCup_UStp23lRx 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static void SuctionCup_UStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &g_up_stp23l_distance_cm);
 }
 
-/* 功能：执行 SuctionCup_DStp23lRx 模块操作并维护相关状态。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static void SuctionCup_DStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &g_down_stp23l_distance_cm);
 }
 
-/* 功能：初始化模块并准备外设资源。 */
+/* ģ��ʵ��ϸ�ڡ� */
 void SuctionCup_Init(void)
 {
     (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, SuctionCup_UStp23lRx);
     (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, SuctionCup_DStp23lRx);
 }
 
-/* 功能：接收并解析一帧通信数据。 */
+/* ģ��ʵ��ϸ�ڡ� */
 void SuctionCup_OnFrame(const can_frame_t *frame)
 {
     unsigned i;
@@ -158,53 +163,127 @@ void SuctionCup_OnFrame(const can_frame_t *frame)
         suction_feedback_angle[4] = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
 }
 
-/* 功能：发送数据或控制指令。 */
+/* ģ��ʵ��ϸ�ڡ� */
 static void SuctionCup_SendGroupFrames(void)
 {
     can_frame_t frame;
+    int16_t can2_larm_current[4] = {0};
     int16_t can2_current[4] = {0};
-    int16_t can3_current[4] = {0};
     int16_t can2_high_current[4] = {0};
+    int16_t can3_current[4] = {0};
 
-    /* 模块实现细节。 */
-    can2_current[0] = M2006_Calc(&m2006_larm, 0.002f);
-    can2_high_current[0] = M3508_Calc(&m3508_dcup[0], 0.002f);
-    can2_current[1] = M2006_Calc(&m2006_dcup[0], 0.002f);
-    can2_current[2] = M2006_Calc(&m2006_dcup[1], 0.002f);
+    /* ��۸��� M2006���������͵� CAN2�� */
+    can2_larm_current[0] = M2006_Calc(&m2006_larm, 0.002f);
+    M2006_BuildGroupFrame(1U, can2_larm_current, &frame);
+    frame.hfdcan = &hfdcan2;
+    (void)BspCan_Send(&frame);
+
+    /* �±� M2006��2 �� M3508��ȫ�����͵� CAN2�� */
+    can2_current[0] = M2006_Calc(&m2006_dcup[0], 0.002f);
+    can2_current[1] = M2006_Calc(&m2006_dcup[1], 0.002f);
     M2006_BuildGroupFrame(1U, can2_current, &frame);
     frame.hfdcan = &hfdcan2;
     (void)BspCan_Send(&frame);
 
-    /* 模块实现细节。 */
+    can2_high_current[0] = M3508_Calc(&m3508_dcup[0], 0.002f);
     M3508_BuildGroupFrame(5U, can2_high_current, &frame);
     frame.hfdcan = &hfdcan2;
     (void)BspCan_Send(&frame);
 
-    /* 模块实现细节。 */
+    /* �ϱ� M2006��2 ������ CAN3�� */
     can3_current[1] = M2006_Calc(&m2006_ucup[0], 0.002f);
     can3_current[2] = M2006_Calc(&m2006_ucup[1], 0.002f);
     M2006_BuildGroupFrame(1U, can3_current, &frame);
     frame.hfdcan = &hfdcan3;
     (void)BspCan_Send(&frame);
 }
+static void SuctionCup_MotorWatchdog(void)
+{
+    bool online_now[5];
+    unsigned i;
 
-/* 功能：执行周期性服务并维护运行状态。 */
+    for (i = 0U; i < 2U; i++)
+    {
+        if (m2006_ucup[i].feedback_online)
+        {
+            if (m2006_ucup[i].feedback_age_cycles < M2006_FEEDBACK_TIMEOUT_CYCLES)
+            {
+                m2006_ucup[i].feedback_age_cycles++;
+            }
+            else
+            {
+                m2006_ucup[i].feedback_online = false;
+            }
+        }
+        if (m2006_dcup[i].feedback_online)
+        {
+            if (m2006_dcup[i].feedback_age_cycles < M2006_FEEDBACK_TIMEOUT_CYCLES)
+            {
+                m2006_dcup[i].feedback_age_cycles++;
+            }
+            else
+            {
+                m2006_dcup[i].feedback_online = false;
+            }
+        }
+        online_now[i] = m2006_ucup[i].feedback_online;
+        online_now[i + 2U] = m2006_dcup[i].feedback_online;
+    }
+    if (m3508_dcup[0].feedback_online)
+    {
+        if (m3508_dcup[0].feedback_age_cycles < M3508_FEEDBACK_TIMEOUT_CYCLES)
+        {
+            m3508_dcup[0].feedback_age_cycles++;
+        }
+        else
+        {
+            m3508_dcup[0].feedback_online = false;
+        }
+    }
+    online_now[4] = m3508_dcup[0].feedback_online;
+
+    for (i = 0U; i < 5U; i++)
+    {
+        if (cup_motor_online_prev[i] && !online_now[i])
+        {
+            cup_motor_offline_count++;
+        }
+        else if (!cup_motor_online_prev[i] && online_now[i])
+        {
+            cup_motor_recover_count++;
+        }
+        cup_motor_online_prev[i] = online_now[i];
+    }
+}
+
+
+/* ģ��ʵ��ϸ�ڡ� */
 void SuctionCup_Service(void)
 {
     unsigned i;
     bool enabled = suction_enable != 0U;
+
+    /* ģ��ʵ��ϸ�ڡ� */
+    SuctionCup_MotorWatchdog();
+
     for (i = 0U; i < 2U; i++)
     {
-        M2006_SetTargetDeferred(&m2006_ucup[i], enabled ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                enabled ? suction_target[i] : 0.0f);
-        M2006_SetTargetDeferred(&m2006_dcup[i], enabled ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                enabled ? suction_target[i + 2U] : 0.0f);
+        bool up_ready = m2006_ucup[i].feedback_online;
+        bool down_ready = m2006_dcup[i].feedback_online;
+
+        M2006_SetTargetDeferred(&m2006_ucup[i],
+                                (enabled && up_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                (enabled && up_ready) ? suction_target[i] : 0.0f);
+        M2006_SetTargetDeferred(&m2006_dcup[i],
+                                (enabled && down_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                (enabled && down_ready) ? suction_target[i + 2U] : 0.0f);
     }
-    M3508_SetTargetDeferred(&m3508_dcup[0], enabled ? M3508_MODE_POSITION : M3508_MODE_STOP,
-                            enabled ? suction_target[4] : 0.0f);
+    M3508_SetTargetDeferred(&m3508_dcup[0],
+                            (enabled && m3508_dcup[0].feedback_online) ? M3508_MODE_POSITION : M3508_MODE_STOP,
+                            (enabled && m3508_dcup[0].feedback_online) ? suction_target[4] : 0.0f);
     SuctionCup_SendGroupFrames();
 }
-/* 功能：执行周期任务主流程。 */
+/* ģ��ʵ��ϸ�ڡ� */
 void SuctionCup_Task(void *argument)
 {
     (void)argument;

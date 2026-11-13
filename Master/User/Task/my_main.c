@@ -1,6 +1,6 @@
-/*
+﻿/*
  * @file my_main.c
- * @brief my_main模块的用户接口与实现。
+ * @brief my_main?????????????????
  */
 
 #include "my_main.h"
@@ -27,7 +27,7 @@ rs00_t rs00_larm[2], rs00_rarm[2];
 rs05_t rs05_larm, rs05_rarm;
 j4310_t j4310_larm, j4310_rarm;
 rs01_t rs01_rarm;
-volatile uint8_t g_rs_recovery_motion_release = 0U;
+
 
 volatile Error_Code g_error_code = ERROR_CODE_NONE;
 volatile const char *g_error_handler_file = NULL;
@@ -52,7 +52,7 @@ static const osThreadAttr_t can_rx_task_attributes = {
     .priority = osPriorityNormal,
 };
 
-/* 功能：记录并处理错误状态。 */
+/* ?????????? */
 void Error_FaultCapture(Error_Code code, uint32_t *stack)
 {
     g_error_code = code;
@@ -70,14 +70,14 @@ void Error_FaultCapture(Error_Code code, uint32_t *stack)
     }
 }
 
-/* 功能：处理外设回调事件。 */
+/* ?????????? */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     (void)huart;
 }
 
 
-/* 功能：初始化模块并准备外设资源。 */
+/* ?????????? */
 void My_Init(void)
 {
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -86,17 +86,19 @@ void My_Init(void)
 
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 
-    BspCan_Init();
+    if (BspCan_Init() != HAL_OK)
+    {
+        g_error_code = ERROR_CODE_CAN_INIT;
+    }
 
     M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, -1);
-    M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, 1);
+    M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, -1);
     M3508_Init(&m3508_dcup[0], &hfdcan2, 5U, 1);
 
-    M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, -1);
+    M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, 1);
     M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, 1);
 
     M2006_Init(&m2006_larm, &hfdcan2, 1U, 1);
-
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
     RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
     J4310_Init(&j4310_larm, &hfdcan2, 4U, 1);
@@ -116,7 +118,7 @@ void My_Init(void)
     Remote_Init();
 }
 
-/* 功能：初始化模块并准备外设资源。 */
+/* ?????????? */
 void My_RtosInit(void)
 {
 
