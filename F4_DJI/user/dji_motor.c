@@ -2,6 +2,11 @@
 
 #include <stddef.h>
 
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length);
+
+
 //读取16位大端有符号整数
 static int16_t DjiMotor_ReadI16Be(const uint8_t *data)
 {
@@ -128,11 +133,9 @@ void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data)
  */
 bool DjiMotor_SendGroup(dji_motor_t *motor, uint8_t number)
 {
-    CAN_TxHeaderTypeDef tx_header = {0};
     uint8_t data[DJI_MOTOR_DATA_LENGTH] = {0};
     uint8_t index;
     uint32_t can_id;
-    uint32_t tx_mailbox;
 
     if ((motor == NULL) || (motor->can == NULL) || (number == 0U)
         || (number > 4U) || (motor->id < DJI_MOTOR_MIN_ID)
@@ -148,12 +151,57 @@ bool DjiMotor_SendGroup(dji_motor_t *motor, uint8_t number)
         DjiMotor_WriteI16Be(&data[index * 2U], motor[index].target_current);
     }
 
-    tx_header.StdId = can_id;
-    tx_header.IDE = CAN_ID_STD;
+    /* header=0 表示标准帧 */
+    return Can_Transmit(motor->can, 0U, can_id, data,
+                        DJI_MOTOR_DATA_LENGTH) == HAL_OK;
+}
+
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length)
+{
+    CAN_TxHeaderTypeDef tx_header = {0};
+    uint32_t mailbox;
+    uint32_t start_tick;
+
+    if ((hcan == NULL) || (data == NULL) || (length > 8U) || (header > 1U))
+    {
+        return HAL_ERROR;
+    }
+
+    if (header == 0U)
+    {
+        if (id > 0x7FFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.StdId = id;
+        tx_header.IDE = CAN_ID_STD;
+    }
+    else
+    {
+        if (id > 0x1FFFFFFFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.ExtId = id;
+        tx_header.IDE = CAN_ID_EXT;
+    }
+
+    /* 最多等待2ms，直到发送邮箱空闲 */
+    start_tick = HAL_GetTick();
+
+    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
+    {
+        if ((HAL_GetTick() - start_tick) >= 2U)
+        {
+            return HAL_TIMEOUT;
+        }
+    }
+
     tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = DJI_MOTOR_DATA_LENGTH;
+    tx_header.DLC = length;
     tx_header.TransmitGlobalTime = DISABLE;
 
-    return HAL_CAN_AddTxMessage(motor->can, &tx_header, data,
-                                &tx_mailbox) == HAL_OK;
+    return HAL_CAN_AddTxMessage(hcan, &tx_header, (uint8_t *)data, &mailbox);
 }

@@ -97,6 +97,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         if (hcan->Instance == CAN1)
         {
             Chassis_rx(&rx_header, rx_data);
+
         }
         else if (hcan->Instance == CAN2)
         {

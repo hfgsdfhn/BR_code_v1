@@ -6,7 +6,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -54,6 +55,13 @@ const osThreadAttr_t Arm_Task_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for Chassis_Task */
+osThreadId_t Chassis_TaskHandle;
+const osThreadAttr_t Chassis_Task_attributes = {
+  .name = "Chassis_Task",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -62,11 +70,12 @@ const osThreadAttr_t Arm_Task_attributes = {
 extern void Status_Task(void *argument);
 extern void SuctionCup_Task(void *argument);
 extern void Arm_Task(void *argument);
+extern void Chassis_Task_(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* Hook prototypes */
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName);
+void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName);
 
 /* USER CODE BEGIN 4 */
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
@@ -115,8 +124,13 @@ void MX_FREERTOS_Init(void) {
   /* creation of Arm_Task */
   Arm_TaskHandle = osThreadNew(Arm_Task, NULL, &Arm_Task_attributes);
 
+  /* creation of Chassis_Task */
+  Chassis_TaskHandle = osThreadNew(Chassis_Task_, NULL, &Chassis_Task_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   My_RtosInit();
+  Queue_Init();
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

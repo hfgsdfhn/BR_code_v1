@@ -842,6 +842,11 @@ void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now)
         motor->feedback.age_cycles++;
     if (motor->feedback.received && motor->feedback.age_cycles > J4310_FEEDBACK_TIMEOUT_CYCLES)
         J4310_RequestEnable(motor);
+<<<<<<< HEAD
+    /* 代码说明：相关模块实现。 */
+    /* Restore those flags if the FIFO rejected the frame. */
+=======
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
     bool disable_sent = motor->fault_disable_sent;
     uint8_t enable_countdown = motor->startup_enable_countdown;
     if (J4310_BuildControlFrame(motor, additional_torque_nm, now, &frame) && !BspCan_Send(&frame))

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @file upper.c
  * @brief upper模块的用户接口与实现。
  */
@@ -270,7 +270,7 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
         if (arm == ARM_LARM_INDEX)
         {
             m2006_t *root_motor = (m2006_t *)motor;
-
+            m2006_t *root = (m2006_t *)motor;
             (void)mode;
             (void)tau;
             M2006_SetTargetDeferred(root_motor, M2006_MODE_POSITION,

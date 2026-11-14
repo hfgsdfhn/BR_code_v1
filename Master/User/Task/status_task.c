@@ -1,10 +1,5 @@
-/*
- * @file status_task.c
- * @brief status_task模块的用户接口与实现。
- */
 #include "status_task.h"
 #include "bsp_can.h"
-#include "cmsis_os2.h"
 #include "my_main.h"
 
 /* 功能：执行Status_Task对应的周期任务并维护运行状态。 */
@@ -29,5 +24,37 @@ void Status_Task(void *argument)
         BspCan_Service();
 
         osDelay((osKernelGetTickFreq() * 2U + 999U) / 1000U);
+    }
+}
+osMessageQueueId_t Chassis_QueueHandle;
+
+void Queue_Init(void)
+{
+    Chassis_QueueHandle = osMessageQueueNew(1,sizeof(send_to_chassis_t),NULL);
+}
+
+void Send_to_Chassis()
+{
+    static chassis_speed_t planned_speed = {0.0f, 0.0f, 0.0f};
+    send_to_chassis_t chassis_data = {0};
+    Remote_GetState(&chassis_data.remote);
+    joy_to_mps(&chassis_data.remote, &planned_speed);
+    chassis_data.target_speed = planned_speed;
+
+    osMessageQueuePut(Chassis_QueueHandle, &chassis_data, 0U, 0U);
+}
+
+void Status_Task(void *argument)
+{
+
+    uint32_t tick = osKernelGetTickCount();
+
+    for (;;)
+    {
+        Send_to_Chassis();
+
+        /* 2ms 周期调度 */
+        tick += 2U;
+        osDelayUntil(tick);
     }
 }

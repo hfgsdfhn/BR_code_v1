@@ -8,8 +8,8 @@
 //0 _ rf 02
 /* 底盘参数 */
 #define WHEEL_RADIUS        0.0775f   // 轮子半径，m
-#define CHASSIS_LENGTH      0.0f      // 前后方向半轴距，m
-#define CHASSIS_WIDTH       0.0f      // 左右方向半轴距，m
+#define CHASSIS_LENGTH      0.21f      // 前后方向半轴距，m
+#define CHASSIS_WIDTH       0.21f      // 左右方向半轴距，m
 #define AK60_POLE_PAIRS    21.0f
 #define TWO_PI             6.283185307f
 #define SQRT_2              1.41421356f
@@ -29,7 +29,7 @@ static const float motor_direction[4] =
  * @param motor_speed 四个电机目标角速度，rad/s
  */
 void Chassis_InverseKinematics(const chassis_speed_t *target,
-                               float motor_speed[4])
+                               float *motor_speed)
 {
     float l = CHASSIS_LENGTH + CHASSIS_WIDTH;
     float k = (60.0f * AK60_POLE_PAIRS * SQRT_2) / (TWO_PI * WHEEL_RADIUS);

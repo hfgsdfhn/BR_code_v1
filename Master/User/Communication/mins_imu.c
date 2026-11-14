@@ -10,7 +10,8 @@
 #define MINS_IMU_RESPONSE_2_3     0x84U
 #define MINS_IMU_YAW_SCALE        0.973f
 
-/* 功能：解析并校验Mins_Imu_CheckFrame对应的通信数据。 */
+imu_t g_imu = {0};
+
 static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
                                    uint8_t data_len, uint8_t command)
 {
@@ -31,7 +32,6 @@ static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
     return (uint8_t)(checksum == frame[len - 1U]);
 }
 
-/* 功能：解析并校验Mins_Imu_DecodeBcd对应的通信数据。 */
 static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decimals)
 {
     uint8_t i;
@@ -54,46 +54,43 @@ static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decim
     return (float)value / (float)divisor;
 }
 
-/* 功能：接收并解析Mins_Imu_receive_all对应的输入数据，更新模块状态。 */
-uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len)
+uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len)
 {
     uint8_t i;
 
-    if ((imu == NULL) || !Mins_Imu_CheckFrame(frame, len, 43U, MINS_IMU_RESPONSE_2_14))
+    if (!Mins_Imu_CheckFrame(frame, len, 43U, MINS_IMU_RESPONSE_2_14))
     {
         return 0U;
     }
 
-    imu->pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
-    imu->roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
-    imu->yaw = Mins_Imu_DecodeBcd(&frame[10], 3U, 2U) * MINS_IMU_YAW_SCALE;
+    g_imu.pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
+    g_imu.roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
+    g_imu.yaw = Mins_Imu_DecodeBcd(&frame[10], 3U, 2U) * MINS_IMU_YAW_SCALE;
     for (i = 0U; i < 3U; i++)
     {
-        imu->accel[i] = Mins_Imu_DecodeBcd(&frame[13U + 3U * i], 3U, 4U);
-        imu->gyro[i] = Mins_Imu_DecodeBcd(&frame[22U + 3U * i], 3U, 2U);
+        g_imu.accel[i] = Mins_Imu_DecodeBcd(&frame[13U + 3U * i], 3U, 4U);
+        g_imu.gyro[i] = Mins_Imu_DecodeBcd(&frame[22U + 3U * i], 3U, 2U);
     }
     for (i = 0U; i < 4U; i++)
     {
-        imu->quaternion[i] = Mins_Imu_DecodeBcd(&frame[31U + 4U * i], 4U, 6U);
+        g_imu.quaternion[i] = Mins_Imu_DecodeBcd(&frame[31U + 4U * i], 4U, 6U);
     }
 
     return 1U;
 }
 
-/* 功能：接收并解析Mins_Imu_receive_omega对应的输入数据，更新模块状态。 */
-uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len)
+uint8_t Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len)
 {
-    if ((imu == NULL) || !Mins_Imu_CheckFrame(frame, len, 9U, MINS_IMU_RESPONSE_2_3))
+    if (!Mins_Imu_CheckFrame(frame, len, 9U, MINS_IMU_RESPONSE_2_3))
     {
         return 0U;
     }
 
-    imu->pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
-    imu->roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
+    g_imu.pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
+    g_imu.roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
     return 1U;
 }
 
-/* 功能：处理Mins_Imu_SetActiveReport对应的输入并更新相关状态。 */
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
 {
     uint8_t command[] = {0x77U, 0x05U, 0x00U, 0x56U, 0x05U, 0x60U};
@@ -102,6 +99,6 @@ HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
     {
         return HAL_ERROR;
     }
-/* 功能：发送HAL_UART_Transmit对应的数据或控制指令。 */
+    
     return HAL_UART_Transmit(uart, command, sizeof(command), 100U);
 }
