@@ -12,11 +12,7 @@
 #define BR_M2006_CUP1_TRAJECTORY_TIME_S 0.0f
 
 
-<<<<<<< HEAD
-/* 代码说明：相关模块实现。 */
-=======
 /* 模块实现细节。 */
->>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 /* Initial values follow DJ_M2006; driver limits and integral separation are preserved. */
 #define BR_M2006_CUP0_POSITION_KP 94.247779608f
 #define BR_M2006_CUP0_POSITION_KI 52.359877560f

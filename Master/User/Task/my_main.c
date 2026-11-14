@@ -76,13 +76,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     (void)huart;
 }
 
-<<<<<<< HEAD
  
 /* 功能：执行 My_Init 函数对应的模块操作。 */
-=======
-
-/* ?????????? */
->>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 void My_Init(void)
 {
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;

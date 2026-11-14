@@ -41,11 +41,6 @@ void Arm_OnFrame(const can_frame_t *frame)
 {
     Upper_OnFrame(&upper_state, frame);
     SuctionCup_OnFrame(frame);
-<<<<<<< HEAD
-    /* 代码说明：相关模块实现。 */
-    /* volatile alone does not write dirty cache lines back to AXI SRAM. */
-=======
->>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
     SCB_CleanDCache_by_Addr(arm_feedback_angle, sizeof(arm_feedback_angle));
     SCB_CleanDCache_by_Addr(suction_feedback_angle, sizeof(suction_feedback_angle));
 }

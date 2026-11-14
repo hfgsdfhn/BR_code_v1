@@ -14,13 +14,8 @@
 #define UART_RESTART_ALL_FLAGS ((1UL << BSP_UART_COUNT) - 1UL)
 #define UART_RX_BUFFER_SIZE 256U
 #define CACHE_LINE_SIZE 32U
-<<<<<<< HEAD
-/* 代码说明：相关模块实现。 */
-typedef uint8_t (*bsp_uart_rx_callback_t)(const uint8_t *data, uint16_t size);
-=======
 /* 模块实现细节。 */
 typedef void (*bsp_uart_rx_callback_t)(const uint8_t *data, uint16_t size);
->>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 typedef struct
 {
     uint8_t buffer[UART_TX_QUEUE_DEPTH][UART_TX_MAX_SIZE];
