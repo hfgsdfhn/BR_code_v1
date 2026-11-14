@@ -15,7 +15,7 @@
 #define UART_RX_BUFFER_SIZE 256U
 #define CACHE_LINE_SIZE 32U
 /* 代码说明：相关模块实现。 */
-typedef void (*bsp_uart_rx_callback_t)(const uint8_t *data, uint16_t size);
+typedef uint8_t (*bsp_uart_rx_callback_t)(const uint8_t *data, uint16_t size);
 typedef struct
 {
     uint8_t buffer[UART_TX_QUEUE_DEPTH][UART_TX_MAX_SIZE];

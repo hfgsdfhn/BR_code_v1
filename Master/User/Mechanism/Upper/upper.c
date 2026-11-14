@@ -221,7 +221,7 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         {
             m2006_t *root = (m2006_t *)motor;
             /* 代码说明：相关模块实现。 */
-             * Keep the unified target array, but always run the motor in its
+            /* Keep the unified target array, but always run the motor in its
              * position-speed cascade. */
             (void)mode;
             (void)tau;

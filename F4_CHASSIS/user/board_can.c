@@ -5,16 +5,6 @@
 
 extern CAN_HandleTypeDef hcan1;
 
-/* 底盘目标数据 */
-int16_t target_speed[BOARD_MOTOR_NUM] = {0};
-int16_t target_current[BOARD_MOTOR_NUM] = {0};
-volatile board_mode_e target_mode_flag = BOARD_MODE_SPEED;
-
-/* DJI接收数据 */
-uint8_t dji_lift_mode = 0U;
-uint8_t dji_action_mode = 0U;
-float dji_target_speed = 0.0f;
-
 /**
  * @brief 发送底盘目标速度
  * @param hcan CAN句柄
@@ -105,41 +95,3 @@ void Chassis_rx(CAN_RxHeaderTypeDef *header, uint8_t data[8])
     chassis_target_speed.vy = (float)raw_vy / 1000.0f;
     chassis_target_speed.vw = (float)raw_w / 1000.0f;
 }
-
-/**
- * @brief DJI小板CAN接收函数
- */
-void Board_DJI_Rx(CAN_HandleTypeDef *hcan)
-{
-    CAN_RxHeaderTypeDef rx_header;
-    uint8_t rx_data[8];
-    uint32_t speed_raw;
-
-    if (hcan == NULL)
-        return;
-
-    while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
-    {
-        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0,
-                                 &rx_header, rx_data) != HAL_OK)
-            break;
-
-        if (rx_header.IDE != CAN_ID_STD ||
-            rx_header.RTR != CAN_RTR_DATA ||
-            rx_header.StdId != DJI_ID_CONTROL ||
-            rx_header.DLC != 8U)
-            continue;
-
-        dji_lift_mode = rx_data[0] & 0x0FU;
-        dji_action_mode = rx_data[1];
-
-        /* 小端序还原float32 */
-        speed_raw = (uint32_t)rx_data[2]
-                  | ((uint32_t)rx_data[3] << 8)
-                  | ((uint32_t)rx_data[4] << 16)
-                  | ((uint32_t)rx_data[5] << 24);
-
-        memcpy(&dji_target_speed, &speed_raw, sizeof(float));
-    }
-}
-

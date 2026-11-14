@@ -6,9 +6,10 @@
 #include "bsp_uart.h"
 #include <string.h>
 #include "cmsis_os2.h"
+#include "mins_imu.h"
+#include "remote.h"
 #include "usart.h"
 #include "STP-23L.h"
-#include "remote.h"
 
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t imu_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dt35_rx[UART_RX_BUFFER_SIZE];
@@ -17,13 +18,18 @@ __ALIGNED(CACHE_LINE_SIZE) static uint8_t dstp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t scram_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t remote_rx[UART_RX_BUFFER_SIZE];
 
+static uint8_t BspUart_ImuRxCallback(const uint8_t *data, uint16_t size)
+{
+    return Mins_Imu_receive_omega(data, size);
+}
+
 bsp_uart_t uart_list[BSP_UART_COUNT] = {
-    [BSP_UART_IMU] = {&huart3, imu_rx, 0U, NULL},
-    [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, NULL},
-    [BSP_UART_UP_STP23L] = {&huart5, ustp23l_rx, 0U, NULL},
-    [BSP_UART_DOWN_STP23L] = {&huart6, dstp23l_rx, 0U, NULL},
-    [BSP_UART_SCRAM] = {&huart7, scram_rx, 0U, NULL},
-    [BSP_UART_REMOTE] = {&huart8, remote_rx, 0U, NULL}
+    [BSP_UART_IMU] = {.handle = &huart3, .buffer = imu_rx, .callback = BspUart_ImuRxCallback},
+    [BSP_UART_DT35] = {.handle = &huart4, .buffer = dt35_rx},
+    [BSP_UART_UP_STP23L] = {.handle = &huart5, .buffer = ustp23l_rx},
+    [BSP_UART_DOWN_STP23L] = {.handle = &huart6, .buffer = dstp23l_rx},
+    [BSP_UART_SCRAM] = {.handle = &huart7, .buffer = scram_rx},
+    [BSP_UART_REMOTE] = {.handle = &huart9, .buffer = remote_rx, .callback = Remote_Receive}
 };
 
 static osThreadId_t uart_task_handle;

@@ -6,8 +6,25 @@
 #ifndef STATUS_TASK_H
 #define STATUS_TASK_H
 
+#include "mins_imu.h"
+#include "remote.h"
+#include "cmsis_os2.h"
+#include "chassis.h"
 
-/* 功能：执行 Status_Task 函数对应的模块操作。 */
 void Status_Task(void *argument);
+
+typedef struct
+{
+    float dt35_right;
+    float dt35_behind;
+    remote_t remote;
+    chassis_speed_t target_speed;
+    imu_t imu;
+}send_to_chassis_t;
+extern osMessageQueueId_t Chassis_QueueHandle;
+
+void Queue_Init(void);
+void Send_to_Chassis(void);
+
 
 #endif

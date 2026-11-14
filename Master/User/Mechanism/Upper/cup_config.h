@@ -13,7 +13,7 @@
 
 
 /* 代码说明：相关模块实现。 */
- * Initial values follow DJ_M2006; driver limits and integral separation are preserved. */
+/* Initial values follow DJ_M2006; driver limits and integral separation are preserved. */
 #define BR_M2006_CUP0_POSITION_KP 94.247779608f
 #define BR_M2006_CUP0_POSITION_KI 52.359877560f
 #define BR_M2006_CUP0_POSITION_KD 0.523598776f

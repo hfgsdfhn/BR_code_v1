@@ -39,6 +39,7 @@ DMA_HandleTypeDef hdma_uart5_rx;
 DMA_HandleTypeDef hdma_uart7_rx;
 DMA_HandleTypeDef hdma_uart7_tx;
 DMA_HandleTypeDef hdma_uart8_rx;
+DMA_HandleTypeDef hdma_uart9_rx;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
 DMA_HandleTypeDef hdma_usart6_rx;
@@ -713,6 +714,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Alternate = GPIO_AF11_UART9;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+    /* UART9 DMA Init */
+    /* UART9_RX Init */
+    hdma_uart9_rx.Instance = DMA1_Stream4;
+    hdma_uart9_rx.Init.Request = DMA_REQUEST_UART9_RX;
+    hdma_uart9_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_uart9_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_uart9_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_uart9_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_uart9_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_uart9_rx.Init.Mode = DMA_CIRCULAR;
+    hdma_uart9_rx.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_uart9_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&hdma_uart9_rx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle,hdmarx,hdma_uart9_rx);
+
     /* UART9 interrupt Init */
     HAL_NVIC_SetPriority(UART9_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(UART9_IRQn);
@@ -1032,6 +1052,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     PD15     ------> UART9_TX
     */
     HAL_GPIO_DeInit(GPIOD, UART9_RX_Pin|UART9_TX_Pin);
+
+    /* UART9 DMA DeInit */
+    HAL_DMA_DeInit(uartHandle->hdmarx);
 
     /* UART9 interrupt Deinit */
     HAL_NVIC_DisableIRQ(UART9_IRQn);

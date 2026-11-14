@@ -76,7 +76,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     (void)huart;
 }
 
-
+ 
 /* 功能：执行 My_Init 函数对应的模块操作。 */
 void My_Init(void)
 {
@@ -110,7 +110,7 @@ void My_Init(void)
     configure_motor_gains();
     Arm_TaskInit();
     Upper_BindMotors(&upper_state);
-    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_RxBytes);
+    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_Receive);
     SuctionCup_Init();
     Scram_Init();
     Remote_Init();
