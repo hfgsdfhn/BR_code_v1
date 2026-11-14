@@ -21,7 +21,7 @@ typedef struct
     bool calibrated; /* 成员变量。 */
 } br_gravity_model_t;
 
-/* 功能：执行 BR_GravityEvaluate 函数对应的模块操作。 */
+/* 功能：执行 BR_GravityEvaluate 模块操作并维护相关状态。 */
 bool BR_GravityEvaluate(const br_gravity_model_t *model, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF], /* 成员变量。 */
                         float *potential_j);
 #endif

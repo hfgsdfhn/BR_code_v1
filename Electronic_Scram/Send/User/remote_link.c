@@ -12,7 +12,7 @@ static uint32_t last_tx_tick;
 static uint8_t link_ready;
 static uint8_t tx_frame[3];
 
-/* 功能：执行 RemoteLink_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void RemoteLink_Init(void)
 {
 
@@ -22,7 +22,7 @@ void RemoteLink_Init(void)
     sw_bits = 0U; sw_last = 0xFFU; last_tx_tick = 0U; link_ready = 1U;
 }
 
-/* 功能：执行 RemoteLink_PollSwitches 函数对应的模块操作。 */
+/* 功能：轮询输入或通信状态。 */
 void RemoteLink_PollSwitches(void)
 {
     sw_bits = 0U;
@@ -32,7 +32,7 @@ void RemoteLink_PollSwitches(void)
     if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_SET) sw_bits |= 8U;
 }
 
-/* 功能：执行 RemoteLink_Process 函数对应的模块操作。 */
+/* 功能：处理当前输入并更新模块状态。 */
 void RemoteLink_Process(void)
 {
     uint32_t now;
@@ -46,5 +46,5 @@ void RemoteLink_Process(void)
     }
 }
 
-/* 功能：执行 RemoteLink_ForwardRawFrame 函数对应的模块操作。 */
+/* 功能：转发通信数据。 */
 void RemoteLink_ForwardRawFrame(void) {}

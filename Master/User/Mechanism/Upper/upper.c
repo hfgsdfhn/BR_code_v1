@@ -5,6 +5,7 @@
 
 #include "upper.h"
 #include "cup_config.h"
+#include "gravity_model.h"
 #include "suction_cup.h"
 #include "my_main.h"
 #include <math.h>
@@ -17,18 +18,44 @@ extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
 upper_t upper_state;
 Arm_Pos Arm_larm, Arm_rarm;
 static uint32_t last_service_tick;
-static br_gravity_model_t gravity_model[2] = {
-    {.link = BR_LEFT_LINKS, .gravity_base = BR_LEFT_GRAVITY_BASE, .payload_mass_kg = BR_PAYLOAD_MASS_KG,
-     .payload_com_m = BR_PAYLOAD_COM_M, .calibrated = BR_LEFT_MODEL_CALIBRATED},
-    {.link = BR_RIGHT_LINKS, .gravity_base = BR_RIGHT_GRAVITY_BASE, .payload_mass_kg = BR_PAYLOAD_MASS_KG,
-     .payload_com_m = BR_PAYLOAD_COM_M, .calibrated = BR_RIGHT_MODEL_CALIBRATED}};
 
-/* 功能：执行 Upper_ZeroCalibrationRequest 函数对应的模块操作。 */
+volatile float br_shoulder_kp = 60.0f;
+volatile float br_shoulder_kd = 1.0f;
+volatile float br_elbow_kp = 20.0f;
+volatile float br_elbow_kd = 1.0f;
+volatile float br_wrist_kp = 20.0f;
+volatile float br_wrist_kd = 1.0f;
+volatile float br_rotation_kp = 20.0f;
+volatile float br_rotation_kd = 1.0f;
+volatile float br_root_rs01_kp = 20.0f;
+volatile float br_root_rs01_kd = 1.0f;
+volatile float br_root_m2006_position_kp = 94.247779608f;
+volatile float br_root_m2006_position_ki = 52.359877560f;
+volatile float br_root_m2006_position_kd = 0.523598776f;
+volatile float br_root_m2006_speed_kp = 3.342253805f;
+volatile float br_root_m2006_speed_ki = 2.387324146f;
+volatile float br_root_m2006_speed_kd = 0.0f;
+volatile uint8_t g_rs_recovery_motion_release = 0U;
+
+/* 模块实现细节。 */
+volatile uint8_t br_manual_tau_enable = 0U;
+volatile float br_shoulder_tau_nm = 0.0f;
+volatile float br_elbow_tau_nm = 0.0f;
+volatile float br_wrist_tau_nm = 0.0f;
+volatile float br_rotation_tau_nm = 0.0f;
+
+static br_gravity_model_t gravity_model[2] = {
+    {.link = BR_G_LINKS, .gravity_base = BR_LEFT_GRAVITY_BASE, .payload_mass_kg = BR_PAYLOAD_MASS_KG,
+     .payload_com_m = BR_PAYLOAD_COM_M, .calibrated = true},
+    {.link = BR_G_LINKS, .gravity_base = BR_RIGHT_GRAVITY_BASE, .payload_mass_kg = BR_PAYLOAD_MASS_KG,
+     .payload_com_m = BR_PAYLOAD_COM_M, .calibrated = true}};
+
+/* 模块实现细节。 */
 static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
 {
     uint8_t active = arm_joint_zero_calibration[arm][joint] != 0U;
@@ -48,7 +75,7 @@ static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
     zero_calibration_previous[arm][joint] = active;
 }
 
-/* 功能：执行 Upper_ZeroCalibrationComplete 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
 {
     bool at_zero = false;
@@ -78,13 +105,13 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
         zero_calibration_previous[arm][joint] = 0U;
     }
 }
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static void telemetry(upper_board_t *board, unsigned joint, float p, float v, float t, float temp, unsigned fault,
                       uint32_t now)
 {
@@ -97,7 +124,7 @@ static void telemetry(upper_board_t *board, unsigned joint, float p, float v, fl
     board->frame_count++;
 }
 
-/* Override gains after M2006_Init; retain each 电机's PID 状态 and limits. */
+/* Override gains after M2006_Init; retain each 鐢垫満's PID 鐘舵€?and limits. */
 static void Upper_ConfigurePidGains(pid_t *pid, float kp, float ki, float kd)
 {
     pid->kp = kp;
@@ -105,7 +132,7 @@ static void Upper_ConfigurePidGains(pid_t *pid, float kp, float ki, float kd)
     pid->kd = kd;
 }
 
-/* 功能：执行 Upper_ConfigureM2006Gains 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void Upper_ConfigureM2006Gains(void)
 {
     Upper_ConfigurePidGains(&m2006_dcup[0].position_pid, BR_M2006_CUP0_POSITION_KP, BR_M2006_CUP0_POSITION_KI, BR_M2006_CUP0_POSITION_KD);
@@ -116,16 +143,16 @@ static void Upper_ConfigureM2006Gains(void)
     Upper_ConfigurePidGains(&m2006_dcup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
     Upper_ConfigurePidGains(&m2006_ucup[1].position_pid, BR_M2006_CUP1_POSITION_KP, BR_M2006_CUP1_POSITION_KI, BR_M2006_CUP1_POSITION_KD);
     Upper_ConfigurePidGains(&m2006_ucup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
-    Upper_ConfigurePidGains(&m2006_larm.position_pid, BR_M2006_ROOT_POSITION_KP, BR_M2006_ROOT_POSITION_KI, BR_M2006_ROOT_POSITION_KD);
-    Upper_ConfigurePidGains(&m2006_larm.speed_pid, BR_M2006_ROOT_SPEED_KP, BR_M2006_ROOT_SPEED_KI, BR_M2006_ROOT_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_larm.position_pid, br_root_m2006_position_kp, br_root_m2006_position_ki, br_root_m2006_position_kd);
+    Upper_ConfigurePidGains(&m2006_larm.speed_pid, br_root_m2006_speed_kp, br_root_m2006_speed_ki, br_root_m2006_speed_kd);
 }
 
-/* 功能：执行 Upper_BindMotors 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void Upper_BindMotors(upper_t *upper)
 {
     if (upper == NULL)
         return;
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     m2006_larm.trajectory_time_s = BR_ROOT_M2006_TRAJECTORY_TIME_S;
     rs01_rarm.trajectory_time_s = BR_ROOT_RS01_TRAJECTORY_TIME_S;
     rs00_larm[0].trajectory_time_s = BR_BIG_ARM_RS00_TRAJECTORY_TIME_S;
@@ -148,7 +175,7 @@ void Upper_BindMotors(upper_t *upper)
     memset(zero_calibration_previous, 0, sizeof(zero_calibration_previous));
 }
 
-/* 功能：执行 Upper_OnFrame 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void Upper_OnFrame(upper_t *upper, const can_frame_t *frame)
 {
     uint32_t now = HAL_GetTick();
@@ -180,7 +207,7 @@ void Upper_OnFrame(upper_t *upper, const can_frame_t *frame)
     }
 }
 
-/* 功能：执行 Upper_ToRsMode 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static rs_mode_t Upper_ToRsMode(arm_mode_t mode)
 {
     switch (mode)
@@ -194,7 +221,7 @@ static rs_mode_t Upper_ToRsMode(arm_mode_t mode)
     }
 }
 
-/* 功能：执行 Upper_ToJ4310Mode 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static j4310_mode_t Upper_ToJ4310Mode(arm_mode_t mode)
 {
     switch (mode)
@@ -208,21 +235,27 @@ static j4310_mode_t Upper_ToJ4310Mode(arm_mode_t mode)
     }
 }
 
-/* 功能：执行 apply_arm 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
 {
     arm_mode_t mode = arm_mode[arm][joint];
-    float target = arm_target[arm][joint]; /* 代码说明：相关模块实现。 */
-    /* 代码说明：相关模块实现。 */
+    float target = arm_target[arm][joint]; /* 模块实现细节。 */
+    /* 模块实现细节。 */
     if (joint == ARM_JOINT_ROOT)
     {
         tau = mode == ARM_MODE_MIT ? br_mit_tau[arm][joint] : 0.0f;
         if (arm == ARM_LARM_INDEX)
         {
             m2006_t *root = (m2006_t *)motor;
+<<<<<<< HEAD
             /* 代码说明：相关模块实现。 */
             /* Keep the unified target array, but always run the motor in its
              * position-speed cascade. */
+=======
+            /* 模块实现细节。 */
+            /* Keep the unified target array, but always run the motor in its
+             position-speed cascade. */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
             (void)mode;
             (void)tau;
             M2006_SetTargetDeferred(root, M2006_MODE_POSITION,
@@ -245,14 +278,14 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         rs00_t *m = (rs00_t *)motor;
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS00_SetTargetMIT(m, RS_MODE_MIT, tau, target);
-/* 功能：执行 RS00_SetTargetBasic 函数对应的模块操作。 */
+/* 模块实现细节。 */
         else RS00_SetTargetBasic(m, Upper_ToRsMode(mode), target);
     }
     else if (joint == ARM_JOINT_WRIST)
     {
         j4310_t *m = (j4310_t *)motor;
         if (mode == ARM_MODE_MIT) J4310_SetTargetMIT(m, J4310_MODE_MIT, tau, target);
-/* 功能：执行 J4310_SetTargetBasic 函数对应的模块操作。 */
+/* 模块实现细节。 */
         else J4310_SetTargetBasic(m, Upper_ToJ4310Mode(mode), target);
     }
     else if (joint == ARM_JOINT_ROTATION)
@@ -260,17 +293,19 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         rs05_t *m = (rs05_t *)motor;
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS05_SetTargetMIT(m, RS_MODE_MIT, tau, target);
-/* 功能：执行 RS05_SetTargetBasic 函数对应的模块操作。 */
+/* 模块实现细节。 */
         else RS05_SetTargetBasic(m, Upper_ToRsMode(mode), target);
     }
 }
-/* 功能：执行 Upper_Service 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void Upper_Service(uint32_t now)
 {
     float dt = last_service_tick == 0U ? 0.002f : (now - last_service_tick) * 0.001f;
     unsigned a;
     if (dt <= 0.0f || dt > 0.02f) dt = 0.002f;
     last_service_tick = now;
+    configure_motor_gains();
+    Upper_ConfigureM2006Gains();
     for (a = 0U; a < 2U; a++)
         for (unsigned zero_joint = 0U; zero_joint < ARM_JOINT_COUNT; zero_joint++)
             Upper_ZeroCalibrationRequest(a, zero_joint);
@@ -290,14 +325,22 @@ void Upper_Service(uint32_t now)
         for (unsigned joint = 0U; joint < BR_ARM_DOF; joint++)
             q[joint] = q_deg[joint] * ARM_DEG_TO_RAD;
         upper_state.board[a].online = online;
-        upper_state.board[a].gravity_ready = online && (a != 0U || BR_LEFT_ROOT_POSE_CALIBRATED) && BR_GravityEvaluate(&gravity_model[a], q, br_grip[a], tau, NULL);
+        upper_state.board[a].gravity_ready = online && BR_GravityEvaluate(&gravity_model[a], q, br_grip[a], tau, NULL);
         if (!upper_state.board[a].gravity_ready) memset(tau, 0, sizeof(tau));
+        if (br_manual_tau_enable != 0U)
+        {
+            /* 模块实现细节。 */
+            tau[ARM_JOINT_SHOULDER] = br_shoulder_tau_nm;
+            tau[ARM_JOINT_ELBOW] = br_elbow_tau_nm;
+            tau[ARM_JOINT_WRIST] = br_wrist_tau_nm;
+            tau[ARM_JOINT_ROTATION] = br_rotation_tau_nm;
+        }
         if (!enabled)
         {
             RS00_SetTargetBasic(&rs00[0], RS_MODE_STOP, 0); RS00_SetTargetBasic(&rs00[1], RS_MODE_STOP, 0);
             RS05_SetTargetBasic(rs05, RS_MODE_STOP, 0); J4310_SetTargetBasic(j4310, J4310_MODE_STOP, 0);
             if (a == 1U) RS01_SetTargetBasic(&rs01_rarm, RS_MODE_STOP, 0);
-/* 功能：执行 M2006_SetTargetDeferred 函数对应的模块操作。 */
+/* 模块实现细节。 */
             else M2006_SetTargetDeferred(&m2006_larm, M2006_MODE_STOP, 0);
         }
         else

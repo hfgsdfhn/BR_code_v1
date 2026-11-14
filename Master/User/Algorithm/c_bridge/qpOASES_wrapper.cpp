@@ -3,7 +3,7 @@
  * @brief qpOASES_wrapper模块的用户接口与实现。
  */
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 
 
 /**
@@ -43,7 +43,7 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 		return -1;
 
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	options->printLevel = PL_MEDIUM;
 	#ifdef __DEBUG__
 	options->printLevel = PL_HIGH;
@@ -116,12 +116,12 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 	switch ( mode )
 	{
 		case 0:
-			/* 代码说明：相关模块实现。 */
+			/* 模块实现细节。 */
 			break;
 
 
 		case 1:
-			/* 代码说明：相关模块实现。 */
+			/* 模块实现细节。 */
 			options->enableFullLITests             =  BT_TRUE;
 			options->enableCholeskyRefactorisation =  1;
 
@@ -133,7 +133,7 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 
 
 		case 2:
-			/* 代码说明：相关模块实现。 */
+			/* 模块实现细节。 */
 			options->enableRamping                 =  BT_FALSE;
 			options->enableFarBounds               =  BT_TRUE;
 			options->enableFlippingBounds          =  BT_FALSE;
@@ -229,7 +229,7 @@ int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 	if ( globalQpObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	if ( x != 0 ) { globalQpObject->getPrimalSolution( x ); }
 	if ( y != 0 ) { globalQpObject->getDualSolution( y ); }
 	if ( obj != 0 ) { *obj = globalQpObject->getObjVal( ); }
@@ -286,17 +286,17 @@ int_t QProblem_init(	const real_t* const H,
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 }
 
@@ -321,10 +321,10 @@ int_t QProblem_hotstart(	const real_t* const g,
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemObject->hotstart( g,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -389,17 +389,17 @@ int_t QProblemB_init(	const real_t* const H,
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemBObject->setOptions( globalOptionsObject );
 	}
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemBObject->init( H,g,lb,ub, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 }
 
@@ -422,10 +422,10 @@ int_t QProblemB_hotstart(	const real_t* const g,
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemBObject->hotstart( g,lb,ub, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -494,17 +494,17 @@ int_t SQProblem_init(	const real_t* const H,
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalSQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalSQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 }
 
@@ -531,10 +531,10 @@ int_t SQProblem_hotstart(	const real_t* const H,
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	returnValue returnvalue = globalSQProblemObject->hotstart( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 代码说明：相关模块实现。 */
+	/* 模块实现细节。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
@@ -556,4 +556,4 @@ int_t SQProblem_cleanup( )
 }
 
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */

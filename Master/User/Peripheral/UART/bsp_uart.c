@@ -2,7 +2,6 @@
  * @file bsp_uart.c
  * @brief bsp_uart模块的用户接口与实现。
  */
-
 #include "bsp_uart.h"
 #include <string.h>
 #include "cmsis_os2.h"
@@ -10,6 +9,11 @@
 #include "remote.h"
 #include "usart.h"
 #include "STP-23L.h"
+<<<<<<< HEAD
+=======
+#include "remote.h"
+#include "scram.h"
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t imu_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dt35_rx[UART_RX_BUFFER_SIZE];
@@ -24,17 +28,26 @@ static uint8_t BspUart_ImuRxCallback(const uint8_t *data, uint16_t size)
 }
 
 bsp_uart_t uart_list[BSP_UART_COUNT] = {
+<<<<<<< HEAD
     [BSP_UART_IMU] = {.handle = &huart3, .buffer = imu_rx, .callback = BspUart_ImuRxCallback},
     [BSP_UART_DT35] = {.handle = &huart4, .buffer = dt35_rx},
     [BSP_UART_UP_STP23L] = {.handle = &huart5, .buffer = ustp23l_rx},
     [BSP_UART_DOWN_STP23L] = {.handle = &huart6, .buffer = dstp23l_rx},
     [BSP_UART_SCRAM] = {.handle = &huart7, .buffer = scram_rx},
     [BSP_UART_REMOTE] = {.handle = &huart9, .buffer = remote_rx, .callback = Remote_Receive}
+=======
+    [BSP_UART_IMU] = {&huart3, imu_rx, 0U, NULL},
+    [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, NULL},
+    [BSP_UART_UP_STP23L] = {&huart5, ustp23l_rx, 0U, NULL},
+    [BSP_UART_DOWN_STP23L] = {&huart6, dstp23l_rx, 0U, NULL},
+    [BSP_UART_SCRAM] = { .handle = &huart7, .buffer = scram_rx, .callback = Scram_RxBytes },
+    [BSP_UART_REMOTE] = { .handle = &huart8, .buffer = remote_rx, .callback = Remote_RxBytes }
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 };
 
 static osThreadId_t uart_task_handle;
 
-/* 功能：执行 BspUart_RegisterRxCallback 函数对应的模块操作。 */
+/* 模块实现细节。 */
 bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback_t callback)
 {
     if ((uint32_t)channel >= BSP_UART_COUNT) return false;
@@ -42,7 +55,7 @@ bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback
     return true;
 }
 
-/* 功能：执行 BspUart_GetAlignedCacheRange 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
                                          uint8_t **aligned_buffer, uint32_t *aligned_size)
 {
@@ -53,7 +66,7 @@ static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
     *aligned_size = (size + offset + CACHE_LINE_SIZE - 1U) & ~(CACHE_LINE_SIZE - 1U);
 }
 
-/* 功能：执行 BspUart_Invalidate 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void BspUart_Invalidate(uint8_t *buffer)
 {
     uint8_t *aligned_buffer;
@@ -62,7 +75,7 @@ static void BspUart_Invalidate(uint8_t *buffer)
     SCB_InvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);
 }
 
-/* 功能：执行 BspUart_StartReceive 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
 {
     HAL_StatusTypeDef status;
@@ -89,14 +102,14 @@ static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
     return status;
 }
 
-/* 功能：执行 BspUart_RequestRestart 函数对应的模块操作。 */
+/* 模块实现细节。 */
 static void BspUart_RequestRestart(uint32_t index)
 {
     uart_list[index].restart_requested = true;
     if (uart_task_handle != NULL) (void)osThreadFlagsSet(uart_task_handle, UART_RESTART_FLAG(index));
 }
 
-/* 功能：执行 BspUart_Init 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void BspUart_Init(void)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -108,7 +121,7 @@ void BspUart_Init(void)
     }
 }
 
-/* 功能：执行 BspUart_Task 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void BspUart_Task(void *argument)
 {
     (void)argument;
@@ -154,7 +167,7 @@ void BspUart_Task(void *argument)
     }
 }
 
-/* 功能：执行 BspUart_Send 函数对应的模块操作。 */
+/* 模块实现细节。 */
 bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size)
 {
     if ((channel >= BSP_UART_COUNT) || (data == NULL) || (size == 0U) ||
@@ -195,7 +208,7 @@ bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size
     return true;
 }
 
-/* 功能：执行 HAL_UART_TxCpltCallback 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -225,7 +238,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 功能：执行 HAL_UART_ErrorCallback 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     if (huart == &huart2)
@@ -244,9 +257,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 功能：执行 HAL_UARTEx_RxEventCallback 函数对应的模块操作。 */
+/* 模块实现细节。 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     (void)huart;
     (void)size;
 }
+

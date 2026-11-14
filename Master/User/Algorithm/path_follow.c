@@ -6,7 +6,7 @@
 #include "path_follow.h"
 #include <math.h>
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 typedef struct
 {
     float x;
@@ -17,13 +17,13 @@ typedef struct
     float velocity;
 } path_point_t;
 
-/* 功能：执行 PathFollow_Abs 函数对应的模块操作。 */
+/* 功能：执行 PathFollow_Abs 模块操作并维护相关状态。 */
 static float PathFollow_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：执行 PathFollow_Clamp 函数对应的模块操作。 */
+/* 功能：执行 PathFollow_Clamp 模块操作并维护相关状态。 */
 static float PathFollow_Clamp(float value, float limit)
 {
     limit = PathFollow_Abs(limit);
@@ -38,7 +38,7 @@ static float PathFollow_Clamp(float value, float limit)
     return value;
 }
 
-/* 功能：执行 PathFollow_WrapPi 函数对应的模块操作。 */
+/* 功能：执行 PathFollow_WrapPi 模块操作并维护相关状态。 */
 static float PathFollow_WrapPi(float angle)
 {
     while (angle >= 3.1415926f)
@@ -97,7 +97,7 @@ bool PathFollow_Init(path_follow_t *follow,
     return true;
 }
 
-/* 功能：执行 PathFollow_Reset 函数对应的模块操作。 */
+/* 功能：执行 PathFollow_Reset 模块操作并维护相关状态。 */
 void PathFollow_Reset(path_follow_t *follow)
 {
     if (follow != 0)
@@ -107,7 +107,7 @@ void PathFollow_Reset(path_follow_t *follow)
     }
 }
 
-/* 功能：执行 PathFollow_Calc 函数对应的模块操作。 */
+/* 功能：执行 PathFollow_Calc 模块操作并维护相关状态。 */
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,

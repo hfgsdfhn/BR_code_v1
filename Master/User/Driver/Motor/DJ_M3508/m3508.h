@@ -85,52 +85,52 @@ extern volatile float m3508_trajectory_max_acceleration_rad_s2; /* 成员变量�
 extern volatile float m3508_trajectory_time_s; /* 成员变量。 */
 
 
-/* 功能：执行 M3508_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 HAL_StatusTypeDef M3508_Init(m3508_t *motor                        , /* 成员变量。 */
                              FDCAN_HandleTypeDef *hcan                  , /* 对应外设句柄。 */
                              uint8_t id                                    , /* 成员变量。 */
                              int direction                                  );
 
 
-/* 功能：执行 M3508_OnFrame 函数对应的模块操作。 */
+/* 功能：接收并解析一帧通信数据。 */
 bool M3508_OnFrame(m3508_t *motor                         , /* 成员变量。 */
                    const can_frame_t *frame                      );
 
 
-/* 功能：执行 M3508_SetTarget 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void M3508_SetTarget(m3508_t *motor                         , /* 成员变量。 */
                      m3508_mode_t mode                          , /* 当前工作模式或状态。 */
                      float target                               );
 
 
-/* 功能：执行 M3508_Stop 函数对应的模块操作。 */
+/* 功能：停止设备输出并清理状态。 */
 bool M3508_Stop(m3508_t *motor                       );
 
 
-/* 功能：执行 M3508_SetPairPositionDegrees 函数对应的模块操作。 */
+/* 功能：执行 M3508_SetPairPositionDegrees 模块操作并维护相关状态。 */
 void M3508_SetPairPositionDegrees(m3508_t motors[2]                         , /* 成员变量。 */
                                   float degrees                            );
 
 
-/* 功能：执行 M3508_Calc 函数对应的模块操作。 */
+/* 功能：执行 M3508_Calc 模块操作并维护相关状态。 */
 int16_t M3508_Calc(m3508_t *motor                             , /* 成员变量。 */
                    float dt_s                          );
 
 
-/* 功能：执行 M3508_BuildGroupFrame 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void M3508_BuildGroupFrame(uint8_t first_id                               , /* 成员变量。 */
                            const int16_t current[4]                             , /* 成员变量。 */
                            can_frame_t *frame                              );
 
 
-/* 功能：执行 M3508_ResetFeedback 函数对应的模块操作。 */
+/* 功能：执行 M3508_ResetFeedback 模块操作并维护相关状态。 */
 void M3508_ResetFeedback(m3508_t *motor                            );
 
-/* 功能：执行 M3508_Service 函数对应的模块操作。 */
+/* 功能：执行周期性服务并维护运行状态。 */
 void M3508_Service(m3508_t *motor                             , /* 成员变量。 */
                    float dt_s                   );
 
-/* 功能：执行 M3508_GetPositionDegrees 函数对应的模块操作。 */
+/* 功能：读取设备当前位置。 */
 void M3508_GetPositionDegrees(const m3508_t *motor                         , /* 成员变量。 */
                               volatile float *position_degrees                      );
 
@@ -138,12 +138,12 @@ void M3508_GetPositionDegrees(const m3508_t *motor                         , /* 
 #define M3508_BUILD_SPECIAL_DECLARED
 
 
-/* 功能：执行 M3508_BuildSpecial 函数对应的模块操作。 */
+/* 功能：构建待发送的通信帧。 */
 void M3508_BuildSpecial(m3508_t *motor                        , uint8_t command             );
 #endif
 
 
-/* 功能：执行 M3508_SetTargetDeferred 函数对应的模块操作。 */
+/* 功能：设置设备目标值。 */
 void M3508_SetTargetDeferred(m3508_t *motor, m3508_mode_t mode, float target);
 
 

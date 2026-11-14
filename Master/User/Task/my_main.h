@@ -46,10 +46,10 @@ extern volatile uint32_t g_error_handler_hfsr; /* 对应外设句柄。 */
 extern volatile uint32_t g_error_handler_bfar; /* 对应外设句柄。 */
 extern volatile uint32_t g_error_handler_mmfar; /* 对应外设句柄。 */
 
-/* 功能：执行 Error_FaultCapture 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
 void Error_FaultCapture(Error_Code code, uint32_t *stack);
 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_Init(void);
 
 #ifndef MY_IMU_DEVICE_ID
@@ -59,14 +59,14 @@ void My_Init(void);
 #define MY_IMU_TIMEOUT_MS 200U
 
 
-/* 功能：执行 My_OnImuRx 函数对应的模块操作。 */
+/* 功能：执行 My_OnImuRx 模块操作并维护相关状态。 */
 void My_OnImuRx(const uint8_t *data, uint16_t size);
 extern volatile float g_whole_yaw_deg; /* 成员变量。 */
 extern volatile uint8_t g_whole_yaw_valid; /* 状态标志。 */
 
 extern volatile uint8_t g_whole_yaw_manual; /* 成员变量。 */
 
-/* 功能：执行 My_RtosInit 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void My_RtosInit(void);
 
 

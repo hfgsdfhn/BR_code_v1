@@ -5,13 +5,13 @@
 
 #include "pid.h"
 
-/* 功能：执行 PID_Abs 函数对应的模块操作。 */
+/* 功能：执行 PID_Abs 模块操作并维护相关状态。 */
 static float PID_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：执行 PID_Clamp 函数对应的模块操作。 */
+/* 功能：执行 PID_Clamp 模块操作并维护相关状态。 */
 static float PID_Clamp(float value, float limit)
 {
     limit = PID_Abs(limit);
@@ -124,6 +124,6 @@ float PID_Calc(pid_t *pid, float target, float feedback)
              pid->kd * derivative;
     pid->previous_feedback = feedback;
     pid->initialized = true;     //上一次返回值有效
-/* 功能：执行 PID_Clamp 函数对应的模块操作。 */
+/* 功能：执行 PID_Clamp 模块操作并维护相关状态。 */
     return PID_Clamp(output, pid->output_limit);        //限幅并输出
 }

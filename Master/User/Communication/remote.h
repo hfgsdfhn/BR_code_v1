@@ -7,6 +7,19 @@
 #define REMOTE_H
 
 #include <stdint.h>
+<<<<<<< HEAD
+=======
+#include "stm32h7xx_hal.h"
+
+/* E34-2G4H27D 由上位机预配置；固件只使用串口透明传输。 */
+#define REMOTE_LORA_MODULE        "E34-2G4H27D"
+#define REMOTE_LORA_TRANSPARENT   1U
+#define REMOTE_LORA_M0_LEVEL      0U
+#define REMOTE_LORA_M1_LEVEL      0U
+#define REMOTE_FRAME_HEADER_0 0xA5U
+#define REMOTE_FRAME_HEADER_1 0x5AU
+#define REMOTE_FRAME_SIZE 8U
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 
 /* 遥控器数据结构体 */
 typedef struct
@@ -23,11 +36,34 @@ typedef struct
 
 extern remote_t remote;
 
+<<<<<<< HEAD
 /* 接收函数：将串口收到的数据喂给此函数进行解析
  * 返回成功解析出的完整帧数 */
 uint8_t Remote_Receive(const uint8_t *data, uint16_t len);
 void Remote_Init(void);
+=======
+/* 功能：初始化模块并准备外设资源。 */
+void Remote_Init(void);
+
+/* 功能：执行 Remote_RxBytes 模块操作并维护相关状态。 */
+void Remote_RxBytes(const uint8_t *data, uint16_t size);
+
+/* 功能：记录并处理错误状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 void Remote_UartError(void);
 uint8_t Remote_GetState(remote_t *state);
 
+<<<<<<< HEAD
 #endif /* REMOTE_H */
+=======
+/* 功能：执行 Remote_GetState 模块操作并维护相关状态。 */
+uint8_t Remote_GetState(remote_state_t *state);
+
+/* 功能：执行 Remote_IsOnline 模块操作并维护相关状态。 */
+uint8_t Remote_IsOnline(uint32_t timeout_ms);
+
+/* 功能：执行 Remote_GetValidFrameCount 模块操作并维护相关状态。 */
+uint32_t Remote_GetValidFrameCount(void);
+
+#endif
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8

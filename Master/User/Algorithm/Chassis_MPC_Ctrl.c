@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* 功能：执行 MPC_QPOASES_Hotstart 函数对应的模块操作。 */
+/* 功能：执行 MPC_QPOASES_Hotstart 模块操作并维护相关状态。 */
 extern int MPC_QPOASES_Hotstart(const float *g, const float *lb, const float *ub, float *x);
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
 static mpc_t mpc =
 {
     .Q = {100.0f, 100.0f, 50.0f, 1.0f, 1.0f, 5.0f}, // 状态权重 [x, y, yaw, vx, vy, w]
@@ -33,9 +33,9 @@ static arm_matrix_instance_f32 H_mat;
 
 static float32_t A_data[NX * NX];
 
-/* 代码说明：相关模块实现。 */
-/* 代码说明：相关模块实现。 */
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
+/* 模块实现细节。 */
+/* 模块实现细节。 */
 static float32_t AB_data[MPC_MAX_N * NX * NU];
 
 // 累加 H 时用的一行缓存，长度 NV
@@ -76,7 +76,7 @@ void MPC_Init(void)
     arm_mat_init_f32(&B_mat, NX, NU, B_data);
 
     // ==========================================
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     // ==========================================
     memcpy(AB_data, B_data, sizeof(B_data));          // d = 0 就是 B
     for (uint16_t d = 1; d < MPC_MAX_N; d++)
@@ -88,7 +88,7 @@ void MPC_Init(void)
     }
 
     // ==========================================
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     // ==========================================
     memset(H_data, 0, sizeof(H_data));
 
@@ -100,7 +100,7 @@ void MPC_Init(void)
         {
             float32_t q2 = 2.0f * mpc.Q[r];
 
-            /* 代码说明：相关模块实现。 */
+            /* 模块实现细节。 */
             for (uint16_t j = 0; j <= i; j++)
             {
                 const float32_t *src =
@@ -110,7 +110,7 @@ void MPC_Init(void)
                 }
             }
 
-            /* 代码说明：相关模块实现。 */
+            /* 模块实现细节。 */
             for (uint16_t a = 0; a < len; a++)
             {
                 float32_t va = q2 * row_cache[a];
@@ -174,7 +174,7 @@ void MPC_g_figure(const float32_t *x0, const float32_t *X_ref, float32_t *g_data
         }
     }
 
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     float m_val = (mpc.RobotParam.mass > 0.001f) ? mpc.RobotParam.mass : 1.0f;
     float Iz_val = (mpc.RobotParam.inertia_z > 0.001f) ? mpc.RobotParam.inertia_z : 1.0f;
 
@@ -185,7 +185,7 @@ void MPC_g_figure(const float32_t *x0, const float32_t *X_ref, float32_t *g_data
     // 从第 N 步倒推到第 1 步
     for (int k = MPC_MAX_N - 1; k >= 0; k--) {
 
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         float32_t A_T_lambda[NX] = {0};
         for(int i = 0; i < NX; i++){
             for(int j = 0; j < NX; j++){
@@ -194,36 +194,36 @@ void MPC_g_figure(const float32_t *x0, const float32_t *X_ref, float32_t *g_data
             }
         }
 
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         for(int i = 0; i < NX; i++){
             lambda[i] = A_T_lambda[i] + 2.0f * mpc.Q[i] * e_all[k * NX + i];
         }
 
-        /* 代码说明：相关模块实现。 */
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
+        /* 模块实现细节。 */
         g_data[k * NU + 0] = b_fx * lambda[3]; // Fx 梯度
         g_data[k * NU + 1] = b_fy * lambda[4]; // Fy 梯度
         g_data[k * NU + 2] = b_mz * lambda[5]; // Mz 梯度
     }
 }
 
-/* 功能：执行 MPC_Solve 函数对应的模块操作。 */
+/* 功能：求解控制器输出。 */
 void MPC_Solve(const float32_t *x0, const float32_t *X_ref)
 {
-    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
     static float32_t g_data[NV];
     static float32_t x_opt[NV]; // qpOASES 求出的最优控制序列 (90维)
 
     // 算出当前梯度 g
     MPC_g_figure(x0, X_ref, g_data);
 
-    /* 代码说明：相关模块实现。 */
-    static uint8_t s_cold_start = 1;    /* 代码说明：相关模块实现。 */
+    /* 模块实现细节。 */
+    static uint8_t s_cold_start = 1;    /* 模块实现细节。 */
     int status;
 
     if (s_cold_start)
     {
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         if (MPC_QPOASES_Init((int)NV) == 0)
         {
             status = MPC_QPOASES_Solve(H_data, g_data, lb, ub, x_opt);
@@ -252,7 +252,7 @@ void MPC_Solve(const float32_t *x0, const float32_t *X_ref)
     }
     else
     {
-        /* 代码说明：相关模块实现。 */
+        /* 模块实现细节。 */
         mpc.u[0] = 0.0f;
         mpc.u[1] = 0.0f;
         mpc.u[2] = 0.0f;

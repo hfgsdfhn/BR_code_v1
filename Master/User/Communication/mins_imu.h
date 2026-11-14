@@ -19,6 +19,7 @@ typedef struct
     float quaternion[4];
 } imu_t;
 
+<<<<<<< HEAD
 /* 提前定义全局结构体变量，供外部直接引用读取数据 */
 extern imu_t g_imu;
 
@@ -27,6 +28,13 @@ uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len);
 /* 功能：执行 Mins_Imu_receive_omega 函数对应的模块操作。 */
 uint8_t Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len);
 /* 功能：执行 Mins_Imu_SetActiveReport 函数对应的模块操作。 */
+=======
+/* 功能：执行 Mins_Imu_receive_all 模块操作并维护相关状态。 */
+uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len);
+/* 功能：执行 Mins_Imu_receive_omega 模块操作并维护相关状态。 */
+uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len);
+/* 功能：执行 Mins_Imu_SetActiveReport 模块操作并维护相关状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart);
 
 #endif

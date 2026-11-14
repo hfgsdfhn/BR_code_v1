@@ -13,7 +13,7 @@ static uint32_t rx_read;
 static scram_stats_t rx_stats;
 
 
-/* 功能：执行 Scram_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 void Scram_Init(void)
 {
     rx_write = 0U;
@@ -23,7 +23,7 @@ void Scram_Init(void)
 }
 
 
-/* 功能：执行 Scram_RxBytes 函数对应的模块操作。 */
+/* 功能：执行 Scram_RxBytes 模块操作并维护相关状态。 */
 void Scram_RxBytes(const uint8_t *data, uint16_t size)
 {
     uint32_t primask;
@@ -47,7 +47,7 @@ void Scram_RxBytes(const uint8_t *data, uint16_t size)
 }
 
 
-/* 功能：执行 Scram_Read 函数对应的模块操作。 */
+/* 功能：读取设备参数。 */
 uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
 {
     uint32_t primask, available;
@@ -68,7 +68,7 @@ uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
 }
 
 
-/* 功能：执行 Scram_GetStats 函数对应的模块操作。 */
+/* 功能：执行 Scram_GetStats 模块操作并维护相关状态。 */
 void Scram_GetStats(scram_stats_t *stats)
 {
     uint32_t primask;

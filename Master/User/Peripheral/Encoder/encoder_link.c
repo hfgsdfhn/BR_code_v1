@@ -19,7 +19,7 @@ static bool s_attempted;
 static bool s_ready;
 
 
-/* 功能：执行 EncoderLink_Cs 函数对应的模块操作。 */
+/* 功能：执行 EncoderLink_Cs 模块操作并维护相关状态。 */
 static void EncoderLink_Cs(GPIO_PinState level)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -31,7 +31,7 @@ static void EncoderLink_Cs(GPIO_PinState level)
 }
 
 
-/* 功能：执行 EncoderLink_Init 函数对应的模块操作。 */
+/* 功能：初始化模块并准备外设资源。 */
 bool EncoderLink_Init(void)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -71,7 +71,7 @@ bool EncoderLink_Init(void)
 }
 
 
-/* 功能：执行 EncoderLink_RecordError 函数对应的模块操作。 */
+/* 功能：记录并处理错误状态。 */
 static void EncoderLink_RecordError(void)
 {
     g_encoder_link.error_count++;
@@ -83,7 +83,7 @@ static void EncoderLink_RecordError(void)
 }
 
 
-/* 功能：执行 EncoderLink_Poll 函数对应的模块操作。 */
+/* 功能：轮询输入或通信状态。 */
 bool EncoderLink_Poll(float yaw_deg)
 {
     uint8_t tx[ENCODER_LINK_FRAME_BYTES];
@@ -181,7 +181,7 @@ bool EncoderLink_Poll(float yaw_deg)
 }
 
 
-/* 功能：执行 EncoderLink_GetYawRaw 函数对应的模块操作。 */
+/* 功能：执行 EncoderLink_GetYawRaw 模块操作并维护相关状态。 */
 uint16_t EncoderLink_GetYawRaw(void)
 {
     return g_encoder_link.yaw_raw;

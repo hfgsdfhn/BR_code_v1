@@ -1,6 +1,6 @@
 /*
  * @file arm_config.h
- * @brief arm_config模块的用户接口与实现。
+ * @brief arm_config模块的用户接口与实现�?
  */
 
 #ifndef BR_ARM_CONFIG_H
@@ -15,7 +15,7 @@
 #define BR_RIGHT_CAN (&hfdcan3)
 #define BR_PERIOD_MS 10U
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节�?*/
 #define BR_ROOT_M2006_TRAJECTORY_TIME_S 0.0f
 #define BR_ROOT_RS01_TRAJECTORY_TIME_S 0.0f
 #define BR_BIG_ARM_RS00_TRAJECTORY_TIME_S 0.0f
@@ -40,16 +40,24 @@
 #define BR_RIGHT_ZERO_RAD {0.0f, 0.0f, 0.0f, 0.0f}
 #define BR_LEFT_JOINT_PER_MOTOR {1.0f, 1.0f, 1.0f, 1.0f}
 #define BR_RIGHT_JOINT_PER_MOTOR {1.0f, 1.0f, 1.0f, 1.0f}
-#define BR_SHOULDER_KP 20.0f
-#define BR_SHOULDER_KD 1.0f
-#define BR_ELBOW_KP 20.0f
-#define BR_ELBOW_KD 1.0f
-#define BR_WRIST_KP 20.0f
-#define BR_WRIST_KD 1.0f
-#define BR_ROTATION_KP 20.0f
-#define BR_ROTATION_KD 1.0f
-#define BR_ROOT_RS01_KP 20.0f
-#define BR_ROOT_RS01_KD 1.0f
+
+extern volatile float br_shoulder_kp;
+extern volatile float br_shoulder_kd;
+extern volatile float br_elbow_kp;
+extern volatile float br_elbow_kd;
+extern volatile float br_wrist_kp;
+extern volatile float br_wrist_kd;
+extern volatile float br_rotation_kp;
+extern volatile float br_rotation_kd;
+extern volatile float br_root_rs01_kp;
+extern volatile float br_root_rs01_kd;
+extern volatile float br_root_m2006_position_kp;
+extern volatile float br_root_m2006_position_ki;
+extern volatile float br_root_m2006_position_kd;
+extern volatile float br_root_m2006_speed_kp;
+extern volatile float br_root_m2006_speed_ki;
+extern volatile float br_root_m2006_speed_kd;
+
 
 #define BR_ROOT_RS01_DIRECTION 1.0f
 #define BR_JOINT_MIN_RAD {-3.14159265f, -3.14159265f, -3.14159265f, -3.14159265f}
@@ -130,27 +138,29 @@ extern rs05_t rs05_larm, rs05_rarm;
 extern j4310_t j4310_larm, j4310_rarm;
 extern rs01_t rs01_rarm;
 
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节�?*/
 static inline void configure_motor_gains(void)
 {
-    rs00_larm[0].mit_kp = BR_SHOULDER_KP;
-    rs00_larm[0].mit_kd = BR_SHOULDER_KD;
-    rs00_rarm[0].mit_kp = BR_SHOULDER_KP;
-    rs00_rarm[0].mit_kd = BR_SHOULDER_KD;
-    rs00_larm[1].mit_kp = BR_ELBOW_KP;
-    rs00_larm[1].mit_kd = BR_ELBOW_KD;
-    rs00_rarm[1].mit_kp = BR_ELBOW_KP;
-    rs00_rarm[1].mit_kd = BR_ELBOW_KD;
-    j4310_larm.mit_kp = BR_WRIST_KP;
-    j4310_larm.mit_kd = BR_WRIST_KD;
-    j4310_rarm.mit_kp = BR_WRIST_KP;
-    j4310_rarm.mit_kd = BR_WRIST_KD;
-    rs05_larm.mit_kp = BR_ROTATION_KP;
-    rs05_larm.mit_kd = BR_ROTATION_KD;
-    rs05_rarm.mit_kp = BR_ROTATION_KP;
-    rs05_rarm.mit_kd = BR_ROTATION_KD;
-    rs01_rarm.mit_kp = BR_ROOT_RS01_KP;
-    rs01_rarm.mit_kd = BR_ROOT_RS01_KD;
+    rs00_larm[0].mit_kp = br_shoulder_kp;
+    rs00_larm[0].mit_kd = br_shoulder_kd;
+    rs00_rarm[0].mit_kp = br_shoulder_kp;
+    rs00_rarm[0].mit_kd = br_shoulder_kd;
+    rs00_larm[1].mit_kp = br_elbow_kp;
+    rs00_larm[1].mit_kd = br_elbow_kd;
+    rs00_rarm[1].mit_kp = br_elbow_kp;
+    rs00_rarm[1].mit_kd = br_elbow_kd;
+    j4310_larm.mit_kp = br_wrist_kp;
+    j4310_larm.mit_kd = br_wrist_kd;
+    j4310_rarm.mit_kp = br_wrist_kp;
+    j4310_rarm.mit_kd = br_wrist_kd;
+    rs05_larm.mit_kp = br_rotation_kp;
+    rs05_larm.mit_kd = br_rotation_kd;
+    rs05_rarm.mit_kp = br_rotation_kp;
+    rs05_rarm.mit_kd = br_rotation_kd;
+    rs01_rarm.mit_kp = br_root_rs01_kp;
+    rs01_rarm.mit_kd = br_root_rs01_kd;
+
+
 }
 
 #endif

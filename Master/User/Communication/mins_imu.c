@@ -10,8 +10,12 @@
 #define MINS_IMU_RESPONSE_2_3     0x84U
 #define MINS_IMU_YAW_SCALE        0.973f
 
+<<<<<<< HEAD
 imu_t g_imu = {0};
 
+=======
+/* 功能：执行 Mins_Imu_CheckFrame 模块操作并维护相关状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
                                    uint8_t data_len, uint8_t command)
 {
@@ -32,6 +36,10 @@ static uint8_t Mins_Imu_CheckFrame(const uint8_t *frame, uint16_t len,
     return (uint8_t)(checksum == frame[len - 1U]);
 }
 
+<<<<<<< HEAD
+=======
+/* 功能：执行 Mins_Imu_DecodeBcd 模块操作并维护相关状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decimals)
 {
     uint8_t i;
@@ -54,7 +62,12 @@ static float Mins_Imu_DecodeBcd(const uint8_t *data, uint8_t size, uint8_t decim
     return (float)value / (float)divisor;
 }
 
+<<<<<<< HEAD
 uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len)
+=======
+/* 功能：执行 Mins_Imu_receive_all 模块操作并维护相关状态。 */
+uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len)
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 {
     uint8_t i;
 
@@ -79,7 +92,12 @@ uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len)
     return 1U;
 }
 
+<<<<<<< HEAD
 uint8_t Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len)
+=======
+/* 功能：执行 Mins_Imu_receive_omega 模块操作并维护相关状态。 */
+uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len)
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 {
     if (!Mins_Imu_CheckFrame(frame, len, 9U, MINS_IMU_RESPONSE_2_3))
     {
@@ -91,6 +109,10 @@ uint8_t Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len)
     return 1U;
 }
 
+<<<<<<< HEAD
+=======
+/* 功能：执行 Mins_Imu_SetActiveReport 模块操作并维护相关状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
 {
     uint8_t command[] = {0x77U, 0x05U, 0x00U, 0x56U, 0x05U, 0x60U};
@@ -99,6 +121,10 @@ HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
     {
         return HAL_ERROR;
     }
+<<<<<<< HEAD
     
+=======
+/* 功能：执行 HAL_UART_Transmit 模块操作并维护相关状态。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
     return HAL_UART_Transmit(uart, command, sizeof(command), 100U);
 }

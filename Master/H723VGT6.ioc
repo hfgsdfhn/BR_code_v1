@@ -216,7 +216,7 @@ Dma.USART6_RX.6.SyncEnable=DISABLE
 Dma.USART6_RX.6.SyncPolarity=HAL_DMAMUX_SYNC_NO_EVENT
 Dma.USART6_RX.6.SyncRequestNumber=1
 Dma.USART6_RX.6.SyncSignalID=NONE
-FDCAN1.AutoRetransmission=DISABLE
+FDCAN1.AutoRetransmission=ENABLE
 FDCAN1.CalculateBaudRateNominal=1000000
 FDCAN1.CalculateTimeBitNominal=1000
 FDCAN1.CalculateTimeQuantumNominal=50.0
@@ -275,7 +275,11 @@ FDCAN3.StdFiltersNbr=1
 FDCAN3.TxFifoQueueElmtsNbr=8
 FREERTOS.FootprintOK=true
 FREERTOS.IPParameters=Tasks01,FootprintOK,configTOTAL_HEAP_SIZE,configCHECK_FOR_STACK_OVERFLOW,configENABLE_FPU
+<<<<<<< HEAD
 FREERTOS.Tasks01=Status_Task,32,1024,Status_Task,As external,NULL,Dynamic,NULL,NULL;SuctionCup_Task,24,512,SuctionCup_Task,As external,NULL,Dynamic,NULL,NULL;Arm_Task,24,512,Arm_Task,As external,NULL,Dynamic,NULL,NULL;Chassis_Task,16,256,Chassis_Task_,As external,NULL,Dynamic,NULL,NULL
+=======
+FREERTOS.Tasks01=Status_Task,32,1024,Status_Task,As external,NULL,Dynamic,NULL,NULL;SuctionCup_Task,24,512,SuctionCup_Task,As external,NULL,Dynamic,NULL,NULL;Arm_Task,24,512,Arm_Task,As external,NULL,Dynamic,NULL,NULL
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 FREERTOS.configCHECK_FOR_STACK_OVERFLOW=2
 FREERTOS.configENABLE_FPU=1
 FREERTOS.configTOTAL_HEAP_SIZE=65536

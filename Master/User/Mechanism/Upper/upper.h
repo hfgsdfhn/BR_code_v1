@@ -47,6 +47,13 @@ extern rs05_t rs05_larm, rs05_rarm;
 extern j4310_t j4310_larm, j4310_rarm;
 extern rs01_t rs01_rarm;
 
+/* 鎵嬪姩 MIT 鍓嶉鎵煩锛屽崟浣?N路m銆俁oot 涓嶄娇鐢ㄨ繖浜涘弬鏁般€?*/
+extern volatile uint8_t br_manual_tau_enable;
+extern volatile float br_shoulder_tau_nm;
+extern volatile float br_elbow_tau_nm;
+extern volatile float br_wrist_tau_nm;
+extern volatile float br_rotation_tau_nm;
+
 void Upper_BindMotors(upper_t *upper);
 void Upper_OnFrame(upper_t *upper, const can_frame_t *frame);
 void Upper_Service(uint32_t now);

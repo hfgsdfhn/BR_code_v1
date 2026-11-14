@@ -18,7 +18,7 @@ struct vofa
     void (*send)(vofa_t *vofa, UART_HandleTypeDef *huart);
 };
 
-/* 功能：执行 vofa_send 函数对应的模块操作。 */
+/* 功能：执行 vofa_send 模块操作并维护相关状态。 */
 void vofa_send(vofa_t *vofa, UART_HandleTypeDef *huart);
 extern vofa_t vofa; /* 成员变量。 */
 

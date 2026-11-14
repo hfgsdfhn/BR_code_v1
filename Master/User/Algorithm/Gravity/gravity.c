@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 
-/* 功能：执行 mv 函数对应的模块操作。 */
+/* 功能：执行 mv 模块操作并维护相关状态。 */
 static void mv(const float r[3][3], const float v[3], float out[3])
 {
     unsigned i;
@@ -15,7 +15,7 @@ static void mv(const float r[3][3], const float v[3], float out[3])
         out[i] = r[i][0] * v[0] + r[i][1] * v[1] + r[i][2] * v[2];
 }
 
-/* 功能：执行 mm 函数对应的模块操作。 */
+/* 功能：执行 mm 模块操作并维护相关状态。 */
 static void mm(const float a[3][3], const float b[3][3], float out[3][3])
 {
     unsigned i, j, k;
@@ -28,14 +28,14 @@ static void mm(const float a[3][3], const float b[3][3], float out[3][3])
         }
 }
 
-/* 功能：执行 vec_ok 函数对应的模块操作。 */
+/* 功能：执行 vec_ok 模块操作并维护相关状态。 */
 static bool vec_ok(const float v[3])
 {
-/* 代码说明：相关模块实现。 */
+/* 模块实现细节。 */
     return isfinite(v[0]) && isfinite(v[1]) && isfinite(v[2]);
 }
 
-/* 功能：执行 rotation_ok 函数对应的模块操作。 */
+/* 功能：执行 rotation_ok 模块操作并维护相关状态。 */
 static bool rotation_ok(const float r[3][3])
 {
     unsigned i, j, k;
@@ -53,7 +53,7 @@ static bool rotation_ok(const float r[3][3])
            0.999f;
 }
 
-/* 功能：执行 add_mass 函数对应的模块操作。 */
+/* 功能：执行 add_mass 模块操作并维护相关状态。 */
 static void add_mass(float mass, const float c[3], unsigned last, const float origins[BR_ARM_DOF][3],
                      const float axes[BR_ARM_DOF][3], const float g[3], float tau[BR_ARM_DOF], float *u)
 {
@@ -69,7 +69,7 @@ static void add_mass(float mass, const float c[3], unsigned last, const float or
     }
 }
 
-/* 功能：执行 BR_GravityEvaluate 函数对应的模块操作。 */
+/* 功能：执行 BR_GravityEvaluate 模块操作并维护相关状态。 */
 bool BR_GravityEvaluate(const br_gravity_model_t *m, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF],
                         float *potential)
 {

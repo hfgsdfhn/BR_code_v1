@@ -11,6 +11,10 @@
 #include "cmsis_os2.h"
 #include "chassis.h"
 
+<<<<<<< HEAD
+=======
+/* 功能：执行周期任务主流程。 */
+>>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
 void Status_Task(void *argument);
 
 typedef struct

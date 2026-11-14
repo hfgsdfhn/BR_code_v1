@@ -19,7 +19,7 @@ volatile float quintic_last_peak_accel = 0.0f;
 volatile uint8_t quintic_last_limited = 0U;
 
 
-/* 功能：执行 Quintic_Shape 函数对应的模块操作。 */
+/* 功能：执行 Quintic_Shape 模块操作并维护相关状态。 */
 static void Quintic_Shape(float k0, float tau, float *s, float *ds, float *dds)
 {
     float tau2 = tau * tau;
@@ -45,7 +45,7 @@ static void Quintic_Shape(float k0, float tau, float *s, float *ds, float *dds)
 }
 
 
-/* 功能：执行 Quintic_Peaks 函数对应的模块操作。 */
+/* 功能：执行 Quintic_Peaks 模块操作并维护相关状态。 */
 static void Quintic_Peaks(float k0, float *peak_ds, float *peak_dds)
 {
     float max_ds = 0.0f;
@@ -79,7 +79,7 @@ static void Quintic_Peaks(float k0, float *peak_ds, float *peak_dds)
 }
 
 
-/* 功能：执行 Quintic_SolveDuration 函数对应的模块操作。 */
+/* 功能：求解控制器输出。 */
 static float Quintic_SolveDuration(float delta, float adelta, float v0, float *k0_out)
 {
     float t;
@@ -153,7 +153,7 @@ static float Quintic_SolveDuration(float delta, float adelta, float v0, float *k
 }
 
 
-/* 功能：执行 Quintic_Fill 函数对应的模块操作。 */
+/* 功能：执行 Quintic_Fill 模块操作并维护相关状态。 */
 static void Quintic_Fill(quintic_plan_t *plan, float start, float delta, float k0, float t)
 {
     float peak_ds;
@@ -176,7 +176,7 @@ static void Quintic_Fill(quintic_plan_t *plan, float start, float delta, float k
 }
 
 
-/* 功能：执行 Quintic_SetDefaultLimits 函数对应的模块操作。 */
+/* 功能：执行 Quintic_SetDefaultLimits 模块操作并维护相关状态。 */
 void Quintic_SetDefaultLimits(float max_speed, float max_accel, float min_duration)
 {
     s_max_speed = max_speed;
@@ -185,7 +185,7 @@ void Quintic_SetDefaultLimits(float max_speed, float max_accel, float min_durati
 }
 
 
-/* 功能：执行 Quintic_MinDuration 函数对应的模块操作。 */
+/* 功能：执行 Quintic_MinDuration 模块操作并维护相关状态。 */
 float Quintic_MinDuration(float delta, float v0)
 {
     float adelta = fabsf(delta);
@@ -194,24 +194,24 @@ float Quintic_MinDuration(float delta, float v0)
     {
         return 0.0f;
     }
-/* 功能：执行 Quintic_SolveDuration 函数对应的模块操作。 */
+/* 功能：求解控制器输出。 */
     return Quintic_SolveDuration(delta, adelta, v0, NULL);
 }
 
 
-/* 功能：执行 Quintic_DefaultDuration 函数对应的模块操作。 */
+/* 功能：执行 Quintic_DefaultDuration 模块操作并维护相关状态。 */
 float Quintic_DefaultDuration(float delta, float v0, float requested_duration)
 {
     if (requested_duration > QUINTIC_EPS)
     {
         return requested_duration;
     }
-/* 功能：执行 Quintic_MinDuration 函数对应的模块操作。 */
+/* 功能：执行 Quintic_MinDuration 模块操作并维护相关状态。 */
     return Quintic_MinDuration(delta, v0);
 }
 
 
-/* 功能：执行 Quintic_Plan 函数对应的模块操作。 */
+/* 功能：规划设备运动轨迹。 */
 void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, float duration)
 {
     float adelta;
@@ -288,7 +288,7 @@ void Quintic_Plan(quintic_plan_t *plan, float start, float target, float v0, flo
 }
 
 
-/* 功能：执行 Quintic_Sample 函数对应的模块操作。 */
+/* 功能：执行 Quintic_Sample 模块操作并维护相关状态。 */
 void Quintic_Sample(const quintic_plan_t *plan, float elapsed, float *pos, float *vel, float *acc)
 {
     float tau;
