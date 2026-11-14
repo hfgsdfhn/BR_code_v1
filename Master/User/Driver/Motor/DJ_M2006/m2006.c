@@ -201,7 +201,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     feedback_needs_reanchor = motor->received && !motor->feedback_online;
     motor->encoder = M2006_ReadU16(&frame->data[0]);
     motor->speed_rpm = (int16_t)M2006_ReadU16(&frame->data[2]);
-    motor->current_raw = (int16_t)(motor->direction * (float)(int16_t)M2006_ReadU16(&frame->data[4]));
+    motor->current_raw = (int16_t)M2006_ReadU16(&frame->data[4]);
     motor->feedback_age_cycles = 0U;
 
     difference = (int32_t)motor->encoder - motor->last_encoder;
@@ -230,7 +230,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     motor->last_encoder = motor->encoder;
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M2006_ENCODER_COUNT * M2006_REDUCTION_RATIO);
-    motor->speed_rad_s = motor->direction * (float)motor->speed_rpm * RPM_TO_RAD_S / M2006_REDUCTION_RATIO;
+    motor->speed_rad_s = (float)motor->speed_rpm * RPM_TO_RAD_S / M2006_REDUCTION_RATIO;
 
     if (first_feedback)
     {
@@ -452,7 +452,7 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     {
         return 0;
     }
-    current_raw = motor->direction * current / M2006_CURRENT_SCALE;
+    current_raw = current / M2006_CURRENT_SCALE;
 
     if (current_raw > M2006_CURRENT_RAW_LIMIT)
     {

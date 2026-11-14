@@ -112,12 +112,11 @@ void My_Init(void)
     RS01_Init(&rs01_rarm, &hfdcan3, 1U, -1);
     RS00_Init(&rs00_rarm[0], &hfdcan3, 2U, -1);
     RS00_Init(&rs00_rarm[1], &hfdcan3, 3U, -1);
-    J4310_Init(&j4310_rarm, &hfdcan3, 4U, -1);
+    J4310_Init(&j4310_rarm, &hfdcan3, 4U, 1);
     RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
     configure_motor_gains();
     Arm_TaskInit();
     Upper_BindMotors(&upper_state);
-    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_Receive);
     SuctionCup_Init();
     Scram_Init();
     Remote_Init();

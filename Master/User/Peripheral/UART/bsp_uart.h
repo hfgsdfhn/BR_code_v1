@@ -28,9 +28,6 @@ typedef struct
 {
     UART_HandleTypeDef *handle; /* 当前通道对应的 HAL UART 外设句柄。 */
     uint8_t *buffer; /* 当前通道的 DMA 循环接收缓冲区。 */
-    volatile uint32_t rx_produced; /* DMA 已经写入的接收数据总位置。 */
-    uint32_t rx_consumed; /* 应用层已经处理的接收数据总位置。 */
-    uint32_t rx_overruns; /* 接收缓冲区发生覆盖的累计次数。 */
     uint16_t position; /* 上一次处理到的循环缓冲区位置。 */
     bsp_uart_rx_callback_t callback; /* 收到新数据后调用的处理函数。 */
     bsp_uart_tx_t tx; /* 当前通道的异步发送队列。 */

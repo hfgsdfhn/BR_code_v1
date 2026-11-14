@@ -1,5 +1,6 @@
 ﻿#include "chassis.h"
 #include <stddef.h>
+#include <stdlib.h>
 #include "math.h"
 static float joystick_axis_to_unit(int16_t value)
 {
@@ -54,9 +55,9 @@ void joy_to_mps(const remote_t *remote, chassis_speed_t *speed)
     
     target_vx = joystick_axis_to_unit(remote->joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     target_vy = joystick_axis_to_unit(remote->joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
-    if(remote->shoulder_left ==1) speed->vw = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
-    else if(remote->shoulder_left ==3) speed->vw = -CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
-    else speed->vw = 0.0f;
+    if(remote->shoulder_left == 1U) target_vw = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
+    else if(remote->shoulder_left == 3U) target_vw = -CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
+    else target_vw = 0.0f;
     
     speed->vx = T_Speed_Control(speed->vx, target_vx, CHASSIS_LINEAR_SPEED_STEP_MPS);
     speed->vy = T_Speed_Control(speed->vy, target_vy, CHASSIS_LINEAR_SPEED_STEP_MPS);

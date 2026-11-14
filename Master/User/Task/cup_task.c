@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @file suction_cup.c
  * @brief cup_task 模块的用户接口与实现。
  */
@@ -23,8 +23,8 @@ volatile uint32_t cup_motor_recover_count = 0U;
 static bool cup_motor_online_prev[5];
 
 __ALIGNED(32) volatile float suction_feedback_angle[2][3];
-volatile float g_up_stp23l_distance_cm;
-volatile float g_down_stp23l_distance_cm;
+volatile float ustp23l_distance_cm;
+volatile float dstp23l_distance_cm;
 
 static suction_stp23l_parser_t up_stp23l_parser;
 static suction_stp23l_parser_t down_stp23l_parser;
@@ -121,22 +121,22 @@ static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
 }
 
 /* 功能：处理SuctionCup_UStp23lRx对应的输入并更新相关状态。 */
-static void SuctionCup_UStp23lRx(const uint8_t *data, uint16_t size)
+void UStp23lRx(const uint8_t *data, uint16_t size)
 {
-    SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &g_up_stp23l_distance_cm);
+    SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &ustp23l_distance_cm);
 }
 
 /* 功能：处理SuctionCup_DStp23lRx对应的输入并更新相关状态。 */
-static void SuctionCup_DStp23lRx(const uint8_t *data, uint16_t size)
+void DStp23lRx(const uint8_t *data, uint16_t size)
 {
-    SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &g_down_stp23l_distance_cm);
+    SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &dstp23l_distance_cm);
 }
 
 /* 功能：初始化SuctionCup_Init对应的外设、参数和运行状态。 */
 void SuctionCup_Init(void)
 {
-    (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, SuctionCup_UStp23lRx);
-    (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, SuctionCup_DStp23lRx);
+    (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, UStp23lRx);
+    (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, DStp23lRx);
 }
 
 /* 功能：接收并解析SuctionCup_OnFrame对应的输入数据，更新模块状态。 */

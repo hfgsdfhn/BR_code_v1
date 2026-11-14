@@ -9,6 +9,7 @@
 #include "remote.h"
 #include "usart.h"
 #include "STP-23L.h"
+#include "cup_task.h"
 #include "remote.h"
 #include "scram.h"
 
@@ -27,10 +28,10 @@ static uint8_t BspUart_ImuRxCallback(const uint8_t *data, uint16_t size)
 bsp_uart_t uart_list[BSP_UART_COUNT] = {
     [BSP_UART_IMU] = {&huart3, imu_rx, 0U, NULL},
     [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, NULL},
-    [BSP_UART_UP_STP23L] = {&huart5, ustp23l_rx, 0U, NULL},
-    [BSP_UART_DOWN_STP23L] = {&huart6, dstp23l_rx, 0U, NULL},
-    [BSP_UART_SCRAM] = {&huart7, scram_rx, Scram_RxBytes },
-    [BSP_UART_REMOTE] = {&huart9, remote_rx, Remote_RxBytes }
+    [BSP_UART_DOWN_STP23L] = {&huart5, dstp23l_rx, 0U, DStp23lRx},
+    [BSP_UART_UP_STP23L] = {&huart6, ustp23l_rx, 0U, UStp23lRx},
+    [BSP_UART_SCRAM] = {&huart7, scram_rx, 0U, Scram_RxBytes},
+    [BSP_UART_REMOTE] = {&huart9, remote_rx, 0U, Remote_RxBytes}
 };
 
 static osThreadId_t uart_task_handle;

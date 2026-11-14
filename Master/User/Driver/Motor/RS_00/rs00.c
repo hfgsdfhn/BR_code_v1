@@ -1,7 +1,6 @@
 /*
  * @file rs00.c
- * @brief rs00模块的用户接口与实现。
- */
+ * @brief rs00模块的用户接口与实现�? */
 
 /**
  * @file rs00.c
@@ -28,38 +27,38 @@ volatile float rs00_speed_max_acceleration_rad_s2 = 30.0f;
 volatile float rs00_speed_limit_current_a = 8.0f;
 volatile float rs00_speed_accel_rad_s2 = 30.0f;
 
-/* 功能：处理clampf对应的输入并更新相关状态。 */
+/* 功能：处理clampf对应的输入并更新相关状态�?*/
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
-/* 功能：将浮点值按范围编码为 16 位整数。 */
+/* 功能：将浮点值按范围编码�?16 位整数�?*/
 static uint16_t enc(float v, float lo, float hi)
 {
     v = clampf(v, lo, hi);
     return (uint16_t)((v - lo) * 65535.0f / (hi - lo));
 }
 
-/* 功能：将 16 位整数按范围解码为浮点值。 */
+/* 功能：将 16 位整数按范围解码为浮点值�?*/
 static float dec(uint16_t v, float lo, float hi)
 {
     return lo + (float)v * (hi - lo) / 65535.0f;
 }
 
-/* 功能：处理rdbe对应的输入并更新相关状态。 */
+/* 功能：处理rdbe对应的输入并更新相关状态�?*/
 static uint16_t rdbe(const uint8_t *p)
 {
     return ((uint16_t)p[0] << 8) | p[1];
 }
 
-/* 功能：处理pack对应的输入并更新相关状态。 */
+/* 功能：处理pack对应的输入并更新相关状态�?*/
 static uint32_t pack(uint8_t cmd, uint16_t extra, uint8_t id)
 {
     return ((uint32_t)cmd << 24) | ((uint32_t)extra << 8) | id;
 }
 
-/* 功能：处理RS00_PlanTrajectory对应的输入并更新相关状态。 */
+/* 功能：处理RS00_PlanTrajectory对应的输入并更新相关状态�?*/
 static void RS00_PlanTrajectory(rs00_t *m, float start, float target)
 {
     quintic_plan_t plan;
@@ -79,7 +78,7 @@ static void RS00_PlanTrajectory(rs00_t *m, float start, float target)
     m->trajectory_duration_ms = (uint32_t)duration_ms;
 }
 
-/* 功能：处理RS00_BeginPositionTrajectory对应的输入并更新相关状态。 */
+/* 功能：处理RS00_BeginPositionTrajectory对应的输入并更新相关状态�?*/
 static void RS00_BeginPositionTrajectory(rs00_t *m, uint32_t now)
 {
     RS00_PlanTrajectory(m, m->position, m->target);
@@ -100,7 +99,7 @@ static void RS00_BeginPositionTrajectory(rs00_t *m, uint32_t now)
     }
 }
 
-/* 功能：轮询并更新RS00_UpdatePositionTrajectory对应的输入和状态。 */
+/* 功能：轮询并更新RS00_UpdatePositionTrajectory对应的输入和状态�?*/
 static void RS00_UpdatePositionTrajectory(rs00_t *m, uint32_t now)
 {
     quintic_plan_t plan;
@@ -126,7 +125,7 @@ static void RS00_UpdatePositionTrajectory(rs00_t *m, uint32_t now)
     Quintic_Sample(&plan, (float)elapsed_ms * 0.001f, &m->reference_position, &m->reference_velocity, NULL);
 }
 
-/* 功能：通过 CAN 外设发送指定命令和数据。 */
+/* 功能：通过 CAN 外设发送指定命令和数据�?*/
 static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t extra, uint8_t id, const uint8_t *data)
 {
     can_frame_t frame = {0};
@@ -139,11 +138,11 @@ static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t ext
     frame.id_type = FDCAN_EXTENDED_ID;
     frame.length = 8U;
 
-/* 功能：发送BspCan_Send对应的数据或控制指令。 */
+/* 功能：发送BspCan_Send对应的数据或控制指令�?*/
     return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
 }
 
-/* 功能：处理RS00_WriteParamFloat对应的输入并更新相关状态。 */
+/* 功能：处理RS00_WriteParamFloat对应的输入并更新相关状态�?*/
 static bool RS00_WriteParamFloat(rs00_t *m, uint16_t index, float value)
 {
     uint8_t data[8] = {0};
@@ -154,7 +153,7 @@ static bool RS00_WriteParamFloat(rs00_t *m, uint16_t index, float value)
     return tx(m->hcan, RS00_CMD_WRITE_PARAM, RS00_HOST_ID, m->id, data) == HAL_OK;
 }
 
-/* 功能：处理RS00_WriteParamByte对应的输入并更新相关状态。 */
+/* 功能：处理RS00_WriteParamByte对应的输入并更新相关状态�?*/
 static bool RS00_WriteParamByte(rs00_t *m, uint16_t index, uint8_t value)
 {
     uint8_t data[8] = {0};
@@ -165,7 +164,7 @@ static bool RS00_WriteParamByte(rs00_t *m, uint16_t index, uint8_t value)
     return tx(m->hcan, RS00_CMD_WRITE_PARAM, RS00_HOST_ID, m->id, data) == HAL_OK;
 }
 
-/* 功能：处理RS00_EnsureMitMode对应的输入并更新相关状态。 */
+/* 功能：处理RS00_EnsureMitMode对应的输入并更新相关状态�?*/
 static bool RS00_EnsureMitMode(rs00_t *m)
 {
     if (m->run_mode == RS00_RUN_MODE_MIT)
@@ -180,7 +179,7 @@ static bool RS00_EnsureMitMode(rs00_t *m)
     return true;
 }
 
-/* 功能：处理RS00_EnsureSpeedMode对应的输入并更新相关状态。 */
+/* 功能：处理RS00_EnsureSpeedMode对应的输入并更新相关状态�?*/
 static bool RS00_EnsureSpeedMode(rs00_t *m)
 {
     if (m->run_mode == RS00_RUN_MODE_SPEED)
@@ -197,7 +196,7 @@ static bool RS00_EnsureSpeedMode(rs00_t *m)
     return true;
 }
 
-/* 功能：轮询并更新RS00_PollFeedback对应的输入和状态。 */
+/* 功能：轮询并更新RS00_PollFeedback对应的输入和状态�?*/
 static bool RS00_PollFeedback(rs00_t *m)
 {
     uint8_t data[8];
@@ -221,14 +220,14 @@ static bool RS00_PollFeedback(rs00_t *m)
     return tx(m->hcan, RS00_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
-/* 功能：发送RS00_SendSetZero对应的数据或控制指令。 */
+/* 功能：发送RS00_SendSetZero对应的数据或控制指令�?*/
 static bool RS00_SendSetZero(rs00_t *m)
 {
     uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
     return (m != NULL) && (tx(m->hcan, RS00_SET_ZERO, RS00_HOST_ID, m->id, data) == HAL_OK);
 }
 
-/* 功能：构建RS00_BuildSpecial需要发送的通信帧或控制指令。 */
+/* 功能：构建RS00_BuildSpecial需要发送的通信帧或控制指令�?*/
 bool RS00_BuildSpecial(rs00_t *m, uint8_t command)
 {
     if (m != NULL && command == RS00_FALSE)
@@ -238,7 +237,7 @@ bool RS00_BuildSpecial(rs00_t *m, uint8_t command)
     return (m != NULL) && (tx(m->hcan, command, RS00_HOST_ID, m->id, NULL) == HAL_OK);
 }
 
-/* 功能：初始化RS00_Init对应的外设、参数和运行状态。 */
+/* 功能：初始化RS00_Init对应的外设、参数和运行状态�?*/
 HAL_StatusTypeDef RS00_Init(rs00_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, int direction)
 {
     if (m == NULL || hcan == NULL || id == 0U)
@@ -257,7 +256,7 @@ HAL_StatusTypeDef RS00_Init(rs00_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     return HAL_OK;
 }
 
-/* 功能：停止RS00_Stop对应的输出并清理运行状态。 */
+/* 功能：停止RS00_Stop对应的输出并清理运行状态�?*/
 bool RS00_Stop(rs00_t *m)
 {
     bool sent;
@@ -277,7 +276,7 @@ bool RS00_Stop(rs00_t *m)
     return sent;
 }
 
-/* 功能：设置RS00_SetTargetBasic对应的目标值或工作模式。 */
+/* 功能：设置RS00_SetTargetBasic对应的目标值或工作模式�?*/
 void RS00_SetTargetBasic(rs00_t *m, rs_mode_t mode, float target)
 {
     if (mode == RS_MODE_MIT)
@@ -343,7 +342,7 @@ void RS00_SetTargetBasic(rs00_t *m, rs_mode_t mode, float target)
     }
 }
 
-/* 功能：处理RS00_PlanSpeed对应的输入并更新相关状态。 */
+/* 功能：处理RS00_PlanSpeed对应的输入并更新相关状态�?*/
 static float RS00_PlanSpeed(rs00_t *m, float target)
 {
     uint32_t now = HAL_GetTick();
@@ -363,11 +362,11 @@ static float RS00_PlanSpeed(rs00_t *m, float target)
     m->speed_planner.a_acc = rs00_speed_max_acceleration_rad_s2;
     m->speed_planner.a_dec = rs00_speed_max_acceleration_rad_s2;
 
-/* 功能：轮询并更新Trapezoid_Update对应的输入和状态。 */
+/* 功能：轮询并更新Trapezoid_Update对应的输入和状态�?*/
     return Trapezoid_Update(&m->speed_planner, target, dt);
 }
 
-/* 功能：发送RS00_Send对应的数据或控制指令。 */
+/* 功能：发送RS00_Send对应的数据或控制指令�?*/
 bool RS00_Send(rs00_t *m)
 {
     uint8_t d[8];
@@ -378,15 +377,15 @@ bool RS00_Send(rs00_t *m)
         return false;
     if (m->mode == RS_MODE_STOP)
 
-/* 功能：停止RS00_Stop对应的输出并清理运行状态。 */
+/* 功能：停止RS00_Stop对应的输出并清理运行状态�?*/
         return RS00_Stop(m);
     if (m->mode == RS_MODE_SPEED)
     {
         if (!RS00_EnsureSpeedMode(m))
             return false;
 
-/* 功能：完成RS00_WriteParamFloat对应的数据处理。 */
-        return RS00_WriteParamFloat(m, RS00_IDX_SPD_REF, m->direction * RS00_PlanSpeed(m, m->target));
+/* 功能：完成RS00_WriteParamFloat对应的数据处理�?*/
+        return RS00_WriteParamFloat(m, RS00_IDX_SPD_REF, RS00_PlanSpeed(m, m->target));
     }
     if (!RS00_EnsureMitMode(m))
         return false;
@@ -411,7 +410,7 @@ bool RS00_Send(rs00_t *m)
             RS00_BeginPositionTrajectory(m, now);
         RS00_UpdatePositionTrajectory(m, now);
         speed_ref = PID_Calc(&m->cascade_position_pid, m->reference_position, m->position, dt);
-        tq = m->direction * PID_Calc(&m->cascade_speed_pid, speed_ref, m->velocity, dt) + m->tau_ff_nm;
+        tq = PID_Calc(&m->cascade_speed_pid, speed_ref, m->velocity, dt) + m->tau_ff_nm;
 
     }
     else if (m->mode == RS_MODE_DAMPING)
@@ -424,14 +423,13 @@ bool RS00_Send(rs00_t *m)
             RS00_BeginPositionTrajectory(m, now);
         RS00_UpdatePositionTrajectory(m, now);
         pos = m->reference_position;
-        vel = m->direction * m->reference_velocity;
+        vel = m->reference_velocity;
         kp = m->mit_kp;
         kd = m->mit_kd;
         tq = m->tau_ff_nm;
     }
     else
         return false;
-    pos *= m->direction;
     {
         uint16_t p = enc(pos, RS00_POSITION_MIN, RS00_POSITION_MAX);
         uint16_t v = enc(vel, -RS00_VELOCITY_MAX, RS00_VELOCITY_MAX);
@@ -449,7 +447,7 @@ bool RS00_Send(rs00_t *m)
     return tx(m->hcan, RS00_CMD_MOTION, enc(tq, -RS00_TORQUE_MAX, RS00_TORQUE_MAX), m->id, d) == HAL_OK;
 }
 
-/* 功能：接收并解析RS00_OnFrame对应的输入数据，更新模块状态。 */
+/* 功能：接收并解析RS00_OnFrame对应的输入数据，更新模块状态�?*/
 bool RS00_OnFrame(rs00_t *m, const can_frame_t *f)
 {
     uint8_t cmd;
@@ -473,9 +471,9 @@ bool RS00_OnFrame(rs00_t *m, const can_frame_t *f)
 
     m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS00_POSITION_MIN, RS00_POSITION_MAX);
 
-    m->velocity = (float)m->direction * dec(rdbe(&f->data[2]), -RS00_VELOCITY_MAX, RS00_VELOCITY_MAX);
+    m->velocity = dec(rdbe(&f->data[2]), -RS00_VELOCITY_MAX, RS00_VELOCITY_MAX);
 
-    m->torque = (float)m->direction * dec(rdbe(&f->data[4]), -RS00_TORQUE_MAX, RS00_TORQUE_MAX);
+    m->torque = dec(rdbe(&f->data[4]), -RS00_TORQUE_MAX, RS00_TORQUE_MAX);
 
     recovering = !m->feedback_valid;
 
@@ -484,7 +482,8 @@ bool RS00_OnFrame(rs00_t *m, const can_frame_t *f)
 
         if (!m->continuous_valid)
         {
-            m->continuous_position = m->single_position;
+            /* Normalize the first single-turn sample to [-pi, pi]. */
+            m->continuous_position = remainderf(m->single_position, RS00_ANGLE_PERIOD);
         }
 
         m->continuous_valid = true;
@@ -548,7 +547,7 @@ bool RS00_OnFrame(rs00_t *m, const can_frame_t *f)
     return true;
 }
 
-/* 功能：读取RS00_GetPositionDegrees对应的数据或运行状态。 */
+/* 功能：读取RS00_GetPositionDegrees对应的数据或运行状态�?*/
 void RS00_GetPositionDegrees(const rs00_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -557,7 +556,7 @@ void RS00_GetPositionDegrees(const rs00_t *m, volatile float *position_degrees)
     }
 }
 
-/* 功能：执行RS00_Service对应的周期任务并维护运行状态。 */
+/* 功能：执行RS00_Service对应的周期任务并维护运行状态�?*/
 void RS00_Service(rs00_t *m)
 {
     uint32_t now;
@@ -572,7 +571,6 @@ void RS00_Service(rs00_t *m)
     if ((uint32_t)(now - m->last_feedback_tick) > 50U)
     {
         m->feedback_valid = false;
-        m->enabled = false;
         m->offline_latched = true;
         m->feedback_recovery_pending = true;
         m->fault = 0U;
@@ -617,7 +615,7 @@ void RS00_Service(rs00_t *m)
     }
 }
 
-/* 功能：设置RS00_SetTargetMIT对应的 MIT 控制目标。 */
+/* 功能：设置RS00_SetTargetMIT对应�?MIT 控制目标�?*/
 void RS00_SetTargetMIT(rs00_t *motor, rs_mode_t mode, float tau_nm, float output_degrees)
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))

@@ -12,6 +12,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "my_main.h"
+#include "status_task.h"
 
 /* USER CODE END Includes */
 

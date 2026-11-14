@@ -26,8 +26,11 @@ extern volatile uint8_t suction_enable;
 extern volatile float suction_target[2][3];
 
 extern volatile float suction_feedback_angle[2][3];
-extern volatile float g_up_stp23l_distance_cm;
-extern volatile float g_down_stp23l_distance_cm;
+extern volatile float ustp23l_distance_cm;
+extern volatile float dstp23l_distance_cm;
+
+void UStp23lRx(const uint8_t *data, uint16_t size);
+void DStp23lRx(const uint8_t *data, uint16_t size);
 
 /* 功能：初始化SuctionCup_Init对应的外设、参数和运行状态。 */
 void SuctionCup_Init(void);
