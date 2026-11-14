@@ -16,22 +16,22 @@
 #define CHASSIS_RADIUS   ((CHASSIS_WIDTH / 2.0f + CHASSIS_LENGTH / 2.0f) * sin45)
 
 typedef struct {
-    float vx; /* 成员变量。 */
-    float vy; /* 成员变量。 */
-    float vw; /* 成员变量。 */
+    float vx;
+    float vy;
+    float vw;
 } chassis_speed_t;   // 底盘三轴速度
 
 typedef struct {
-    float lf; /* 成员变量。 */
-    float rf; /* 成员变量。 */
-    float lr; /* 成员变量。 */
-    float rr; /* 成员变量。 */
+    float lf;
+    float rf;
+    float lr;
+    float rr;
 } wheel_speed_t;     // 四轮轮速
 
 typedef struct {
-    float x; /* 成员变量。 */
-    float y; /* 成员变量。 */
-    float yaw; /* 成员变量。 */
+    float x;
+    float y;
+    float yaw;
 } chassis_position_t; // 底盘位置
 
 typedef struct {
@@ -49,15 +49,15 @@ typedef struct {
     chassis_position_t target_position; // 目标位置（由决策层下发）
 } omni_chassis_t;
 
-extern omni_chassis_t chassis; /* 成员变量。 */
+extern omni_chassis_t chassis;
 
-/* 功能：执行 chassis_set_speed 模块操作并维护相关状态。 */
+/* 功能：处理chassis_set_speed对应的输入并更新相关状态。 */
 void chassis_set_speed(void);
-/* 功能：执行 chassis_get_speed 模块操作并维护相关状态。 */
+/* 功能：读取chassis_get_speed对应的数据或运行状态。 */
 void chassis_get_speed(void);
-/* 功能：执行 Chassis_BodyToWorld 模块操作并维护相关状态。 */
+/* 功能：处理Chassis_BodyToWorld对应的输入并更新相关状态。 */
 void Chassis_BodyToWorld(void);
-/* 功能：执行 Chassis_WheelSpeedToYawRate 模块操作并维护相关状态。 */
+/* 功能：处理Chassis_WheelSpeedToYawRate对应的输入并更新相关状态。 */
 float Chassis_WheelSpeedToYawRate(float wheel_speed);
 
 #endif

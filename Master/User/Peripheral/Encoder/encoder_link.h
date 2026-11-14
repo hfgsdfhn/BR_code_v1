@@ -9,16 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
-
-
 #ifndef ENCODER_LINK_FRAME_WORDS
 #define ENCODER_LINK_FRAME_WORDS 6U
 
 #endif
 
 #define ENCODER_LINK_FRAME_BYTES (ENCODER_LINK_FRAME_WORDS * 2U)
-
 
 #ifndef ENCODER_LINK_IDX_C1_H
 #define ENCODER_LINK_IDX_C1_H 1U
@@ -41,9 +37,6 @@
 
 #endif
 
-
-
-
 #ifndef ENCODER_LINK_CS_ENABLE
 #define ENCODER_LINK_CS_ENABLE 1
 
@@ -55,7 +48,6 @@
 #define ENCODER_LINK_CS_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE()
 #endif
 
-
 #ifndef ENCODER_LINK_SPI_PRESCALER
 #define ENCODER_LINK_SPI_PRESCALER SPI_BAUDRATEPRESCALER_16
 
@@ -66,50 +58,40 @@
 
 #endif
 
-
 #ifndef ENCODER_LINK_RETRY_MS
 #define ENCODER_LINK_RETRY_MS 100U
 
 #endif
-
 
 #ifndef ENCODER_LINK_MAX_DELTA
 #define ENCODER_LINK_MAX_DELTA 20000
 
 #endif
 
-
 #ifndef ENCODER_LINK_OFFLINE_ERRORS
 #define ENCODER_LINK_OFFLINE_ERRORS 5U
 
 #endif
 
-
-
 typedef struct
 {
-    int32_t encoder1_count; /* 数据长度或数量。 */
-    int32_t encoder2_count; /* 数据长度或数量。 */
-    uint16_t yaw_raw; /* 成员变量。 */
-    uint32_t frame_count; /* 数据缓冲区或数据帧。 */
-    uint32_t error_count; /* 数据长度或数量。 */
-    bool online; /* 状态标志。 */
+    int32_t encoder1_count;
+    int32_t encoder2_count;
+    uint16_t yaw_raw;
+    uint32_t frame_count;
+    uint32_t error_count;
+    bool online;
 } encoder_link_t;
 
-extern volatile encoder_link_t g_encoder_link; /* 成员变量。 */
+extern volatile encoder_link_t g_encoder_link;
 
-
-
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化EncoderLink_Init对应的外设、参数和运行状态。 */
 bool EncoderLink_Init(void);
 
-
-/* 功能：轮询输入或通信状态。 */
+/* 功能：轮询并更新EncoderLink_Poll对应的输入和状态。 */
 bool EncoderLink_Poll(float yaw_deg);
 
-
-/* 功能：执行 EncoderLink_GetYawRaw 模块操作并维护相关状态。 */
+/* 功能：读取EncoderLink_GetYawRaw对应的数据或运行状态。 */
 uint16_t EncoderLink_GetYawRaw(void);
 
 #endif

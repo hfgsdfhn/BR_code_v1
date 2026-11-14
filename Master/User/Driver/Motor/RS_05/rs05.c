@@ -17,7 +17,6 @@
 #include <math.h>
 #include <string.h>
 
-
 volatile float rs05_trajectory_max_speed_rad_s = 10.0f;
 volatile float rs05_trajectory_max_acceleration_rad_s2 = 30.0f;
 
@@ -28,53 +27,45 @@ volatile float rs05_speed_max_acceleration_rad_s2 = 30.0f;
 volatile float rs05_speed_limit_current_a = 8.0f;
 volatile float rs05_speed_accel_rad_s2 = 30.0f;
 
-
 volatile float rs_recovery_max_speed_rad_s = 2.5f;
 volatile float rs_recovery_max_acceleration_rad_s2 = 0.8333333333f;
 
-
-/* 模块实现细节。 */
+/* 功能：处理clampf对应的输入并更新相关状态。 */
 static float clampf(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：将浮点值按范围编码为 16 位整数。 */
 static uint16_t enc(float v, float lo, float hi)
 {
     v = clampf(v, lo, hi);
     return (uint16_t)((v - lo) * 65535.0f / (hi - lo));
 }
 
-
-/* 模块实现细节。 */
+/* 功能：将 16 位整数按范围解码为浮点值。 */
 static float dec(uint16_t v, float lo, float hi)
 {
     return lo + (float)v * (hi - lo) / 65535.0f;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理rdbe对应的输入并更新相关状态。 */
 static uint16_t rdbe(const uint8_t *p)
 {
     return ((uint16_t)p[0] << 8) | p[1];
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理pack对应的输入并更新相关状态。 */
 static uint32_t pack(uint8_t cmd, uint16_t extra, uint8_t id)
 {
     return ((uint32_t)cmd << 24) | ((uint32_t)extra << 8) | id;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_PlanTrajectory对应的输入并更新相关状态。 */
 static void RS05_PlanTrajectory(rs05_t *m, float start, float target)
 {
     quintic_plan_t plan;
     float duration_ms;
-
 
     Quintic_SetDefaultLimits(rs05_trajectory_max_speed_rad_s, rs05_trajectory_max_acceleration_rad_s2,
                              (float)RS05_TRAJECTORY_PERIOD_MS * 0.001f);
@@ -90,8 +81,7 @@ static void RS05_PlanTrajectory(rs05_t *m, float start, float target)
     m->trajectory_duration_ms = (uint32_t)duration_ms;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_RecoveryVelocity对应的输入并更新相关状态。 */
 float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_rad_s, float dt_s)
 {
     float speed = rs_recovery_max_speed_rad_s;
@@ -114,12 +104,12 @@ float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_
     desired = fminf(desired, 4.0f * fabsf(error_rad));
     desired = copysignf(desired, error_rad);
     step = acceleration * dt_s;
-/* 模块实现细节。 */
+
+/* 功能：完成clampf对应的数据处理。 */
     return clampf(previous_rad_s + clampf(desired - previous_rad_s, -step, step), -speed, speed);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_BeginPositionTrajectory对应的输入并更新相关状态。 */
 static void RS05_BeginPositionTrajectory(rs05_t *m, uint32_t now)
 {
     RS05_PlanTrajectory(m, m->position, m->target);
@@ -140,8 +130,7 @@ static void RS05_BeginPositionTrajectory(rs05_t *m, uint32_t now)
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：轮询并更新RS05_UpdatePositionTrajectory对应的输入和状态。 */
 static void RS05_UpdatePositionTrajectory(rs05_t *m, uint32_t now)
 {
     quintic_plan_t plan;
@@ -167,8 +156,7 @@ static void RS05_UpdatePositionTrajectory(rs05_t *m, uint32_t now)
     Quintic_Sample(&plan, (float)elapsed_ms * 0.001f, &m->reference_position, &m->reference_velocity, NULL);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：通过 CAN 外设发送指定命令和数据。 */
 static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t extra, uint8_t id, const uint8_t *data)
 {
     can_frame_t frame = {0};
@@ -180,12 +168,12 @@ static HAL_StatusTypeDef tx(FDCAN_HandleTypeDef *hcan, uint8_t cmd, uint16_t ext
     frame.id = pack(cmd, extra, id);
     frame.id_type = FDCAN_EXTENDED_ID;
     frame.length = 8U;
-/* 模块实现细节。 */
+
+/* 功能：发送BspCan_Send对应的数据或控制指令。 */
     return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：轮询并更新RS05_PollFeedback对应的输入和状态。 */
 static bool RS05_PollFeedback(rs05_t *m)
 {
     uint8_t data[8];
@@ -205,20 +193,18 @@ static bool RS05_PollFeedback(rs05_t *m)
     data[6] = (uint8_t)(enc(0.0f, RS05_KD_MIN, RS05_KD_MAX) >> 8);
     data[7] = (uint8_t)enc(0.0f, RS05_KD_MIN, RS05_KD_MAX);
     zero_torque = enc(0.0f, -RS05_TORQUE_MAX, RS05_TORQUE_MAX);
-/* 模块实现细节。 */
+
     return tx(m->hcan, RS05_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：发送RS05_SendSetZero对应的数据或控制指令。 */
 static bool RS05_SendSetZero(rs05_t *m)
 {
     uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
     return (m != NULL) && (tx(m->hcan, RS05_SET_ZERO, RS05_HOST_ID, m->id, data) == HAL_OK);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：构建RS05_BuildSpecial需要发送的通信帧或控制指令。 */
 bool RS05_BuildSpecial(rs05_t *m, uint8_t command)
 {
     if (m != NULL && command == RS05_FALSE)
@@ -228,8 +214,7 @@ bool RS05_BuildSpecial(rs05_t *m, uint8_t command)
     return (m != NULL) && (tx(m->hcan, command, RS05_HOST_ID, m->id, NULL) == HAL_OK);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：初始化RS05_Init对应的外设、参数和运行状态。 */
 HAL_StatusTypeDef RS05_Init(rs05_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, int direction)
 {
     if (m == NULL || hcan == NULL || id == 0U)
@@ -248,8 +233,7 @@ HAL_StatusTypeDef RS05_Init(rs05_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     return HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：停止RS05_Stop对应的输出并清理运行状态。 */
 bool RS05_Stop(rs05_t *m)
 {
     bool sent;
@@ -269,8 +253,7 @@ bool RS05_Stop(rs05_t *m)
     return sent;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：设置RS05_SetTargetBasic对应的目标值或工作模式。 */
 void RS05_SetTargetBasic(rs05_t *m, rs_mode_t mode, float target)
 {
     if (mode == RS_MODE_MIT)
@@ -338,8 +321,7 @@ void RS05_SetTargetBasic(rs05_t *m, rs_mode_t mode, float target)
 
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_PlanSpeed对应的输入并更新相关状态。 */
 static float RS05_PlanSpeed(rs05_t *m, float target)
 {
     uint32_t now = HAL_GetTick();
@@ -358,36 +340,34 @@ static float RS05_PlanSpeed(rs05_t *m, float target)
     m->speed_planner_valid = true;
     m->speed_planner.a_acc = rs05_speed_max_acceleration_rad_s2;
     m->speed_planner.a_dec = rs05_speed_max_acceleration_rad_s2;
-/* 模块实现细节。 */
+
+/* 功能：轮询并更新Trapezoid_Update对应的输入和状态。 */
     return Trapezoid_Update(&m->speed_planner, target, dt);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_WriteParamFloat对应的输入并更新相关状态。 */
 static bool RS05_WriteParamFloat(rs05_t *m, uint16_t index, float value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     memcpy(&data[4], &value, 4U);
-/* 模块实现细节。 */
+
     return tx(m->hcan, RS05_CMD_WRITE_PARAM, RS05_HOST_ID, m->id, data) == HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_WriteParamByte对应的输入并更新相关状态。 */
 static bool RS05_WriteParamByte(rs05_t *m, uint16_t index, uint8_t value)
 {
     uint8_t data[8] = {0};
 
     memcpy(&data[0], &index, 2U);
     data[4] = value;
-/* 模块实现细节。 */
+
     return tx(m->hcan, RS05_CMD_WRITE_PARAM, RS05_HOST_ID, m->id, data) == HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_EnsureMitMode对应的输入并更新相关状态。 */
 static bool RS05_EnsureMitMode(rs05_t *m)
 {
     if (m->run_mode == RS05_RUN_MODE_MIT)
@@ -402,8 +382,7 @@ static bool RS05_EnsureMitMode(rs05_t *m)
     return true;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理RS05_EnsureSpeedMode对应的输入并更新相关状态。 */
 static bool RS05_EnsureSpeedMode(rs05_t *m)
 {
     if (m->run_mode == RS05_RUN_MODE_SPEED)
@@ -420,8 +399,7 @@ static bool RS05_EnsureSpeedMode(rs05_t *m)
     return true;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：发送RS05_Send对应的数据或控制指令。 */
 bool RS05_Send(rs05_t *m)
 {
     uint8_t d[8];
@@ -431,13 +409,15 @@ bool RS05_Send(rs05_t *m)
     if (!m)
         return false;
     if (m->mode == RS_MODE_STOP)
-/* 模块实现细节。 */
+
+/* 功能：停止RS05_Stop对应的输出并清理运行状态。 */
         return RS05_Stop(m);
     if (m->mode == RS_MODE_SPEED)
     {
         if (!RS05_EnsureSpeedMode(m))
             return false;
-/* 模块实现细节。 */
+
+/* 功能：完成RS05_WriteParamFloat对应的数据处理。 */
         return RS05_WriteParamFloat(m, RS05_IDX_SPD_REF, m->direction * RS05_PlanSpeed(m, m->target));
     }
     if (!RS05_EnsureMitMode(m))
@@ -497,17 +477,15 @@ bool RS05_Send(rs05_t *m)
         d[6] = damp >> 8;
         d[7] = damp;
     }
-/* 模块实现细节。 */
+
     return tx(m->hcan, RS05_CMD_MOTION, enc(tq, -RS05_TORQUE_MAX, RS05_TORQUE_MAX), m->id, d) == HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：接收并解析RS05_OnFrame对应的输入数据，更新模块状态。 */
 bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
 {
     uint8_t cmd;
     bool recovering;
-
 
     if (!m || !f || f->hfdcan != m->hcan || f->id_type != FDCAN_EXTENDED_ID || f->length != 8U)
     {
@@ -515,7 +493,6 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     }
 
     cmd = (uint8_t)((f->id >> 24) & 0x1FU);
-
 
     if (cmd != RS05_CMD_FEEDBACK || (uint8_t)f->id != RS05_HOST_ID || (uint8_t)(f->id >> 8) != m->id)
     {
@@ -534,7 +511,6 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
 
     recovering = !m->feedback_valid;
 
-
     if (recovering)
     {
 
@@ -546,7 +522,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
         m->continuous_valid = true;
         m->feedback_valid = true;
         m->feedback_recovery_pending = false;
-        /* 模块实现细节。 */
+
         m->ever_feedback_received = true;
     }
 
@@ -604,8 +580,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     return true;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：读取RS05_GetPositionDegrees对应的数据或运行状态。 */
 void RS05_GetPositionDegrees(const rs05_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -614,8 +589,7 @@ void RS05_GetPositionDegrees(const rs05_t *m, volatile float *position_degrees)
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：执行RS05_Service对应的周期任务并维护运行状态。 */
 void RS05_Service(rs05_t *m)
 {
     uint32_t now;
@@ -627,7 +601,6 @@ void RS05_Service(rs05_t *m)
 
     now = HAL_GetTick();
 
-    /* 模块实现细节。 */
     if ((uint32_t)(now - m->last_feedback_tick) > 50U)
     {
         m->feedback_valid = false;
@@ -635,7 +608,7 @@ void RS05_Service(rs05_t *m)
         m->offline_latched = true;
         m->feedback_recovery_pending = true;
     }
-    /* 模块实现细节。 */
+
     if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 20U)
     {
         m->reconnect_retry_tick = now;
@@ -653,7 +626,7 @@ void RS05_Service(rs05_t *m)
 
         return;
     }
-    /* 模块实现细节。 */
+
     if (m->mode == RS_MODE_STOP || !m->enabled)
     {
         if ((uint32_t)(now - m->last_control_tick) >= 5U)
@@ -674,8 +647,7 @@ void RS05_Service(rs05_t *m)
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：设置RS05_SetTargetMIT对应的 MIT 控制目标。 */
 void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output_degrees)
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))

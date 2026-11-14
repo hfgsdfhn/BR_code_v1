@@ -10,18 +10,18 @@
 
 typedef struct
 {
-    float origin[3], fixed_rotation[3][3], axis[3]; /* 成员变量。 */
-    float mass_kg, com_m[3]; /* 成员变量。 */
+    float origin[3], fixed_rotation[3][3], axis[3];
+    float mass_kg, com_m[3];
 } br_gravity_link_t;
 typedef struct
 {
-    br_gravity_link_t link[BR_ARM_DOF]; /* 成员变量。 */
-    float gravity_base[3]; /* 成员变量。 */
-    float payload_mass_kg, payload_com_m[3]; /* 成员变量。 */
-    bool calibrated; /* 成员变量。 */
+    br_gravity_link_t link[BR_ARM_DOF];
+    float gravity_base[3];
+    float payload_mass_kg, payload_com_m[3];
+    bool calibrated;
 } br_gravity_model_t;
 
-/* 功能：执行 BR_GravityEvaluate 模块操作并维护相关状态。 */
-bool BR_GravityEvaluate(const br_gravity_model_t *model, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF], /* 成员变量。 */
+/* 功能：计算BR_GravityEvaluate对应的控制量或规划结果。 */
+bool BR_GravityEvaluate(const br_gravity_model_t *model, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF],
                         float *potential_j);
 #endif

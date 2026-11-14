@@ -11,19 +11,19 @@
 
 typedef struct
 {
-    float yaw; /* 成员变量。 */
-    float pitch; /* 成员变量。 */
-    float roll; /* 成员变量。 */
-    float accel[3]; /* 成员变量。 */
-    float gyro[3]; /* 成员变量。 */
-    float quaternion[4]; /* 成员变量。 */
+    float yaw;
+    float pitch;
+    float roll;
+    float accel[3];
+    float gyro[3];
+    float quaternion[4];
 } imu_t;
 
-/* 功能：执行 Mins_Imu_receive_all 模块操作并维护相关状态。 */
+/* 功能：接收并解析Mins_Imu_receive_all对应的输入数据，更新模块状态。 */
 uint8_t Mins_Imu_receive_all(imu_t *imu, const uint8_t *frame, uint16_t len);
-/* 功能：执行 Mins_Imu_receive_omega 模块操作并维护相关状态。 */
+/* 功能：接收并解析Mins_Imu_receive_omega对应的输入数据，更新模块状态。 */
 uint8_t Mins_Imu_receive_omega(imu_t *imu, const uint8_t *frame, uint16_t len);
-/* 功能：执行 Mins_Imu_SetActiveReport 模块操作并维护相关状态。 */
+/* 功能：处理Mins_Imu_SetActiveReport对应的输入并更新相关状态。 */
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart);
 
 #endif

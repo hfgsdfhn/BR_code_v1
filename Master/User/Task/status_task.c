@@ -7,7 +7,7 @@
 #include "cmsis_os2.h"
 #include "my_main.h"
 
-/* 模块实现细节。 */
+/* 功能：执行Status_Task对应的周期任务并维护运行状态。 */
 void Status_Task(void *argument)
 {
     (void)argument;
@@ -26,10 +26,8 @@ void Status_Task(void *argument)
         can2_bus_off_prev = can2_bus_off;
         can3_bus_off_prev = can3_bus_off;
 
-       /* 模块实现细节。 */
         BspCan_Service();
 
         osDelay((osKernelGetTickFreq() * 2U + 999U) / 1000U);
     }
 }
-

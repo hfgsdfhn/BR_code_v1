@@ -13,6 +13,7 @@ int16_t target_speed[BOARD_MOTOR_NUM] = {0};
 int16_t target_current[BOARD_MOTOR_NUM] = {0};
 volatile board_mode_e target_mode_flag = BOARD_MODE_SPEED;
 
+/* 功能：发送Board_CAN1_SendFrame对应的数据或控制指令。 */
 static HAL_StatusTypeDef Board_CAN1_SendFrame(uint32_t can_id,
                                                const uint8_t data[8])
 {
@@ -24,12 +25,11 @@ static HAL_StatusTypeDef Board_CAN1_SendFrame(uint32_t can_id,
     frame.length = 8U;
     memcpy(frame.data, data, sizeof(frame.data));
 
+/* 功能：发送BspCan_Send对应的数据或控制指令。 */
     return BspCan_Send(&frame) ? HAL_OK : HAL_ERROR;
 }
 
-/**
- * @brief 主控CAN1发送底盘数据
- */
+/* 功能：发送Board_CAN1_Send对应的数据或控制指令。 */
 HAL_StatusTypeDef Board_CAN1_Send(
     uint16_t can_id,
     const int16_t data[BOARD_MOTOR_NUM])
@@ -55,18 +55,12 @@ HAL_StatusTypeDef Board_CAN1_Send(
         tx_data[2U * i + 1U] = (uint8_t)(raw >> 8);
     }
 
-/* 功能：执行 HAL_CAN_AddTxMessage 模块操作并维护相关状态。 */
+/* 功能：完成HAL_CAN_AddTxMessage对应的数据处理。 */
     return HAL_CAN_AddTxMessage(
         &hcan1, &tx_header, tx_data, &tx_mailbox);
 }
 
-
-/**
- * @brief 主控发送DJI小板控制数据
- * @param lift_mode 四个3508升降控制位
- * @param action_mode 上台阶行动模式
- * @param target_speed 目标速度
- */
+/* 功能：发送Board_DJI_Send对应的数据或控制指令。 */
 HAL_StatusTypeDef Board_DJI_Send(
     uint8_t lift_mode,
     uint8_t action_mode,
@@ -81,7 +75,6 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[0] = lift_mode;
     tx_data[1] = action_mode;
 
-    /* 模块实现细节。 */
     memcpy(&speed_raw, &target_speed, sizeof(float));
 
     /* 小端序排列 */
@@ -90,7 +83,7 @@ HAL_StatusTypeDef Board_DJI_Send(
     tx_data[4] = (uint8_t)((speed_raw >> 16) & 0xFFU);
     tx_data[5] = (uint8_t)((speed_raw >> 24) & 0xFFU);
 
-/* 功能：执行 HAL_CAN_AddTxMessage 模块操作并维护相关状态。 */
+/* 功能：完成HAL_CAN_AddTxMessage对应的数据处理。 */
     return HAL_CAN_AddTxMessage(
         &hcan1, &tx_header, tx_data, &tx_mailbox);
 }

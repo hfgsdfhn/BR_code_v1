@@ -13,17 +13,14 @@
 #define BOARD_ID_SPEED       0x081U
 #define BOARD_ID_CURRENT     0x082U
 
-/* 模块实现细节。 */
 #define DJI_ID_CONTROL       0x100U
 
 /* 电机数量 */
 #define BOARD_MOTOR_NUM      4U
 
-/* 模块实现细节。 */
 #define DJI_LIFT_DOWN        0U
 #define DJI_LIFT_UP          1U
 
-/* 模块实现细节。 */
 #define DJI_MODE_NORMAL      0U
 #define DJI_MODE_CLIMB       1U
 
@@ -34,32 +31,31 @@ typedef enum
     BOARD_MODE_CURRENT /* 当前工作模式或状态。 */
 } board_mode_e;
 
-extern volatile board_mode_e target_mode_flag; /* 状态标志。 */
+extern volatile board_mode_e target_mode_flag;
 
 /* 底盘接收数据 */
-extern int16_t target_speed[BOARD_MOTOR_NUM]; /* 成员变量。 */
-extern int16_t target_current[BOARD_MOTOR_NUM]; /* 成员变量。 */
+extern int16_t target_speed[BOARD_MOTOR_NUM];
+extern int16_t target_current[BOARD_MOTOR_NUM];
 
-/* 模块实现细节。 */
 extern uint8_t dji_lift_mode; /* 当前工作模式或状态。 */
 extern uint8_t dji_action_mode; /* 当前工作模式或状态。 */
-extern float dji_target_speed; /* 成员变量。 */
+extern float dji_target_speed;
 
-/* 模块实现细节。 */
+/* 功能：处理Chassis_rx对应的输入并更新相关状态。 */
 void Chassis_rx(CAN_RxHeaderTypeDef *header, uint8_t data[8]);
 
-/* 模块实现细节。 */
+/* 功能：发送Board_CAN1_Send对应的数据或控制指令。 */
 HAL_StatusTypeDef Board_CAN1_Send(
-    uint16_t can_id, /* 成员变量。 */
+    uint16_t can_id,
     const int16_t data[BOARD_MOTOR_NUM]);
 
-/* 模块实现细节。 */
+/* 功能：发送Board_DJI_Send对应的数据或控制指令。 */
 HAL_StatusTypeDef Board_DJI_Send(
     uint8_t lift_mode, /* 当前工作模式或状态。 */
     uint8_t action_mode, /* 当前工作模式或状态。 */
     float target_speed);
 
-/* 模块实现细节。 */
+/* 功能：处理Board_DJI_Rx对应的输入并更新相关状态。 */
 void Board_DJI_Rx(CAN_HandleTypeDef *hcan);
 
 #endif

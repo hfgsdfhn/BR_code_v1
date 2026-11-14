@@ -21,57 +21,38 @@
 extern "C" {
 #endif
 
-/* nV = MPC_MAX_N * NU. 30 * 3 = 90 now; leave some headroom. */
 #define MPC_QPOASES_MAX_NV 192
 
-/**
- * @brief  Create the internal QProblemB object.
- * @param  nV number of optimisation variables (= horizon * nu)
- * @return 0 on success, negative on setup error.
- */
+/* 功能：初始化MPC_QPOASES_Init对应的外设、参数和运行状态。 */
 int MPC_QPOASES_Init(int nV);
 
-/**
- * @brief  First solve (cold start) of
- *             min 0.5*x'Hx + g'x   s.t.  lb <= x <= ub
- * @param  H  nV*nV Hessian, column-major (symmetric, so row-major is also OK)
- * @param  g  nV gradient
- * @param  lb nV lower bounds
- * @param  ub nV upper bounds
- * @param  x  nV output: optimal primal solution
- * @return solver status: 0 = solved, 1 = max nWSR reached, 2 = infeasible,
- *         negative = API/setup error.
- */
+/* 功能：计算MPC_QPOASES_Solve对应的控制量或规划结果。 */
 int MPC_QPOASES_Solve(const float *H,
                       const float *g,
                       const float *lb,
                       const float *ub,
                       float *x);
 
-/**
- * @brief  Warm start with a new gradient / new bounds (H stays unchanged).
- *         Call this once per control cycle after MPC_QPOASES_Solve().
- * @return same status encoding as MPC_QPOASES_Solve().
- */
+/* 功能：使用上一周期结果热启动 qpOASES 求解器。 */
 int MPC_QPOASES_Hotstart(const float *g,
                          const float *lb,
                          const float *ub,
                          float *x);
 
-/* 模块实现细节。 */
+/* 功能：读取MPC_QPOASES_GetLastStatus对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastStatus(void);
 
-/* 模块实现细节。 */
+/* 功能：读取MPC_QPOASES_GetLastNWSR对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastNWSR(void);
 
-/* 模块实现细节。 */
+/* 功能：读取MPC_QPOASES_GetLastObj对应的数据或运行状态。 */
 float MPC_QPOASES_GetLastObj(void);
 
-/* 模块实现细节。 */
+/* 功能：重置或释放MPC_QPOASES_Cleanup对应的内部状态和资源。 */
 void MPC_QPOASES_Cleanup(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MPC_QPOASES_H */
+#endif

@@ -18,8 +18,7 @@ static uint32_t s_consecutive_errors;
 static bool s_attempted;
 static bool s_ready;
 
-
-/* 功能：执行 EncoderLink_Cs 模块操作并维护相关状态。 */
+/* 功能：处理EncoderLink_Cs对应的输入并更新相关状态。 */
 static void EncoderLink_Cs(GPIO_PinState level)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -30,8 +29,7 @@ static void EncoderLink_Cs(GPIO_PinState level)
 
 }
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化EncoderLink_Init对应的外设、参数和运行状态。 */
 bool EncoderLink_Init(void)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -45,7 +43,6 @@ bool EncoderLink_Init(void)
     HAL_GPIO_Init(ENCODER_LINK_CS_PORT, &gpio);
     EncoderLink_Cs(GPIO_PIN_SET);
 #endif
-
 
     hspi6.Init.DataSize = SPI_DATASIZE_8BIT;
     hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
@@ -70,8 +67,7 @@ bool EncoderLink_Init(void)
     return true;
 }
 
-
-/* 功能：记录并处理错误状态。 */
+/* 功能：处理EncoderLink_RecordError对应的输入并更新相关状态。 */
 static void EncoderLink_RecordError(void)
 {
     g_encoder_link.error_count++;
@@ -82,8 +78,7 @@ static void EncoderLink_RecordError(void)
     }
 }
 
-
-/* 功能：轮询输入或通信状态。 */
+/* 功能：轮询并更新EncoderLink_Poll对应的输入和状态。 */
 bool EncoderLink_Poll(float yaw_deg)
 {
     uint8_t tx[ENCODER_LINK_FRAME_BYTES];
@@ -98,7 +93,6 @@ bool EncoderLink_Poll(float yaw_deg)
     {
         return false;
     }
-
 
     now = HAL_GetTick();
     if ((!g_encoder_link.online) && s_attempted && ((now - s_last_attempt_ms) < ENCODER_LINK_RETRY_MS))
@@ -121,7 +115,6 @@ bool EncoderLink_Poll(float yaw_deg)
         return false;
     }
 
-
     {
         bool all_ff = true;
 
@@ -140,7 +133,6 @@ bool EncoderLink_Poll(float yaw_deg)
         }
     }
 
-
     for (i = 0U; i < ENCODER_LINK_FRAME_WORDS; i++)
     {
         s_words[i] = (uint16_t)(((uint16_t)rx[2U * i] << 8) | (uint16_t)rx[2U * i + 1U]);
@@ -148,7 +140,6 @@ bool EncoderLink_Poll(float yaw_deg)
 
     c1 = (int32_t)(((uint32_t)s_words[ENCODER_LINK_IDX_C1_H] << 16) | (uint32_t)s_words[ENCODER_LINK_IDX_C1_L]);
     c2 = (int32_t)(((uint32_t)s_words[ENCODER_LINK_IDX_C2_H] << 16) | (uint32_t)s_words[ENCODER_LINK_IDX_C2_L]);
-
 
     if (g_encoder_link.online)
     {
@@ -180,8 +171,7 @@ bool EncoderLink_Poll(float yaw_deg)
     return true;
 }
 
-
-/* 功能：执行 EncoderLink_GetYawRaw 模块操作并维护相关状态。 */
+/* 功能：读取EncoderLink_GetYawRaw对应的数据或运行状态。 */
 uint16_t EncoderLink_GetYawRaw(void)
 {
     return g_encoder_link.yaw_raw;

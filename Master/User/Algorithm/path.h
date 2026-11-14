@@ -3,15 +3,14 @@
  * @brief path模块的用户接口与实现。
  */
 
-/* 模块实现细节。 */
 typedef struct
 {
-    float x; /* 成员变量。 */
-    float y; /* 成员变量。 */
-    float theta; /* 成员变量。 */
-    float curvature; /* 成员变量。 */
-    float s; /* 成员变量。 */
-    float velocity; /* 成员变量。 */
+    float x;
+    float y;
+    float theta;
+    float curvature;
+    float s;
+    float velocity;
 } PathPoint;
 
 #define PATH_SIZE 90

@@ -14,25 +14,21 @@ volatile float m2006_trajectory_max_acceleration_rad_s2 = 62.832f;
 volatile float m2006_trajectory_time_s = 0.0f;
 #include <string.h>
 
-
 static int16_t m2006_command_current[M2006_MOTOR_COUNT];
 
-
-/* 模块实现细节。 */
+/* 功能：处理M2006_ReadU16对应的输入并更新相关状态。 */
 static uint16_t M2006_ReadU16(const uint8_t *data                               )
 {
     return ((uint16_t)data[0] << 8U) | data[1];
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理M2006_Abs对应的输入并更新相关状态。 */
 static float M2006_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理M2006_Clamp对应的输入并更新相关状态。 */
 static float M2006_Clamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -46,8 +42,7 @@ static float M2006_Clamp(float value, float minimum, float maximum)
     return value;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：重置或释放M2006_ResetMotion对应的内部状态和资源。 */
 static void M2006_ResetMotion(m2006_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -62,8 +57,7 @@ static void M2006_ResetMotion(m2006_t *motor)
     motor->trajectory_active = false;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：重置或释放M2006_ResetFeedback对应的内部状态和资源。 */
 void M2006_ResetFeedback(m2006_t *motor)
 {
     if (motor == NULL)
@@ -84,14 +78,11 @@ void M2006_ResetFeedback(m2006_t *motor)
     M2006_ResetMotion(motor);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理M2006_BeginPositionTrajectory对应的输入并更新相关状态。 */
 static void M2006_BeginPositionTrajectory(m2006_t *motor)
 {
     quintic_plan_t plan;
     float distance = motor->target_position_rad - motor->position_rad;
-
-
 
     Quintic_SetDefaultLimits(m2006_trajectory_max_speed_rad_s, m2006_trajectory_max_acceleration_rad_s2,
                              M2006_MIN_TRAJECTORY_S);
@@ -117,8 +108,7 @@ static void M2006_BeginPositionTrajectory(m2006_t *motor)
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：轮询并更新M2006_UpdatePositionTrajectory对应的输入和状态。 */
 static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
 {
     quintic_plan_t plan;
@@ -150,8 +140,7 @@ static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
     motor->trajectory_elapsed_s += dt_s;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：轮询并更新M2006_UpdateSpeedRamp对应的输入和状态。 */
 static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
 {
     float delta;
@@ -171,8 +160,7 @@ static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
         M2006_Abs(motor->target_speed_rad_s - motor->reference_speed_rad_s) > M2006_TRAJECTORY_EPSILON;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：初始化M2006_Init对应的外设、参数和运行状态。 */
 HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
                              FDCAN_HandleTypeDef *hcan                  ,
                              uint8_t id                                    ,
@@ -195,8 +183,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     return HAL_OK;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：接收并解析M2006_OnFrame对应的输入数据，更新模块状态。 */
 bool M2006_OnFrame(m2006_t *motor                         ,
                    const can_frame_t *frame                      )
 {
@@ -209,7 +196,6 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     {
         return false;
     }
-
 
     first_feedback = !motor->received;
     feedback_needs_reanchor = motor->received && !motor->feedback_online;
@@ -259,7 +245,6 @@ bool M2006_OnFrame(m2006_t *motor                         ,
         motor->startup_hold_active = true;
     }
 
-
     if (feedback_needs_reanchor && motor->received)
     {
         if (motor->mode == M2006_MODE_POSITION)
@@ -283,8 +268,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     return true;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：设置M2006_SetTargetDeferred对应的目标值或工作模式。 */
 void M2006_SetTargetDeferred(m2006_t *motor                         ,
                      m2006_mode_t mode                          ,
                      float target                               )
@@ -364,8 +348,7 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
 
 }
 
-
-/* 模块实现细节。 */
+/* 功能：设置M2006_SetTarget对应的目标值或工作模式。 */
 void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
 {
     if (motor && motor->target_sink) { motor->target_sink(motor, (int)mode, target, 0.0f); return; }
@@ -384,8 +367,7 @@ void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：执行M2006_Service对应的周期任务并维护运行状态。 */
 void M2006_Service(m2006_t *motor, float dt_s)
 {
     can_frame_t frame;
@@ -406,8 +388,7 @@ void M2006_Service(m2006_t *motor, float dt_s)
     (void)BspCan_Send(&frame);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：停止M2006_Stop对应的输出并清理运行状态。 */
 bool M2006_Stop(m2006_t *motor)
 {
     if (motor == NULL)
@@ -420,16 +401,14 @@ bool M2006_Stop(m2006_t *motor)
     return true;
 }
 
-
-/* 模块实现细节。 */
+/* 功能：处理M2006_SetPositionDegrees对应的输入并更新相关状态。 */
 void M2006_SetPositionDegrees(m2006_t *motor                     ,
                               float degrees                          )
 {
     M2006_SetTarget(motor, M2006_MODE_POSITION, degrees);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：计算M2006_Calc对应的控制量或规划结果。 */
 int16_t M2006_Calc(m2006_t *motor                             ,
                    float dt_s                          )
 {
@@ -490,8 +469,7 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     return (int16_t)(current_raw - 0.5f);
 }
 
-
-/* 模块实现细节。 */
+/* 功能：读取M2006_GetPositionDegrees对应的数据或运行状态。 */
 void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -500,8 +478,7 @@ void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_deg
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：构建M2006_BuildGroupFrame需要发送的通信帧或控制指令。 */
 void M2006_BuildGroupFrame(uint8_t first_id                               ,
                            const int16_t current[4]                             ,
                            can_frame_t *frame                              )
@@ -518,8 +495,7 @@ void M2006_BuildGroupFrame(uint8_t first_id                               ,
     }
 }
 
-
-/* 模块实现细节。 */
+/* 功能：构建M2006_BuildSpecial需要发送的通信帧或控制指令。 */
 void M2006_BuildSpecial(m2006_t *motor, uint8_t command)
 {
     if (motor == NULL)

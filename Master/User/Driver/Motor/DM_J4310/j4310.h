@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 #define J4310_SPEED_PLANNER_RESEED_SEC 0.1f
 #define J4310_SPEED_PLANNER_MAX_DT_SEC 0.02f
 #define J4310_ENABLE_COMMAND 0xFCU
@@ -40,15 +39,15 @@
 
 typedef struct
 {
-    bool enabled; /* 状态标志。 */
-    bool started; /* 成员变量。 */
-    float base_kp; /* 成员变量。 */
-    float base_kd; /* 成员变量。 */
-    float applied_kp; /* 成员变量。 */
-    float applied_kd; /* 成员变量。 */
-    float previous_error; /* 成员变量。 */
-    float previous_abs_error; /* 成员变量。 */
-    float convergence_rate; /* 成员变量。 */
+    bool enabled;
+    bool started;
+    float base_kp;
+    float base_kd;
+    float applied_kp;
+    float applied_kd;
+    float previous_error;
+    float previous_abs_error;
+    float convergence_rate;
 } j4310_online_mit_state_t;
 
 typedef enum
@@ -62,156 +61,142 @@ typedef enum
 
 typedef struct
 {
-    uint16_t age_cycles; /* 成员变量。 */
-    float position_rad; /* 成员变量。 */
-    float speed_rad_s; /* 成员变量。 */
-    float torque_nm; /* 成员变量。 */
+    uint16_t age_cycles;
+    float position_rad;
+    float speed_rad_s;
+    float torque_nm;
     uint8_t state; /* 当前工作模式或状态。 */
-    uint8_t mos_temperature; /* 成员变量。 */
-    uint8_t rotor_temperature; /* 成员变量。 */
-    bool received; /* 成员变量。 */
+    uint8_t mos_temperature;
+    uint8_t rotor_temperature;
+    bool received;
 } j4310_feedback_t;
 
 typedef struct
 {
     void (*target_sink)(void *motor, int mode, float target, float position_deg);
-    pid_t cascade_position_pid, cascade_speed_pid; /* 成员变量。 */
-    uint32_t cascade_tick; /* 成员变量。 */
-    bool cascade_configured; /* 成员变量。 */
-    float mit_kp, mit_kd; /* 模块实现细节。 */
+    pid_t cascade_position_pid, cascade_speed_pid;
+    uint32_t cascade_tick;
+    bool cascade_configured;
+    float mit_kp, mit_kd;
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
-    uint8_t motor_id; /* 成员变量。 */
-    uint16_t master_id; /* 成员变量。 */
-    int direction; /* 成员变量。 */
+    uint8_t motor_id;
+    uint16_t master_id;
+    int direction;
     j4310_mode_t mode; /* 当前工作模式或状态。 */
-    float target_position_rad; /* 成员变量。 */
-    float target_speed_rad_s; /* 成员变量。 */
-    float reference_position_rad; /* 成员变量。 */
-    float reference_speed_rad_s; /* 成员变量。 */
-    float trajectory_time_s; /* 成员变量。 */
-    float trajectory_start_rad; /* 成员变量。 */
-    float trajectory_k0; /* 成员变量。 */
-    uint32_t trajectory_started_at; /* 成员变量。 */
-    uint32_t trajectory_duration_ms; /* 成员变量。 */
-    float target_torque_nm; /* 成员变量。 */
-    float kp; /* 成员变量。 */
-    float kd; /* 成员变量。 */
-    j4310_feedback_t feedback; /* 成员变量。 */
-    float last_raw_position_rad; /* 成员变量。 */
-    float position_offset_rad; /* 成员变量。 */
-    uint8_t startup_enable_countdown; /* 数据长度或数量。 */
-    bool position_tracking_valid; /* 状态标志。 */
-    bool offline_latched; /* 成员变量。 */
-    bool fault_active; /* 状态标志。 */
-    bool fault_disable_sent; /* 成员变量。 */
-    bool fault_recovery_pending; /* 成员变量。 */
-    bool trajectory_pending; /* 成员变量。 */
-    bool trajectory_active; /* 状态标志。 */
-    trapezoid_t speed_planner; /* 成员变量。 */
-    uint32_t speed_planner_tick; /* 成员变量。 */
-    bool speed_planner_valid; /* 状态标志。 */
-    bool startup_hold_pending; /* 成员变量。 */
-    bool startup_hold_active; /* 状态标志。 */
-    bool recovery_trajectory; /* 成员变量。 */
-    volatile uint8_t set_zero_position_request; /* 成员变量。 */
+    float target_position_rad;
+    float target_speed_rad_s;
+    float reference_position_rad;
+    float reference_speed_rad_s;
+    float trajectory_time_s;
+    float trajectory_start_rad;
+    float trajectory_k0;
+    uint32_t trajectory_started_at;
+    uint32_t trajectory_duration_ms;
+    float target_torque_nm;
+    float kp;
+    float kd;
+    j4310_feedback_t feedback;
+    float last_raw_position_rad;
+    float position_offset_rad;
+    uint8_t startup_enable_countdown;
+    bool position_tracking_valid;
+    bool offline_latched;
+    bool fault_active;
+    bool fault_disable_sent;
+    bool fault_recovery_pending;
+    bool trajectory_pending;
+    bool trajectory_active;
+    trapezoid_t speed_planner;
+    uint32_t speed_planner_tick;
+    bool speed_planner_valid;
+    bool startup_hold_pending;
+    bool startup_hold_active;
+    bool recovery_trajectory;
+    volatile uint8_t set_zero_position_request;
 } j4310_t;
 
-extern volatile float j4310_trajectory_max_speed_rad_s; /* 成员变量。 */
-extern volatile float j4310_trajectory_max_acceleration_rad_s2; /* 成员变量。 */
-extern volatile float j4310_trajectory_time_s; /* 成员变量。 */
+extern volatile float j4310_trajectory_max_speed_rad_s;
+extern volatile float j4310_trajectory_max_acceleration_rad_s2;
+extern volatile float j4310_trajectory_time_s;
 
-extern volatile float j4310_speed_max_acceleration_rad_s2; /* 成员变量。 */
+extern volatile float j4310_speed_max_acceleration_rad_s2;
 
-extern volatile float j4310_tau_ff_nm; /* 成员变量。 */
+extern volatile float j4310_tau_ff_nm;
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化J4310_Init对应的外设、参数和运行状态。 */
 HAL_StatusTypeDef J4310_Init(j4310_t *motor, FDCAN_HandleTypeDef *hcan, /* 对应外设句柄。 */
                              uint8_t motor_id, int direction);
 
-
-/* 功能：执行 J4310_SetMode 模块操作并维护相关状态。 */
+/* 功能：设置J4310_SetMode对应的目标值或工作模式。 */
 void J4310_SetMode(j4310_t *motor                         , j4310_mode_t mode                    );
 
-
-/* 功能：设置设备目标值。 */
+/* 功能：设置J4310_SetTargetMode对应的目标值或工作模式。 */
 void J4310_SetTargetMode(j4310_t *motor                       , j4310_mode_t mode              , /* 当前工作模式或状态。 */
-                         float target                             , /* 成员变量。 */
-                         float speed_rad_s                    , float kp                , /* 成员变量。 */
+                         float target                             ,
+                         float speed_rad_s                    , float kp                ,
                          float kd                , float torque_nm                  );
 
-
-/* 功能：停止设备输出并清理状态。 */
+/* 功能：停止J4310_Stop对应的输出并清理运行状态。 */
 bool J4310_Stop(j4310_t *motor                       );
 
-
-/* 功能：发送设备使能指令。 */
+/* 功能：处理J4310_RequestEnable对应的输入并更新相关状态。 */
 void J4310_RequestEnable(j4310_t *motor                            );
 
-
-/* 功能：设置设备目标值。 */
+/* 功能：设置J4310_SetTargetBasic对应的目标值或工作模式。 */
 void J4310_SetTargetBasic(j4310_t *motor, j4310_mode_t mode, float target);
 
-/* 功能：执行 J4310_SetMitTarget 模块操作并维护相关状态。 */
-void J4310_SetMitTarget(j4310_t *motor                              , /* 成员变量。 */
-                        float position_degrees                          , /* 成员变量。 */
-                        float speed_rad_s                             , /* 成员变量。 */
-                        float kp                            , /* 成员变量。 */
-                        float kd                            , /* 成员变量。 */
+/* 功能：读取J4310_SetMitTarget对应的数据或运行状态。 */
+void J4310_SetMitTarget(j4310_t *motor                              ,
+                        float position_degrees                          ,
+                        float speed_rad_s                             ,
+                        float kp                            ,
+                        float kd                            ,
                         float torque_nm                             );
 
-
-/* 功能：执行 J4310_SetPositionDegrees 模块操作并维护相关状态。 */
-void J4310_SetPositionDegrees(j4310_t *motor                         , /* 成员变量。 */
-                              float degrees                         , /* 成员变量。 */
-                              float kp                           , /* 成员变量。 */
-                              float kd                           , /* 成员变量。 */
+/* 功能：处理J4310_SetPositionDegrees对应的输入并更新相关状态。 */
+void J4310_SetPositionDegrees(j4310_t *motor                         ,
+                              float degrees                         ,
+                              float kp                           ,
+                              float kd                           ,
                               float torque_nm                             );
 
-
-/* 功能：接收并解析一帧通信数据。 */
-bool J4310_OnFrame(j4310_t *motor                         , /* 成员变量。 */
+/* 功能：接收并解析J4310_OnFrame对应的输入数据，更新模块状态。 */
+bool J4310_OnFrame(j4310_t *motor                         ,
                    const can_frame_t *frame                      );
 
-/* 功能：读取设备当前位置。 */
-void J4310_GetPositionDegrees(const j4310_t *motor                         , /* 成员变量。 */
+/* 功能：读取J4310_GetPositionDegrees对应的数据或运行状态。 */
+void J4310_GetPositionDegrees(const j4310_t *motor                         ,
                               volatile float *position_degrees                     );
 
-
-/* 功能：构建待发送的通信帧。 */
-void J4310_BuildEnable(const j4310_t *motor                              , /* 成员变量。 */
+/* 功能：构建J4310_BuildEnable需要发送的通信帧或控制指令。 */
+void J4310_BuildEnable(const j4310_t *motor                              ,
                        can_frame_t *frame                              );
 
-
-/* 功能：构建待发送的通信帧。 */
-void J4310_BuildDisable(const j4310_t *motor                              , /* 成员变量。 */
+/* 功能：构建J4310_BuildDisable需要发送的通信帧或控制指令。 */
+void J4310_BuildDisable(const j4310_t *motor                              ,
                         can_frame_t *frame                              );
 
-
-/* 功能：构建待发送的通信帧。 */
-void J4310_BuildMit(const j4310_t *motor                             , /* 成员变量。 */
-                    float position_rad                               , /* 成员变量。 */
-                    float speed_rad_s                                 , /* 成员变量。 */
-                    float kp                           , float kd                           , /* 成员变量。 */
-                    float torque_nm                             , /* 成员变量。 */
+/* 功能：构建J4310_BuildMit需要发送的通信帧或控制指令。 */
+void J4310_BuildMit(const j4310_t *motor                             ,
+                    float position_rad                               ,
+                    float speed_rad_s                                 ,
+                    float kp                           , float kd                           ,
+                    float torque_nm                             ,
                     can_frame_t *frame                                );
 
-
-/* 功能：执行周期性服务并维护运行状态。 */
+/* 功能：执行J4310_Service对应的周期任务并维护运行状态。 */
 void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now);
-/* 功能：构建待发送的通信帧。 */
-bool J4310_BuildControlFrame(j4310_t *motor                             , /* 成员变量。 */
-                             float additional_torque_nm                       , /* 成员变量。 */
-                             uint32_t now                         , /* 成员变量。 */
+/* 功能：构建J4310_BuildControlFrame需要发送的通信帧或控制指令。 */
+bool J4310_BuildControlFrame(j4310_t *motor                             ,
+                             float additional_torque_nm                       ,
+                             uint32_t now                         ,
                              can_frame_t *frame                               );
 
-
-/* 功能：设置设备目标值。 */
+/* 功能：设置J4310_SetTargetMIT对应的 MIT 控制目标。 */
 void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float output_degrees);
 #define J4310_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define J4310_SetTarget(...) J4310_TARGET_SELECT(__VA_ARGS__, J4310_SetTargetMIT, J4310_SetTargetBasic)(__VA_ARGS__)
-
 
 #define J4310_POSITION_PID_KP 4.0f
 #define J4310_POSITION_PID_KI 0.0f

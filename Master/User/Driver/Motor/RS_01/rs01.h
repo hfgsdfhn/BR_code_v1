@@ -20,13 +20,10 @@
 #define RS01_CMD_MOTION 1U
 #define RS01_CMD_FEEDBACK 2U
 
-
 #define RS01_CMD_WRITE_PARAM 0x12U
-
 
 #define RS01_RUN_MODE_MIT 0U
 #define RS01_RUN_MODE_SPEED 2U
-
 
 #define RS01_IDX_RUN_MODE 0x7005U
 #define RS01_IDX_SPD_REF 0x700AU
@@ -46,9 +43,7 @@ typedef enum
 } rs_mode_t;
 #endif
 
-
 #define RS01_SPEED_PLANNER_RESEED_SEC 0.1f
-
 
 #define RS01_SPEED_PLANNER_MAX_DT_SEC 0.02f
 #define RS01_ANGLE_PERIOD 6.28318530718f
@@ -57,63 +52,63 @@ typedef enum
 typedef struct
 {
     void (*target_sink)(void *motor, int mode, float target, float position_deg);
-    pid_t cascade_position_pid, cascade_speed_pid; /* 成员变量。 */
-    uint32_t cascade_tick; /* 成员变量。 */
-    bool cascade_configured; /* 成员变量。 */
-    float mit_kp, mit_kd; /* 模块实现细节。 */
+    pid_t cascade_position_pid, cascade_speed_pid;
+    uint32_t cascade_tick;
+    bool cascade_configured;
+    float mit_kp, mit_kd;
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
-    uint8_t id; /* 成员变量。 */
-    int direction; /* 成员变量。 */
+    uint8_t id;
+    int direction;
     rs_mode_t mode; /* 当前工作模式或状态。 */
-    float target; /* 成员变量。 */
-    float hold_position; /* 成员变量。 */
-    float reference_position; /* 成员变量。 */
-    float reference_velocity; /* 成员变量。 */
-    float trajectory_time_s; /* 成员变量。 */
-    float trajectory_start_position; /* 成员变量。 */
-    float trajectory_delta_position; /* 成员变量。 */
-    float trajectory_k0; /* 成员变量。 */
-    uint32_t trajectory_start_tick; /* 成员变量。 */
-    uint32_t trajectory_duration_ms; /* 成员变量。 */
-    volatile uint32_t last_feedback_tick; /* 成员变量。 */
-    volatile float position; /* 成员变量。 */
-    volatile float single_position; /* 成员变量。 */
-    volatile float velocity; /* 成员变量。 */
-    volatile float torque; /* 成员变量。 */
-    volatile uint8_t fault; /* 成员变量。 */
-    volatile bool feedback_valid; /* 状态标志。 */
-    volatile bool feedback_recovery_pending; /* 成员变量。 */
-    volatile bool enabled; /* 模块实现细节。 */
-    volatile uint8_t feedback_state; /* 模块实现细节。 */
-    float continuous_position; /* 成员变量。 */
-    bool continuous_valid; /* 状态标志。 */
-    bool angle_store_pending; /* 成员变量。 */
-    volatile bool offline_latched; /* 成员变量。 */
-    volatile bool ever_feedback_received; /* 成员变量。 */
-    volatile uint32_t reconnect_retry_tick; /* 成员变量。 */
-    volatile uint32_t last_poll_tick; /* 成员变量。 */
-    volatile uint32_t last_control_tick; /* 成员变量。 */
-    bool trajectory_pending; /* 成员变量。 */
-    bool trajectory_active; /* 状态标志。 */
-    volatile bool startup_hold_active; /* 状态标志。 */
-    volatile bool startup_hold_initialized; /* 成员变量。 */
-    volatile bool recovery_trajectory; /* 成员变量。 */
-    volatile bool recovery_sync_candidate; /* 成员变量。 */
-    volatile uint8_t set_zero_position_request; /* 成员变量。 */
-    trapezoid_t speed_planner; /* 成员变量。 */
-    uint32_t speed_planner_tick; /* 成员变量。 */
-    bool speed_planner_valid; /* 状态标志。 */
-    float tau_ff_nm; /* 成员变量。 */
+    float target;
+    float hold_position;
+    float reference_position;
+    float reference_velocity;
+    float trajectory_time_s;
+    float trajectory_start_position;
+    float trajectory_delta_position;
+    float trajectory_k0;
+    uint32_t trajectory_start_tick;
+    uint32_t trajectory_duration_ms;
+    volatile uint32_t last_feedback_tick;
+    volatile float position;
+    volatile float single_position;
+    volatile float velocity;
+    volatile float torque;
+    volatile uint8_t fault;
+    volatile bool feedback_valid;
+    volatile bool feedback_recovery_pending;
+    volatile bool enabled;
+    volatile uint8_t feedback_state;
+    float continuous_position;
+    bool continuous_valid;
+    bool angle_store_pending;
+    volatile bool offline_latched;
+    volatile bool ever_feedback_received;
+    volatile uint32_t reconnect_retry_tick;
+    volatile uint32_t last_poll_tick;
+    volatile uint32_t last_control_tick;
+    bool trajectory_pending;
+    bool trajectory_active;
+    volatile bool startup_hold_active;
+    volatile bool startup_hold_initialized;
+    volatile bool recovery_trajectory;
+    volatile bool recovery_sync_candidate;
+    volatile uint8_t set_zero_position_request;
+    trapezoid_t speed_planner;
+    uint32_t speed_planner_tick;
+    bool speed_planner_valid;
+    float tau_ff_nm;
     uint8_t run_mode; /* 当前工作模式或状态。 */
 } rs01_t;
 
-extern volatile float rs01_trajectory_max_speed_rad_s; /* 成员变量。 */
-extern volatile float rs01_trajectory_max_acceleration_rad_s2; /* 成员变量。 */
-extern volatile float rs01_trajectory_time_s; /* 成员变量。 */
-extern volatile float rs01_speed_max_acceleration_rad_s2; /* 成员变量。 */
-extern volatile float rs01_speed_limit_current_a; /* 成员变量。 */
-extern volatile float rs01_speed_accel_rad_s2; /* 成员变量。 */
+extern volatile float rs01_trajectory_max_speed_rad_s;
+extern volatile float rs01_trajectory_max_acceleration_rad_s2;
+extern volatile float rs01_trajectory_time_s;
+extern volatile float rs01_speed_max_acceleration_rad_s2;
+extern volatile float rs01_speed_limit_current_a;
+extern volatile float rs01_speed_accel_rad_s2;
 #define RS01_POSITION_MIN (-12.57f)
 #define RS01_POSITION_MAX (12.57f)
 #define RS01_VELOCITY_MAX (44.0f)
@@ -122,41 +117,38 @@ extern volatile float rs01_speed_accel_rad_s2; /* 成员变量。 */
 #define RS01_TRAJECTORY_PERIOD_MS (2U)
 #define RS01_TRAJECTORY_EPSILON_RAD (0.000001f)
 
-
-/* 功能：初始化模块并准备外设资源。 */
-HAL_StatusTypeDef RS01_Init(rs01_t *motor                     , /* 成员变量。 */
-                            FDCAN_HandleTypeDef *hcan                    , uint8_t id                 , /* 成员变量。 */
+/* 功能：初始化RS01_Init对应的外设、参数和运行状态。 */
+HAL_StatusTypeDef RS01_Init(rs01_t *motor                     ,
+                            FDCAN_HandleTypeDef *hcan                    , uint8_t id                 ,
                             int direction                       );
 
-/* 功能：构建待发送的通信帧。 */
+/* 功能：构建RS01_BuildSpecial需要发送的通信帧或控制指令。 */
 bool RS01_BuildSpecial(rs01_t *motor                       , uint8_t command             );
 
-/* 功能：设置设备目标值。 */
+/* 功能：设置RS01_SetTargetBasic对应的目标值或工作模式。 */
 void RS01_SetTargetBasic(rs01_t *motor                      , rs_mode_t mode              , /* 当前工作模式或状态。 */
                          float target                      );
 
-/* 功能：发送数据或控制指令。 */
+/* 功能：发送RS01_Send对应的数据或控制指令。 */
 bool RS01_Send(rs01_t *motor                      );
 
-/* 功能：接收并解析一帧通信数据。 */
+/* 功能：接收并解析RS01_OnFrame对应的输入数据，更新模块状态。 */
 bool RS01_OnFrame(rs01_t *motor                      , const can_frame_t *frame                     );
 
-/* 功能：停止设备输出并清理状态。 */
+/* 功能：停止RS01_Stop对应的输出并清理运行状态。 */
 bool RS01_Stop(rs01_t *motor                    );
 
-/* 功能：执行周期性服务并维护运行状态。 */
+/* 功能：执行RS01_Service对应的周期任务并维护运行状态。 */
 void RS01_Service(rs01_t *motor                             );
 
-/* 功能：读取设备当前位置。 */
-void RS01_GetPositionDegrees(const rs01_t *motor                      , /* 成员变量。 */
+/* 功能：读取RS01_GetPositionDegrees对应的数据或运行状态。 */
+void RS01_GetPositionDegrees(const rs01_t *motor                      ,
                              volatile float *position_degrees                      );
 
-
-/* 功能：设置设备目标值。 */
+/* 功能：设置RS01_SetTargetMIT对应的 MIT 控制目标。 */
 void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS01_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS01_SetTarget(...) RS01_TARGET_SELECT(__VA_ARGS__, RS01_SetTargetMIT, RS01_SetTargetBasic)(__VA_ARGS__)
-
 
 #define RS01_POSITION_PID_KP 4.0f
 #define RS01_POSITION_PID_KI 0.0f

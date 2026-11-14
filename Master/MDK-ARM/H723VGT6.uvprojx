@@ -891,14 +891,14 @@
               <FilePath>..\User\Task\status_task.h</FilePath>
             </File>
             <File>
-              <FileName>suction_cup.c</FileName>
+              <FileName>cup_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Task\suction_cup.c</FilePath>
+              <FilePath>..\User\Task\cup_task.c</FilePath>
             </File>
             <File>
-              <FileName>suction_cup.h</FileName>
+              <FileName>cup_task.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\User\Task\suction_cup.h</FilePath>
+              <FilePath>..\User\Task\cup_task.h</FilePath>
             </File>
           </Files>
         </Group>

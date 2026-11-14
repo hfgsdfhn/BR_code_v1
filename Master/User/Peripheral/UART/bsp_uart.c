@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @file bsp_uart.c
  * @brief bsp_uart模块的用户接口与实现。
  */
@@ -22,13 +22,13 @@ bsp_uart_t uart_list[BSP_UART_COUNT] = {
     [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, NULL},
     [BSP_UART_UP_STP23L] = {&huart5, ustp23l_rx, 0U, NULL},
     [BSP_UART_DOWN_STP23L] = {&huart6, dstp23l_rx, 0U, NULL},
-    [BSP_UART_SCRAM] = { .handle = &huart7, .buffer = scram_rx, .callback = Scram_RxBytes },
-    [BSP_UART_REMOTE] = { .handle = &huart8, .buffer = remote_rx, .callback = Remote_RxBytes }
+    [BSP_UART_SCRAM] = {&huart7, scram_rx, Scram_RxBytes },
+    [BSP_UART_REMOTE] = {&huart9, remote_rx, Remote_RxBytes }
 };
 
 static osThreadId_t uart_task_handle;
 
-/* 模块实现细节。 */
+/* 功能：为指定 UART 通道注册接收回调函数。 */
 bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback_t callback)
 {
     if ((uint32_t)channel >= BSP_UART_COUNT) return false;
@@ -36,7 +36,7 @@ bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback
     return true;
 }
 
-/* 模块实现细节。 */
+/* 功能：读取BspUart_GetAlignedCacheRange对应的数据或运行状态。 */
 static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
                                          uint8_t **aligned_buffer, uint32_t *aligned_size)
 {
@@ -47,7 +47,7 @@ static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,
     *aligned_size = (size + offset + CACHE_LINE_SIZE - 1U) & ~(CACHE_LINE_SIZE - 1U);
 }
 
-/* 模块实现细节。 */
+/* 功能：判断BspUart_Invalidate对应的运行条件是否满足。 */
 static void BspUart_Invalidate(uint8_t *buffer)
 {
     uint8_t *aligned_buffer;
@@ -56,7 +56,7 @@ static void BspUart_Invalidate(uint8_t *buffer)
     SCB_InvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);
 }
 
-/* 模块实现细节。 */
+/* 功能：接收并解析BspUart_StartReceive对应的输入数据，更新模块状态。 */
 static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
 {
     HAL_StatusTypeDef status;
@@ -83,14 +83,14 @@ static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
     return status;
 }
 
-/* 模块实现细节。 */
+/* 功能：处理BspUart_RequestRestart对应的输入并更新相关状态。 */
 static void BspUart_RequestRestart(uint32_t index)
 {
     uart_list[index].restart_requested = true;
     if (uart_task_handle != NULL) (void)osThreadFlagsSet(uart_task_handle, UART_RESTART_FLAG(index));
 }
 
-/* 模块实现细节。 */
+/* 功能：初始化BspUart_Init对应的外设、参数和运行状态。 */
 void BspUart_Init(void)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -102,7 +102,7 @@ void BspUart_Init(void)
     }
 }
 
-/* 模块实现细节。 */
+/* 功能：轮询 UART 接收数据、处理回调并维护发送队列。 */
 void BspUart_Task(void *argument)
 {
     (void)argument;
@@ -148,7 +148,7 @@ void BspUart_Task(void *argument)
     }
 }
 
-/* 模块实现细节。 */
+/* 功能：将数据复制到指定 UART 通道的非阻塞发送队列。 */
 bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size)
 {
     if ((channel >= BSP_UART_COUNT) || (data == NULL) || (size == 0U) ||
@@ -189,7 +189,7 @@ bool BspUart_Send(bsp_uart_channel_t channel, const uint8_t *data, uint16_t size
     return true;
 }
 
-/* 模块实现细节。 */
+/* 功能：处理 UART 发送完成事件并释放发送状态。 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
@@ -219,7 +219,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 模块实现细节。 */
+/* 功能：处理 UART 错误事件并请求链路恢复。 */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     if (huart == &huart2)
@@ -238,10 +238,9 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 模块实现细节。 */
+/* 功能：处理 UART 空闲接收事件并更新接收缓冲区。 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     (void)huart;
     (void)size;
 }
-

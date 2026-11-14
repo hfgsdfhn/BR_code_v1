@@ -6,8 +6,7 @@
 #ifndef STATUS_TASK_H
 #define STATUS_TASK_H
 
-
-/* 功能：执行周期任务主流程。 */
+/* 功能：执行Status_Task对应的周期任务并维护运行状态。 */
 void Status_Task(void *argument);
 
 #endif

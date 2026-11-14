@@ -10,8 +10,7 @@
 #include <stddef.h>
 #include <string.h>
 
-
-/* 功能：执行 angle_crc 模块操作并维护相关状态。 */
+/* 功能：处理angle_crc对应的输入并更新相关状态。 */
 static uint32_t angle_crc(const motor_angle_record_t *record)
 {
     const uint8_t *bytes = (const uint8_t *)record;
@@ -25,22 +24,19 @@ static uint32_t angle_crc(const motor_angle_record_t *record)
     return crc;
 }
 
-
-/* 功能：执行 angle_record_valid 模块操作并维护相关状态。 */
+/* 功能：判断angle_record_valid对应的运行条件是否满足。 */
 static bool angle_record_valid(const motor_angle_record_t *record)
 {
     return record->magic == FLASH_MOTOR_ANGLE_MAGIC && isfinite(record->angle) && record->crc == angle_crc(record);
 }
 
-
-/* 功能：执行 Flash_Select 模块操作并维护相关状态。 */
+/* 功能：处理Flash_Select对应的输入并更新相关状态。 */
 static void Flash_Select(GPIO_PinState state)
 {
     HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, state);
 }
 
-
-/* 功能：读取设备参数。 */
+/* 功能：处理Flash_ReadStatus对应的输入并更新相关状态。 */
 static bool Flash_ReadStatus(uint8_t *status)
 {
     uint8_t command = FLASH_CMD_READ_STATUS;
@@ -52,8 +48,7 @@ static bool Flash_ReadStatus(uint8_t *status)
     return ok && *status != 0xFFU;
 }
 
-
-/* 功能：执行 Flash_Wait 模块操作并维护相关状态。 */
+/* 功能：处理Flash_Wait对应的输入并更新相关状态。 */
 static bool Flash_Wait(uint32_t timeout_ms)
 {
     uint32_t start = HAL_GetTick();
@@ -72,8 +67,7 @@ static bool Flash_Wait(uint32_t timeout_ms)
     return false;
 }
 
-
-/* 功能：写入设备参数。 */
+/* 功能：处理Flash_WriteEnable对应的输入并更新相关状态。 */
 static bool Flash_WriteEnable(void)
 {
     uint8_t command = FLASH_CMD_WRITE_ENABLE;
@@ -85,17 +79,14 @@ static bool Flash_WriteEnable(void)
     return ok && Flash_ReadStatus(&status) && (status & 2U) != 0U;
 }
 
-
-/* 功能：发送数据或控制指令。 */
+/* 功能：发送Flash_SendAddress对应的数据或控制指令。 */
 static bool Flash_SendAddress(uint8_t command, uint32_t address)
 {
     uint8_t header[4] = {command, (uint8_t)(address >> 16U), (uint8_t)(address >> 8U), (uint8_t)address};
-/* 功能：执行 HAL_SPI_Transmit 模块操作并维护相关状态。 */
     return HAL_SPI_Transmit(&hspi1, header, sizeof(header), FLASH_IO_TIMEOUT_MS) == HAL_OK;
 }
 
-
-/* 功能：读取设备参数。 */
+/* 功能：处理Flash_ReadId对应的输入并更新相关状态。 */
 uint16_t Flash_ReadId(void)
 {
     uint8_t command[4] = {FLASH_CMD_DEVICE_ID, 0U, 0U, 0U};
@@ -112,8 +103,7 @@ uint16_t Flash_ReadId(void)
     return ((uint16_t)id[0] << 8U) | id[1];
 }
 
-
-/* 功能：读取设备参数。 */
+/* 功能：处理Flash_Read对应的输入并更新相关状态。 */
 bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
 {
     bool ok;
@@ -132,8 +122,7 @@ bool Flash_Read(uint32_t address, uint8_t *data, uint16_t size)
     return ok;
 }
 
-
-/* 功能：写入设备参数。 */
+/* 功能：处理Flash_WritePage对应的输入并更新相关状态。 */
 bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
 {
     bool ok;
@@ -153,8 +142,7 @@ bool Flash_WritePage(uint32_t address, const uint8_t *data, uint16_t size)
     return ok && Flash_Wait(FLASH_PROGRAM_TIMEOUT_MS);
 }
 
-
-/* 功能：执行 Flash_EraseSector 模块操作并维护相关状态。 */
+/* 功能：处理Flash_EraseSector对应的输入并更新相关状态。 */
 bool Flash_EraseSector(uint32_t address)
 {
     bool ok;
@@ -172,16 +160,14 @@ bool Flash_EraseSector(uint32_t address)
     return ok && Flash_Wait(FLASH_ERASE_TIMEOUT_MS);
 }
 
-
-/* 功能：执行 angle_record_newer 模块操作并维护相关状态。 */
+/* 功能：处理angle_record_newer对应的输入并更新相关状态。 */
 static bool angle_record_newer(const motor_angle_record_t *a, const motor_angle_record_t *b)
 {
     uint32_t delta = a->sequence - b->sequence;
     return delta != 0U && delta < 0x80000000UL;
 }
 
-
-/* 功能：执行 Flash_LoadMotorAngle 模块操作并维护相关状态。 */
+/* 功能：处理Flash_LoadMotorAngle对应的输入并更新相关状态。 */
 bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
 {
     motor_angle_record_t a = {0}, b = {0};
@@ -202,8 +188,7 @@ bool Flash_LoadMotorAngle(uint8_t slot, float *angle)
     return true;
 }
 
-
-/* 功能：执行 Flash_SaveMotorAngle 模块操作并维护相关状态。 */
+/* 功能：处理Flash_SaveMotorAngle对应的输入并更新相关状态。 */
 bool Flash_SaveMotorAngle(uint8_t slot, float angle)
 {
     motor_angle_record_t a = {0}, b = {0}, record = {0}, verify = {0};
@@ -235,7 +220,7 @@ bool Flash_SaveMotorAngle(uint8_t slot, float angle)
         address = base + FLASH_MOTOR_ANGLE_SECTOR;
     }
     record.crc = angle_crc(&record);
-/* 功能：执行 Flash_EraseSector 模块操作并维护相关状态。 */
+/* 功能：完成Flash_EraseSector对应的数据处理。 */
     return Flash_EraseSector(address) && Flash_WritePage(address, (const uint8_t *)&record, sizeof(record)) &&
            Flash_Read(address, (uint8_t *)&verify, sizeof(verify)) && memcmp(&record, &verify, sizeof(record)) == 0;
 }

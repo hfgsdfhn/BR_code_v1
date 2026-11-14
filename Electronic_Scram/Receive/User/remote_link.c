@@ -18,7 +18,7 @@ static remote_port_t *RemoteLink_FindPort(UART_HandleTypeDef *uart)
     return NULL;
 }
 
-/* 功能：接收并处理输入数据。 */
+/* 功能：接收并解析RemoteLink_StartReceive对应的输入数据，更新模块状态。 */
 static HAL_StatusTypeDef RemoteLink_StartReceive(remote_port_t *port)
 {
     if (port->uart->hdmarx == NULL || port->uart->hdmatx == NULL) return HAL_ERROR;
@@ -29,7 +29,7 @@ static HAL_StatusTypeDef RemoteLink_StartReceive(remote_port_t *port)
     return HAL_UARTEx_ReceiveToIdle_DMA(port->uart, port->rx_buffer, REMOTE_RX_SIZE);
 }
 
-/* 功能：接收并处理输入数据。 */
+/* 功能：接收并解析RemoteLink_UpdateReceive对应的输入数据，更新模块状态。 */
 static uint32_t RemoteLink_UpdateReceive(remote_port_t *port)
 {
     uint32_t primask = __get_PRIMASK();
@@ -47,7 +47,7 @@ static uint32_t RemoteLink_UpdateReceive(remote_port_t *port)
     return produced;
 }
 
-/* 功能：执行通信或设备故障恢复。 */
+/* 功能：处理RemoteLink_Recover对应的输入并更新相关状态。 */
 static void RemoteLink_Recover(remote_port_t *port)
 {
     uint32_t primask = __get_PRIMASK();
@@ -68,7 +68,7 @@ static void RemoteLink_Recover(remote_port_t *port)
     __set_PRIMASK(primask);
 }
 
-/* 功能：执行 RemoteLink_TransmitLocked 模块操作并维护相关状态。 */
+/* 功能：发送RemoteLink_TransmitLocked对应的数据或控制指令。 */
 static void RemoteLink_TransmitLocked(remote_port_t *port)
 {
     uint32_t available;
@@ -96,7 +96,7 @@ static void RemoteLink_TransmitLocked(remote_port_t *port)
     }
 }
 
-/* 功能：执行 RemoteLink_Transmit 模块操作并维护相关状态。 */
+/* 功能：发送RemoteLink_Transmit对应的数据或控制指令。 */
 static void RemoteLink_Transmit(remote_port_t *port)
 {
     uint32_t primask = __get_PRIMASK();
@@ -105,7 +105,7 @@ static void RemoteLink_Transmit(remote_port_t *port)
     __set_PRIMASK(primask);
 }
 
-/* 功能：转发通信数据。 */
+/* 功能：发送RemoteLink_Forward对应的数据或控制指令。 */
 static void RemoteLink_Forward(remote_port_t *source, remote_port_t *target)
 {
     uint32_t produced;
@@ -142,7 +142,7 @@ static void RemoteLink_Forward(remote_port_t *source, remote_port_t *target)
     source->rx_consumed += count;
 }
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化RemoteLink_Init对应的外设、参数和运行状态。 */
 void RemoteLink_Init(void)
 {
     uint32_t index;
@@ -157,7 +157,7 @@ void RemoteLink_Init(void)
     }
 }
 
-/* 功能：处理当前输入并更新模块状态。 */
+/* 功能：轮询并更新RemoteLink_Process对应的输入和状态。 */
 void RemoteLink_Process(void)
 {
     uint32_t index;
@@ -171,7 +171,7 @@ void RemoteLink_Process(void)
     for (index = 0U; index < REMOTE_PORT_COUNT; index++) RemoteLink_Transmit(&ports[index]);
 }
 
-/* 功能：处理外设回调事件。 */
+/* 功能：处理 UART 空闲接收事件并更新接收缓冲区。 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *uart, uint16_t size)
 {
     remote_port_t *port = RemoteLink_FindPort(uart);
@@ -181,7 +181,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *uart, uint16_t size)
     }
 }
 
-/* 功能：处理外设回调事件。 */
+/* 功能：处理 UART 发送完成事件并释放发送状态。 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *uart)
 {
     remote_port_t *port = RemoteLink_FindPort(uart);
@@ -191,7 +191,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *uart)
     }
 }
 
-/* 功能：处理外设回调事件。 */
+/* 功能：处理 UART 错误事件并请求链路恢复。 */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *uart)
 {
     remote_port_t *port = RemoteLink_FindPort(uart);

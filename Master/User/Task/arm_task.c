@@ -12,7 +12,7 @@
 #include "cmsis_os2.h"
 #include "my_main.h"
 #include "upper.h"
-#include "suction_cup.h"
+#include "cup_task.h"
 #include "../Peripheral/CAN/bsp_can.h"
 #include <math.h>
 #include <string.h>
@@ -24,7 +24,6 @@ volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
 
-/* 模块实现细节。 */
 volatile uint8_t arm_gpio_pb6 = 0U;
 volatile uint8_t arm_gpio_pb7 = 0U;
 volatile uint8_t arm_gpio_pd7 = 0U;
@@ -35,8 +34,7 @@ volatile uint8_t arm_gpio_pd4 = 0U;
 volatile uint8_t arm_gpio_pd5 = 0U;
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 
-
-/* 功能：接收并解析一帧通信数据。 */
+/* 功能：接收并解析Arm_OnFrame对应的输入数据，更新模块状态。 */
 void Arm_OnFrame(const can_frame_t *frame)
 {
     Upper_OnFrame(&upper_state, frame);
@@ -44,7 +42,7 @@ void Arm_OnFrame(const can_frame_t *frame)
     SCB_CleanDCache_by_Addr(arm_feedback_angle, sizeof(arm_feedback_angle));
     SCB_CleanDCache_by_Addr(suction_feedback_angle, sizeof(suction_feedback_angle));
 }
-/* 功能：执行周期性服务并维护运行状态。 */
+/* 功能：执行Arm_ServiceGpio对应的周期任务并维护运行状态。 */
 static void Arm_ServiceGpio(void)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,
@@ -65,7 +63,7 @@ static void Arm_ServiceGpio(void)
                       arm_gpio_pd5 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Arm_TaskInit对应的外设、参数和运行状态。 */
 void Arm_TaskInit(void)
 {
     memset(&upper_state, 0, sizeof(upper_state));
@@ -84,7 +82,6 @@ void Arm_TaskInit(void)
     memset((void *)arm_joint_zero_calibration, 0, sizeof(arm_joint_zero_calibration));
     memset(&Arm_larm, 0, sizeof(Arm_larm));
     memset(&Arm_rarm, 0, sizeof(Arm_rarm));
-    /* Prepare 位置 commands; upper_state.使能 gates 电机 输出. */
     for (unsigned arm = 0; arm < 2U; arm++)
         for (unsigned joint = 0; joint < ARM_JOINT_COUNT; joint++)
             arm_mode[arm][joint] = (arm == ARM_LARM_INDEX && joint == ARM_JOINT_ROOT)
@@ -92,13 +89,13 @@ void Arm_TaskInit(void)
                                         : ARM_MODE_MIT;
 }
 
-/* 功能：执行周期任务主流程。 */
+/* 功能：停止Arm_TaskStop对应的输出并清理运行状态。 */
 void Arm_TaskStop(void)
 {
     upper_state.enable = 0U;
 }
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：将Arm_TxQueueInit对应的目标数据加入执行队列。 */
 bool Arm_TxQueueInit(void)
 {
     if (br_mutex == NULL)
@@ -106,7 +103,7 @@ bool Arm_TxQueueInit(void)
     return br_mutex != NULL;
 }
 
-/* 功能：执行周期任务主流程。 */
+/* 功能：执行Arm_TxTask对应的周期任务并维护运行状态。 */
 void Arm_TxTask(void *argument)
 {
     (void)argument;
@@ -116,7 +113,7 @@ void Arm_TxTask(void *argument)
     }
 }
 
-/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
+/* 功能：解析机械臂命令并调用对应的关节控制接口。 */
 static bool arm_set_command(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target, float tau)
 {
     if (arm >= 2U || joint >= ARM_JOINT_COUNT || !isfinite(target) || !isfinite(tau) || br_mutex == NULL)
@@ -129,28 +126,28 @@ static bool arm_set_command(uint8_t arm, arm_joint_t joint, arm_mode_t mode, flo
     return true;
 }
 
-/* 功能：执行 Upper_SetJointMIT 模块操作并维护相关状态。 */
+/* 功能：设置Upper_SetJointMIT对应的目标值或工作模式。 */
 bool Upper_SetJointMIT(uint8_t arm, arm_joint_t joint, float tau_nm, float output_degrees)
 {
-/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
+/* 功能：完成arm_set_command对应的数据处理。 */
     return arm_set_command(arm, joint, ARM_MODE_MIT, output_degrees, tau_nm);
 }
 
-/* 功能：执行 Upper_SetJointModeTarget 模块操作并维护相关状态。 */
+/* 功能：设置Upper_SetJointModeTarget对应的目标值或工作模式。 */
 bool Upper_SetJointModeTarget(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target_degrees)
 {
-/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
+/* 功能：完成arm_set_command对应的数据处理。 */
     return arm_set_command(arm, joint, mode, target_degrees, 0.0f);
 }
 
-/* 功能：执行 Upper_SetJointDegrees 模块操作并维护相关状态。 */
+/* 功能：设置Upper_SetJointDegrees对应的目标值或工作模式。 */
 bool Upper_SetJointDegrees(uint8_t arm, arm_joint_t joint, float degrees)
 {
-/* 功能：执行 arm_set_command 模块操作并维护相关状态。 */
+/* 功能：完成arm_set_command对应的数据处理。 */
     return arm_set_command(arm, joint, ARM_MODE_POSITION, degrees, 0.0f);
 }
 
-/* 功能：执行 Upper_QueueArmPositions 模块操作并维护相关状态。 */
+/* 功能：将Upper_QueueArmPositions对应的目标数据加入执行队列。 */
 void Upper_QueueArmPositions(bool enable)
 {
     upper_state.enable = enable ? 1U : 0U;
@@ -158,7 +155,7 @@ void Upper_QueueArmPositions(bool enable)
         Arm_TaskStop();
 }
 
-/* 功能：执行周期任务主流程。 */
+/* 功能：执行Arm_Task对应的周期任务并维护运行状态。 */
 void Arm_Task(void *argument)
 {
     uint32_t next = osKernelGetTickCount();

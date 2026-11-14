@@ -5,13 +5,13 @@
 
 #include "pid.h"
 
-/* 功能：执行 PID_Abs 模块操作并维护相关状态。 */
+/* 功能：处理PID_Abs对应的输入并更新相关状态。 */
 static float PID_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：执行 PID_Clamp 模块操作并维护相关状态。 */
+/* 功能：处理PID_Clamp对应的输入并更新相关状态。 */
 static float PID_Clamp(float value, float limit)
 {
     limit = PID_Abs(limit);
@@ -31,17 +31,7 @@ static float PID_Clamp(float value, float limit)
     return value;
 }
 
-/**
- * @brief PID初始化函数
- *
- * @param pid 填入PID结构体指针
- * @param kp 比例增益
- * @param ki 积分增益
- * @param kd 微分增益
- * @param sample_time_ms 采样时间，单位毫秒
- * @param output_limit  输出限幅
- * @param integral_limit 积分限幅
- */
+/* 功能：初始化PID_Init对应的外设、参数和运行状态。 */
 bool PID_Init(pid_t *pid, float kp, float ki, float kd,
               float sample_time_ms, float output_limit, float integral_limit)
 {
@@ -70,11 +60,7 @@ void PID_SetIntegralSeparation(pid_t *pid, float separation)
     }
 }
 
-/**
- * @brief PID重置函数
- *
- * @param pid 填入PID结构体指针
- */
+/* 功能：重置或释放PID_Reset对应的内部状态和资源。 */
 void PID_Reset(pid_t *pid)
 {
     if (pid != 0)
@@ -85,14 +71,7 @@ void PID_Reset(pid_t *pid)
     }
 }
 
-/**
- * @brief PID计算函数
- *
- * @param pid 填入PID结构体指针
- * @param target 目标值
- * @param feedback 反馈值
- * @return float 计算结果
- */
+/* 功能：计算PID_Calc对应的控制量或规划结果。 */
 float PID_Calc(pid_t *pid, float target, float feedback)
 {
     float error;    //误差值
@@ -124,6 +103,6 @@ float PID_Calc(pid_t *pid, float target, float feedback)
              pid->kd * derivative;
     pid->previous_feedback = feedback;
     pid->initialized = true;     //上一次返回值有效
-/* 功能：执行 PID_Clamp 模块操作并维护相关状态。 */
+/* 功能：完成PID_Clamp对应的数据处理。 */
     return PID_Clamp(output, pid->output_limit);        //限幅并输出
 }

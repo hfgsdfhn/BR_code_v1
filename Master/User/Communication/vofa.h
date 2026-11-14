@@ -9,17 +9,17 @@
 #include "main.h"
 #define CH_COUNT 1   //通道数量
 
-typedef struct vofa vofa_t; /* 成员变量。 */
+typedef struct vofa vofa_t;
 struct vofa
 {
-    float fdata[CH_COUNT]; /* 数据缓冲区或数据帧。 */
-    uint8_t tail[4]; /* 成员变量。 */
+    float fdata[CH_COUNT];
+    uint8_t tail[4];
     HAL_StatusTypeDef tx_state; /* 当前工作模式或状态。 */
     void (*send)(vofa_t *vofa, UART_HandleTypeDef *huart);
 };
 
-/* 功能：执行 vofa_send 模块操作并维护相关状态。 */
+/* 功能：发送vofa_send对应的数据或控制指令。 */
 void vofa_send(vofa_t *vofa, UART_HandleTypeDef *huart);
-extern vofa_t vofa; /* 成员变量。 */
+extern vofa_t vofa;
 
 #endif

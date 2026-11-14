@@ -8,40 +8,35 @@
 
 #include <stdbool.h>
 
-
 typedef struct
 {
-    float kp; /* 成员变量。 */
-    float ki; /* 成员变量。 */
-    float kd; /* 成员变量。 */
-    float integral; /* 成员变量。 */
-    float previous_error; /* 成员变量。 */
-    float output_limit; /* 成员变量。 */
-    float integral_limit; /* 成员变量。 */
-    float full_integral_separation; /* 成员变量。 */
-    float integral_separation; /* 成员变量。 */
-    bool initialized; /* 成员变量。 */
+    float kp;
+    float ki;
+    float kd;
+    float integral;
+    float previous_error;
+    float output_limit;
+    float integral_limit;
+    float full_integral_separation;
+    float integral_separation;
+    bool initialized;
 } pid_t;
 
-
-/* 功能：初始化模块并准备外设资源。 */
-bool PID_Init(pid_t *pid                    , float kp            , float ki            , /* 成员变量。 */
-              float kd            , float output_limit               , /* 成员变量。 */
+/* 功能：初始化PID_Init对应的外设、参数和运行状态。 */
+bool PID_Init(pid_t *pid                    , float kp            , float ki            ,
+              float kd            , float output_limit               ,
               float integral_limit                );
 
-
-/* 功能：执行 PID_SetIntegralSeparationRange 模块操作并维护相关状态。 */
-void PID_SetIntegralSeparationRange(pid_t *pid                   , /* 成员变量。 */
-                                    float full_separation                   , /* 成员变量。 */
+/* 功能：处理PID_SetIntegralSeparationRange对应的输入并更新相关状态。 */
+void PID_SetIntegralSeparationRange(pid_t *pid                   ,
+                                    float full_separation                   ,
                                     float separation                   );
 
-
-/* 功能：执行 PID_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放PID_Reset对应的内部状态和资源。 */
 void PID_Reset(pid_t *pid                     );
 
-
-/* 功能：执行 PID_Calc 模块操作并维护相关状态。 */
-float PID_Calc(pid_t *pid                      , float target             , /* 成员变量。 */
+/* 功能：计算PID_Calc对应的控制量或规划结果。 */
+float PID_Calc(pid_t *pid                      , float target             ,
                float feedback             , float dt_s                 );
 
 #endif

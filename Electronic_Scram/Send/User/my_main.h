@@ -6,9 +6,9 @@
 #ifndef MY_MAIN_H
 #define MY_MAIN_H
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化My_Init对应的外设、参数和运行状态。 */
 void My_Init(void);
 
-/* 功能：执行 My_Loop 模块操作并维护相关状态。 */
+/* 功能：执行My_Loop对应的周期任务并维护运行状态。 */
 void My_Loop(void);
 #endif
