@@ -176,6 +176,10 @@ void Upper_BindMotors(upper_t *upper)
     if (upper == NULL)
         return;
 
+    /* Root M2006 and RS01 both use the 14-tooth drive / 45-tooth output gear. */
+    m2006_larm.output_ratio = 14.0f / 45.0f;
+    rs01_rarm.output_ratio = RS01_ROOT_OUTPUT_RATIO;
+
     m2006_larm.trajectory_time_s = BR_ROOT_M2006_TRAJECTORY_TIME_S;
     rs01_rarm.trajectory_time_s = BR_ROOT_RS01_TRAJECTORY_TIME_S;
     rs00_larm[0].trajectory_time_s = BR_BIG_ARM_RS00_TRAJECTORY_TIME_S;

@@ -48,6 +48,7 @@ typedef enum
 #define RS01_SPEED_PLANNER_MAX_DT_SEC 0.02f
 #define RS01_ANGLE_PERIOD 6.28318530718f
 #define RS01_DEG_TO_RAD 0.017453292519943295f
+#define RS01_ROOT_OUTPUT_RATIO (14.0f / 45.0f)
 
 typedef struct
 {
@@ -56,6 +57,7 @@ typedef struct
     uint32_t cascade_tick;
     bool cascade_configured;
     float mit_kp, mit_kd;
+    float output_ratio;
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
     uint8_t id;

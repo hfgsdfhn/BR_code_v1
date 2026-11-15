@@ -175,6 +175,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     motor->hcan = hcan;
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
+    motor->output_ratio = 1.0f;
     PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, M2006_POSITION_OUTPUT_LIMIT, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
     PID_SetIntegralSeparationRange(&motor->position_pid, M2006_POSITION_I_FULL, M2006_POSITION_I_SEPARATION);
@@ -201,7 +202,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     feedback_needs_reanchor = motor->received && !motor->feedback_online;
     motor->encoder = M2006_ReadU16(&frame->data[0]);
     motor->speed_rpm = (int16_t)M2006_ReadU16(&frame->data[2]);
-    motor->current_raw = (int16_t)M2006_ReadU16(&frame->data[4]);
+    motor->current_raw = (int16_t)(motor->direction * (float)(int16_t)M2006_ReadU16(&frame->data[4]));
     motor->feedback_age_cycles = 0U;
 
     difference = (int32_t)motor->encoder - motor->last_encoder;
@@ -230,7 +231,9 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     motor->last_encoder = motor->encoder;
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M2006_ENCODER_COUNT * M2006_REDUCTION_RATIO);
-    motor->speed_rad_s = (float)motor->speed_rpm * RPM_TO_RAD_S / M2006_REDUCTION_RATIO;
+    motor->speed_rad_s = motor->direction * (float)motor->speed_rpm * RPM_TO_RAD_S / M2006_REDUCTION_RATIO;
+    motor->position_rad *= motor->output_ratio;
+    motor->speed_rad_s *= motor->output_ratio;
 
     if (first_feedback)
     {
@@ -275,7 +278,7 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
 {
     bool mode_changed = mode != motor->mode;
     bool target_changed;
-    float target_position_rad = target * M2006_DEG_TO_RAD;
+    float target_position_rad = target * M2006_DEG_TO_RAD * motor->output_ratio;
 
     if (mode != M2006_MODE_POSITION)
     {
@@ -452,7 +455,7 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     {
         return 0;
     }
-    current_raw = current / M2006_CURRENT_SCALE;
+    current_raw = motor->direction * current / M2006_CURRENT_SCALE;
 
     if (current_raw > M2006_CURRENT_RAW_LIMIT)
     {

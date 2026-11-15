@@ -245,6 +245,7 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
+    m->output_ratio = 1.0f;
     m->mode = RS_MODE_STOP;
     m->continuous_valid = Flash_LoadMotorAngle(0U, &m->continuous_position);
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
@@ -306,7 +307,8 @@ void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
     }
     if (mode == RS_MODE_POSITION)
     {
-        position_target = clampf(target * RS01_DEG_TO_RAD, RS01_POSITION_MIN, RS01_POSITION_MAX);
+        position_target = clampf(target * RS01_DEG_TO_RAD * m->output_ratio,
+                                RS01_POSITION_MIN, RS01_POSITION_MAX);
         target_changed = (m->mode != RS_MODE_POSITION) || m->recovery_trajectory ||
                          (fabsf(position_target - m->target) > RS01_TRAJECTORY_EPSILON_RAD);
         m->mode = mode;
@@ -322,7 +324,7 @@ void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
     else if (mode == RS_MODE_SPEED)
     {
         m->mode = mode;
-        m->target = clampf(target, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
+        m->target = clampf(target * m->output_ratio, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
         m->trajectory_pending = false;
         m->trajectory_active = false;
         m->recovery_trajectory = false;
@@ -426,8 +428,8 @@ bool RS01_Send(rs01_t *m)
     else
         return false;
     {
-        uint16_t p = enc(pos, RS01_POSITION_MIN, RS01_POSITION_MAX);
-        uint16_t v = enc(vel, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
+        uint16_t p = enc(pos / m->output_ratio, RS01_POSITION_MIN, RS01_POSITION_MAX);
+        uint16_t v = enc(vel / m->output_ratio, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
         uint16_t k = enc(kp, 0, 500), damp = enc(kd, 0, 5);
         d[0] = p >> 8;
         d[1] = p;
@@ -464,9 +466,10 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     m->feedback_state = (uint8_t)((f->id >> 22) & 0x03U);
     m->enabled = (m->feedback_state == 2U) && (m->fault == 0U);
 
-    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX);
+    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX) * m->output_ratio;
 
-    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
+    /* Keep RS01 velocity in the protocol/external feedback convention, as RS00/RS05 do. */
+    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio;
 
     m->torque = dec(rdbe(&f->data[4]), -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
 
@@ -620,7 +623,7 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
     }
     if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX || fabsf(tau_nm) > RS01_TORQUE_MAX)
         return;
-    float position_target = output_degrees * RS01_DEG_TO_RAD;
+    float position_target = output_degrees * RS01_DEG_TO_RAD * motor->output_ratio;
     if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||
         fabsf(position_target - motor->target) > RS01_TRAJECTORY_EPSILON_RAD)
     {

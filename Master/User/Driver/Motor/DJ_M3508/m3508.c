@@ -203,7 +203,7 @@ bool M3508_OnFrame(m3508_t *motor                         ,
     feedback_needs_reanchor = motor->received && !motor->feedback_online;
     motor->encoder = M3508_ReadU16(&frame->data[0]);
     motor->speed_rpm = (int16_t)M3508_ReadU16(&frame->data[2]);
-    motor->current_raw = (int16_t)M3508_ReadU16(&frame->data[4]);
+    motor->current_raw = (int16_t)(motor->direction * (float)(int16_t)M3508_ReadU16(&frame->data[4]));
     motor->feedback_age_cycles = 0U;
 
     difference = (int32_t)motor->encoder - motor->last_encoder;
@@ -232,7 +232,7 @@ bool M3508_OnFrame(m3508_t *motor                         ,
     motor->last_encoder = motor->encoder;
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M3508_ENCODER_COUNT * M3508_REDUCTION_RATIO);
-    motor->speed_rad_s = (float)motor->speed_rpm * RPM_TO_RAD_S / M3508_REDUCTION_RATIO;
+    motor->speed_rad_s = motor->direction * (float)motor->speed_rpm * RPM_TO_RAD_S / M3508_REDUCTION_RATIO;
 
     if (first_feedback)
     {
@@ -458,7 +458,7 @@ int16_t M3508_Calc(m3508_t *motor                             ,
         return 0;
     }
     current = M3508_Clamp(current, -3.0f, 3.0f);
-    current_raw = current / M3508_CURRENT_SCALE;
+    current_raw = motor->direction * current / M3508_CURRENT_SCALE;
 
     if (current_raw > M3508_CURRENT_RAW_LIMIT)
     {
