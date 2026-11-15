@@ -48,7 +48,7 @@ bool apply_cup(uint8_t cup, uint8_t index, float target_degrees)
     return true;
 }
 
-volatile float br_shoulder_kp = 60.0f;
+volatile float br_shoulder_kp = 20.0f;
 volatile float br_shoulder_kd = 1.0f;
 volatile float br_elbow_kp = 20.0f;
 volatile float br_elbow_kd = 1.0f;
@@ -56,10 +56,10 @@ volatile float br_wrist_kp = 20.0f;
 volatile float br_wrist_kd = 1.0f;
 volatile float br_rotation_kp = 20.0f;
 volatile float br_rotation_kd = 1.0f;
-volatile float br_root_rs01_kp = 20.0f;
+volatile float br_root_rs01_kp = 10.0f;
 volatile float br_root_rs01_kd = 1.0f;
-volatile float br_root_m2006_position_kp = 94.247779608f;
-volatile float br_root_m2006_position_ki = 52.359877560f;
+volatile float br_root_m2006_position_kp = 30.247779608f;
+volatile float br_root_m2006_position_ki = 20.359877560f;
 volatile float br_root_m2006_position_kd = 0.523598776f;
 volatile float br_root_m2006_speed_kp = 3.342253805f;
 volatile float br_root_m2006_speed_ki = 2.387324146f;
@@ -176,9 +176,9 @@ void Upper_BindMotors(upper_t *upper)
     if (upper == NULL)
         return;
 
-    /* Root M2006 and RS01 both use the 14-tooth drive / 45-tooth output gear. */
     m2006_larm.output_ratio = 14.0f / 45.0f;
     rs01_rarm.output_ratio = RS01_ROOT_OUTPUT_RATIO;
+
 
     m2006_larm.trajectory_time_s = BR_ROOT_M2006_TRAJECTORY_TIME_S;
     rs01_rarm.trajectory_time_s = BR_ROOT_RS01_TRAJECTORY_TIME_S;

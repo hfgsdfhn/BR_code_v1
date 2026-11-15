@@ -419,17 +419,19 @@ bool RS01_Send(rs01_t *m)
         if (m->trajectory_pending)
             RS01_BeginPositionTrajectory(m, now);
         RS01_UpdatePositionTrajectory(m, now);
-        pos = m->reference_position;
-        vel = m->reference_velocity;
+        /* MIT targets are converted from the external joint convention to
+         * the motor convention at the CAN boundary. */
+        pos = (float)m->direction * m->reference_position;
+        vel = (float)m->direction * m->reference_velocity;
         kp = m->mit_kp;
         kd = m->mit_kd;
-        tq = m->tau_ff_nm;
+        tq = (float)m->direction * m->tau_ff_nm;
     }
     else
         return false;
     {
-        uint16_t p = enc(pos / m->output_ratio, RS01_POSITION_MIN, RS01_POSITION_MAX);
-        uint16_t v = enc(vel / m->output_ratio, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
+        uint16_t p = enc(pos, RS01_POSITION_MIN, RS01_POSITION_MAX);
+        uint16_t v = enc(vel, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
         uint16_t k = enc(kp, 0, 500), damp = enc(kd, 0, 5);
         d[0] = p >> 8;
         d[1] = p;

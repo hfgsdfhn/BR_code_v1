@@ -746,8 +746,14 @@ bool J4310_BuildControlFrame(j4310_t *motor                             ,
         if (motor->trajectory_pending)
             J4310_BeginPositionTrajectory(motor, now);
         J4310_SamplePositionTrajectory(motor, now);
-        J4310_BuildMit(motor, motor->reference_position_rad, motor->reference_speed_rad_s,
-                       motor->mit_kp, motor->mit_kd, motor->target_torque_nm, frame);
+        /* MIT targets are converted from the external joint convention to
+         * the motor convention at the CAN boundary. */
+        J4310_BuildMit(motor,
+                       (float)motor->direction * motor->reference_position_rad,
+                       (float)motor->direction * motor->reference_speed_rad_s,
+                       motor->mit_kp, motor->mit_kd,
+                       (float)motor->direction * motor->target_torque_nm,
+                       frame);
     }
     else
         return false;

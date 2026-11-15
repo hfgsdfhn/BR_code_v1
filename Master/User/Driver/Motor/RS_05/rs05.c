@@ -454,11 +454,13 @@ bool RS05_Send(rs05_t *m)
         if (m->trajectory_pending)
             RS05_BeginPositionTrajectory(m, now);
         RS05_UpdatePositionTrajectory(m, now);
-        pos = m->reference_position;
-        vel = m->reference_velocity;
+        /* MIT targets are converted from the external joint convention to
+         * the motor convention at the CAN boundary. */
+        pos = (float)m->direction * m->reference_position;
+        vel = (float)m->direction * m->reference_velocity;
         kp = m->mit_kp;
         kd = m->mit_kd;
-        tq = m->tau_ff_nm;
+        tq = (float)m->direction * m->tau_ff_nm;
     }
     else
         return false;
