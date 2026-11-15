@@ -26,26 +26,5 @@ void Robot_Stop(void)
 /* 功能：接收并解析BspCan_OnFrame对应的输入数据，更新模块状态。 */
 void BspCan_OnFrame(const can_frame_t *frame)
 {
-    if (frame == NULL)
-        return;
-
-    /* Keep the bus origin explicit.  Motor *_OnFrame() handlers also verify
-     * frame->hfdcan against each motor's bound CAN peripheral, so equal IDs
-     * seen on another bus cannot update the wrong motor state. */
-    if (frame->hfdcan == &hfdcan2)
-    {
-        /* CAN2 feedback is dispatched through the CAN3-side mechanism path. */
-        Arm_OnFrame(frame);
-    }
-    else if (frame->hfdcan == &hfdcan3)
-    {
-        /* CAN3 feedback is dispatched through the CAN2-side mechanism path. */
-        Arm_OnFrame(frame);
-    }
-    else if (frame->hfdcan == &hfdcan1)
-    {
-        /* CAN1 frames are parsed as CAN1 traffic; motor source checks reject
-         * same-ID CAN1 frames unless a motor is explicitly bound to CAN1. */
-        Arm_OnFrame(frame);
-    }
+    Arm_OnFrame(frame);
 }
