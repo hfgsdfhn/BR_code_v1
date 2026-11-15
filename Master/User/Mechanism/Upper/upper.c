@@ -247,15 +247,8 @@ static void apply_arm(void *motor, unsigned arm, arm_joint_t joint, float tau)
         if (arm == ARM_LARM_INDEX)
         {
             m2006_t *root = (m2006_t *)motor;
-<<<<<<< HEAD
-            /* 代码说明：相关模块实现。 */
             /* Keep the unified target array, but always run the motor in its
              * position-speed cascade. */
-=======
-            /* 模块实现细节。 */
-            /* Keep the unified target array, but always run the motor in its
-             position-speed cascade. */
->>>>>>> c1f3984123493276c22fa7685c0e10887a5564d8
             (void)mode;
             (void)tau;
             M2006_SetTargetDeferred(root, M2006_MODE_POSITION,

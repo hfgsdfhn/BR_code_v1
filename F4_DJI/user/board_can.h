@@ -1,14 +1,16 @@
-#ifndef BOARD_CAN_H
-#define BOARD_CAN_H
+#ifndef __BOARD_CAN_H
+#define __BOARD_CAN_H
 
 #include "main.h"
+#include "can.h"
 
-#define DJI_ID_CONTROL 0x100U
 
-extern volatile uint8_t dji_lift_mode;
-extern volatile uint8_t dji_action_mode;
-extern volatile float dji_target_speed;
+extern volatile float PID_K[3][3];
+extern volatile float leg_height_mm[4];
+extern volatile float wheel_speed_mps[4];
 
-void Board_DJI_Rx(CAN_RxHeaderTypeDef *rx_header, uint8_t rx_data[8]);
-
+void CAN_Parse_SmallBoard(CAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
+void Send_Feedback_Pos(CAN_HandleTypeDef *hcan, float pos_mm[4]);
+void Send_Feedback_Speed(CAN_HandleTypeDef *hcan, float speed_mps[4]);
+void SmallBoard_Send_PID(CAN_HandleTypeDef *hcan, uint8_t pid_id, float kp, float ki, float kd);
 #endif

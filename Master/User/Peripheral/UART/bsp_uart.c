@@ -30,7 +30,7 @@ bsp_uart_t uart_list[BSP_UART_COUNT] = {
     [BSP_UART_UP_STP23L] = {&huart5, ustp23l_rx, 0U, NULL},
     [BSP_UART_DOWN_STP23L] = {&huart6, dstp23l_rx, 0U, NULL},
     [BSP_UART_SCRAM] = { .handle = &huart7, .buffer = scram_rx, .callback = Scram_RxBytes },
-    [BSP_UART_REMOTE] = { .handle = &huart8, .buffer = remote_rx, .callback = Remote_RxBytes }
+    [BSP_UART_REMOTE] = { .handle = &huart9, .buffer = remote_rx, .callback = Remote_RxBytes }
 };
 
 static osThreadId_t uart_task_handle;

@@ -10,9 +10,6 @@
 #define BOARD_ID_SPEED       0x081U
 #define BOARD_ID_CURRENT     0x082U
 
-/* DJI小板通信ID */
-#define DJI_ID_CONTROL       0x100U
-
 /* 电机数量 */
 #define BOARD_MOTOR_NUM      4U
 

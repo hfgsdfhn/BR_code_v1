@@ -112,7 +112,7 @@ void My_Init(void)
     configure_motor_gains();
     Arm_TaskInit();
     Upper_BindMotors(&upper_state);
-    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_Receive);
+    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_RxBytes);
     SuctionCup_Init();
     Scram_Init();
     Remote_Init();

@@ -26,6 +26,7 @@ extern remote_t remote;
 /* 接收函数：将串口收到的数据喂给此函数进行解析
  * 返回成功解析出的完整帧数 */
 uint8_t Remote_Receive(const uint8_t *data, uint16_t len);
+void Remote_RxBytes(const uint8_t *data, uint16_t len);
 void Remote_Init(void);
 void Remote_UartError(void);
 uint8_t Remote_GetState(remote_t *state);
