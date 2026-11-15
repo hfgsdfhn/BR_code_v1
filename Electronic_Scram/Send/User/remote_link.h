@@ -12,13 +12,13 @@ extern "C"
 {
 #endif
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化RemoteLink_Init对应的外设、参数和运行状态。 */
 void RemoteLink_Init(void);
-/* 功能：轮询输入或通信状态。 */
+/* 功能：轮询并更新RemoteLink_PollSwitches对应的输入和状态。 */
 void RemoteLink_PollSwitches(void);
-/* 功能：处理当前输入并更新模块状态。 */
+/* 功能：轮询并更新RemoteLink_Process对应的输入和状态。 */
 void RemoteLink_Process(void);
-/* 功能：转发通信数据。 */
+/* 功能：发送RemoteLink_ForwardRawFrame对应的数据或控制指令。 */
 void RemoteLink_ForwardRawFrame(void);
 
 #ifdef __cplusplus

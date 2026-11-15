@@ -18,20 +18,19 @@ extern volatile uint8_t arm_gpio_pd3;
 extern volatile uint8_t arm_gpio_pd4;
 extern volatile uint8_t arm_gpio_pd5;
 
-/* 模块实现细节。 */
 extern volatile uint8_t arm_joint_zero_calibration[2][5];
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Arm_TaskInit对应的外设、参数和运行状态。 */
 void Arm_TaskInit(void);
-/* 功能：执行周期任务主流程。 */
+/* 功能：停止Arm_TaskStop对应的输出并清理运行状态。 */
 void Arm_TaskStop(void);
-/* 功能：执行周期任务主流程。 */
+/* 功能：执行Arm_Task对应的周期任务并维护运行状态。 */
 void Arm_Task(void *argument);
-/* 功能：执行周期任务主流程。 */
+/* 功能：执行Arm_TxTask对应的周期任务并维护运行状态。 */
 void Arm_TxTask(void *argument);
-/* 功能：接收并解析一帧通信数据。 */
+/* 功能：接收并解析Arm_OnFrame对应的输入数据，更新模块状态。 */
 void Arm_OnFrame(const can_frame_t *frame);
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：将Arm_TxQueueInit对应的目标数据加入执行队列。 */
 bool Arm_TxQueueInit(void);
 
 #endif

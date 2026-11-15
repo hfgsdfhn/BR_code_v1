@@ -6,7 +6,6 @@
 #include "path_follow.h"
 #include <math.h>
 
-/* 模块实现细节。 */
 typedef struct
 {
     float x;
@@ -17,13 +16,13 @@ typedef struct
     float velocity;
 } path_point_t;
 
-/* 功能：执行 PathFollow_Abs 模块操作并维护相关状态。 */
+/* 功能：处理PathFollow_Abs对应的输入并更新相关状态。 */
 static float PathFollow_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：执行 PathFollow_Clamp 模块操作并维护相关状态。 */
+/* 功能：处理PathFollow_Clamp对应的输入并更新相关状态。 */
 static float PathFollow_Clamp(float value, float limit)
 {
     limit = PathFollow_Abs(limit);
@@ -38,7 +37,7 @@ static float PathFollow_Clamp(float value, float limit)
     return value;
 }
 
-/* 功能：执行 PathFollow_WrapPi 模块操作并维护相关状态。 */
+/* 功能：处理PathFollow_WrapPi对应的输入并更新相关状态。 */
 static float PathFollow_WrapPi(float angle)
 {
     while (angle >= 3.1415926f)
@@ -52,21 +51,7 @@ static float PathFollow_WrapPi(float angle)
     return angle;
 }
 
-/**
- * @brief 路径规划初始化
- *
- * @param follow    路径规划结构体
- * @param path      路径点
- * @param path_size 路径点大小
- * @param lookahead_mm 前视距离
- * @param normal_gain   法相速度增益
- * @param normal_speed_limit 法向速度上限
- * @param yaw_gain          yaw增益
- * @param yaw_speed_limit   yaw速度上线
- * @param finish_distance_mm 终点停止距离
- * @return true
- * @return false
- */
+/* 功能：初始化PathFollow_Init对应的外设、参数和运行状态。 */
 bool PathFollow_Init(path_follow_t *follow,
                      const void *path,
                      uint16_t path_size,
@@ -97,7 +82,7 @@ bool PathFollow_Init(path_follow_t *follow,
     return true;
 }
 
-/* 功能：执行 PathFollow_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放PathFollow_Reset对应的内部状态和资源。 */
 void PathFollow_Reset(path_follow_t *follow)
 {
     if (follow != 0)
@@ -107,7 +92,7 @@ void PathFollow_Reset(path_follow_t *follow)
     }
 }
 
-/* 功能：执行 PathFollow_Calc 模块操作并维护相关状态。 */
+/* 功能：计算PathFollow_Calc对应的控制量或规划结果。 */
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,

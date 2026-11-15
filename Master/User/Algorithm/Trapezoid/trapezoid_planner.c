@@ -8,8 +8,7 @@
 #include <math.h>
 #include <stddef.h>
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Trapezoid_Init对应的外设、参数和运行状态。 */
 void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec)
 {
     if (tp == NULL)
@@ -23,8 +22,7 @@ void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec)
     tp->a_dec = (a_dec > 0.0f) ? a_dec : 0.0f;
 }
 
-
-/* 功能：执行 Trapezoid_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放Trapezoid_Reset对应的内部状态和资源。 */
 void Trapezoid_Reset(trapezoid_t *tp, float speed)
 {
     if (tp == NULL)
@@ -36,8 +34,7 @@ void Trapezoid_Reset(trapezoid_t *tp, float speed)
     tp->accel = 0.0f;
 }
 
-
-/* 功能：更新控制状态或轨迹数据。 */
+/* 功能：轮询并更新Trapezoid_Update对应的输入和状态。 */
 float Trapezoid_Update(trapezoid_t *tp, float target, float dt)
 {
     float dv;
@@ -48,7 +45,6 @@ float Trapezoid_Update(trapezoid_t *tp, float target, float dt)
     {
         return 0.0f;
     }
-
 
     if (!isfinite(target))
     {
@@ -91,8 +87,7 @@ float Trapezoid_Update(trapezoid_t *tp, float target, float dt)
     return tp->speed;
 }
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Trapezoid2D_Init对应的外设、参数和运行状态。 */
 void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec)
 {
     if (tp == NULL)
@@ -106,8 +101,7 @@ void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec)
     tp->a_dec = (a_dec > 0.0f) ? a_dec : 0.0f;
 }
 
-
-/* 功能：执行 Trapezoid2D_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放Trapezoid2D_Reset对应的内部状态和资源。 */
 void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy)
 {
     if (tp == NULL)
@@ -119,8 +113,7 @@ void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy)
     tp->vy = vy;
 }
 
-
-/* 功能：更新控制状态或轨迹数据。 */
+/* 功能：轮询并更新Trapezoid2D_Update对应的输入和状态。 */
 void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float *vx, float *vy)
 {
     float dx;
@@ -136,7 +129,6 @@ void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float 
     {
         return;
     }
-
 
     if (!isfinite(tx) || !isfinite(ty))
     {
@@ -191,8 +183,7 @@ void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float 
     }
 }
 
-
-/* 功能：执行 Trapezoid_BrakeSpeedLimit 模块操作并维护相关状态。 */
+/* 功能：处理Trapezoid_BrakeSpeedLimit对应的输入并更新相关状态。 */
 float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec)
 {
     if (!(remaining > 0.0f) || !(a_dec > 0.0f))
@@ -200,6 +191,6 @@ float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec)
         return 0.0f;
     }
 
-/* 模块实现细节。 */
+/* 功能：完成sqrtf对应的数据处理。 */
     return sqrtf(2.0f * a_dec * remaining);
 }

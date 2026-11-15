@@ -39,7 +39,7 @@
 #define NU   3       // 控制维度
 #define NV   (MPC_MAX_N*NU)  // 优化变量总维度
 
-typedef struct MPC mpc_t; /* 成员变量。 */
+typedef struct MPC mpc_t;
 
 typedef struct {
 
@@ -65,22 +65,21 @@ struct MPC
     float x[NX]; //状态量
     float u[NU]; //控制量
 
-    float Q[NX]; /* 成员变量。 */
-    float R[NU]; /* 成员变量。 */
+    float Q[NX];
+    float R[NU];
 
-     uint8_t nWSR;   //最大工作集重计算次数（number of Working Set Recalculations）  限制求解时间
+     uint8_t nWSR;
 
-    MpcPhysicalParams RobotParam; /* 成员变量。 */
+    MpcPhysicalParams RobotParam;
     uint8_t i;  //运算了多少步
 };
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化MPC_Init对应的外设、参数和运行状态。 */
 void MPC_Init(void);
-/* 功能：执行 MPC_g_figure 模块操作并维护相关状态。 */
+/* 功能：根据底盘模型计算 MPC 优化问题的梯度项。 */
 void MPC_g_figure(const float32_t *x0, const float32_t *X_ref, float32_t *g_data);
-/* 功能：求解控制器输出。 */
+/* 功能：计算MPC_Solve对应的控制量或规划结果。 */
 void MPC_Solve(const float32_t *x0, const float32_t *X_ref);
 
-/* 模块实现细节。 */
 const float32_t *MPC_GetH(void);
 const float32_t *MPC_GetLb(void);
 const float32_t *MPC_GetUb(void);

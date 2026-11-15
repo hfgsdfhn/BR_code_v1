@@ -10,8 +10,8 @@
       <TargetName>H723VGT6</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pArmCC>6180000::V6.18::ARMCLANG</pArmCC>
-      <pCCUsed>6180000::V6.18::ARMCLANG</pCCUsed>
+      <pArmCC>6240000::V6.24::ARMCLANG</pArmCC>
+      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -1038,14 +1038,14 @@
               <FilePath>..\User\Task\status_task.h</FilePath>
             </File>
             <File>
-              <FileName>suction_cup.c</FileName>
+              <FileName>cup_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Task\suction_cup.c</FilePath>
+              <FilePath>..\User\Task\cup_task.c</FilePath>
             </File>
             <File>
-              <FileName>suction_cup.h</FileName>
+              <FileName>cup_task.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\User\Task\suction_cup.h</FilePath>
+              <FilePath>..\User\Task\cup_task.h</FilePath>
             </File>
             <File>
               <FileName>chassis_task.c</FileName>

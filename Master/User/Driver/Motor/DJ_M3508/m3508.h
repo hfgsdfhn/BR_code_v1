@@ -41,111 +41,100 @@ typedef enum
 
 typedef struct
 {
-    void (*target_sink)(void *motor, int mode, float target, /* 成员变量。 */
+    void (*target_sink)(void *motor, int mode, float target,
                         float position_deg);
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
-    uint16_t feedback_age_cycles; /* 成员变量。 */
-    uint8_t id; /* 成员变量。 */
-    int direction; /* 成员变量。 */
-    uint16_t encoder; /* 成员变量。 */
-    uint16_t last_encoder; /* 成员变量。 */
-    int32_t total_encoder; /* 成员变量。 */
-    int16_t speed_rpm; /* 成员变量。 */
-    int16_t current_raw; /* 成员变量。 */
-    float position_rad; /* 成员变量。 */
-    float speed_rad_s; /* 成员变量。 */
-    float target_current_a; /* 成员变量。 */
-    float target_position_rad; /* 成员变量。 */
-    float target_speed_rad_s; /* 成员变量。 */
-    float reference_position_rad; /* 成员变量。 */
-    float reference_speed_rad_s; /* 成员变量。 */
-    float reference_acceleration_rad_s2; /* 成员变量。 */
-    float trajectory_time_s; /* 成员变量。 */
-    float trajectory_start_rad; /* 成员变量。 */
-    float trajectory_delta_rad; /* 成员变量。 */
-    float trajectory_k0; /* 成员变量。 */
-    float trajectory_duration_s; /* 成员变量。 */
-    float trajectory_elapsed_s; /* 成员变量。 */
-    pid_t position_pid; /* 成员变量。 */
-    pid_t speed_pid; /* 成员变量。 */
-    pid_t damping_pid; /* 成员变量。 */
+    uint16_t feedback_age_cycles;
+    uint8_t id;
+    int direction;
+    uint16_t encoder;
+    uint16_t last_encoder;
+    int32_t total_encoder;
+    int16_t speed_rpm;
+    int16_t current_raw;
+    float position_rad;
+    float speed_rad_s;
+    float target_current_a;
+    float target_position_rad;
+    float target_speed_rad_s;
+    float reference_position_rad;
+    float reference_speed_rad_s;
+    float reference_acceleration_rad_s2;
+    float trajectory_time_s;
+    float trajectory_start_rad;
+    float trajectory_delta_rad;
+    float trajectory_k0;
+    float trajectory_duration_s;
+    float trajectory_elapsed_s;
+    pid_t position_pid;
+    pid_t speed_pid;
+    pid_t damping_pid;
     m3508_mode_t mode; /* 当前工作模式或状态。 */
-    uint8_t zero_stable_frames; /* 数据缓冲区或数据帧。 */
-    bool received; /* 成员变量。 */
-    bool feedback_online; /* 状态标志。 */
-    bool speed_reference_valid; /* 状态标志。 */
-    bool trajectory_pending; /* 成员变量。 */
-    bool trajectory_active; /* 状态标志。 */
-    bool startup_hold_active; /* 状态标志。 */
+    uint8_t zero_stable_frames;
+    bool received;
+    bool feedback_online;
+    bool speed_reference_valid;
+    bool trajectory_pending;
+    bool trajectory_active;
+    bool startup_hold_active;
 } m3508_t;
 
-extern volatile float m3508_trajectory_max_speed_rad_s; /* 成员变量。 */
-extern volatile float m3508_trajectory_max_acceleration_rad_s2; /* 成员变量。 */
-extern volatile float m3508_trajectory_time_s; /* 成员变量。 */
+extern volatile float m3508_trajectory_max_speed_rad_s;
+extern volatile float m3508_trajectory_max_acceleration_rad_s2;
+extern volatile float m3508_trajectory_time_s;
 
-
-/* 功能：初始化模块并准备外设资源。 */
-HAL_StatusTypeDef M3508_Init(m3508_t *motor                        , /* 成员变量。 */
+/* 功能：初始化M3508_Init对应的外设、参数和运行状态。 */
+HAL_StatusTypeDef M3508_Init(m3508_t *motor                        ,
                              FDCAN_HandleTypeDef *hcan                  , /* 对应外设句柄。 */
-                             uint8_t id                                    , /* 成员变量。 */
+                             uint8_t id                                    ,
                              int direction                                  );
 
-
-/* 功能：接收并解析一帧通信数据。 */
-bool M3508_OnFrame(m3508_t *motor                         , /* 成员变量。 */
+/* 功能：接收并解析M3508_OnFrame对应的输入数据，更新模块状态。 */
+bool M3508_OnFrame(m3508_t *motor                         ,
                    const can_frame_t *frame                      );
 
-
-/* 功能：设置设备目标值。 */
-void M3508_SetTarget(m3508_t *motor                         , /* 成员变量。 */
+/* 功能：设置M3508_SetTarget对应的目标值或工作模式。 */
+void M3508_SetTarget(m3508_t *motor                         ,
                      m3508_mode_t mode                          , /* 当前工作模式或状态。 */
                      float target                               );
 
-
-/* 功能：停止设备输出并清理状态。 */
+/* 功能：停止M3508_Stop对应的输出并清理运行状态。 */
 bool M3508_Stop(m3508_t *motor                       );
 
-
-/* 功能：执行 M3508_SetPairPositionDegrees 模块操作并维护相关状态。 */
-void M3508_SetPairPositionDegrees(m3508_t motors[2]                         , /* 成员变量。 */
+/* 功能：处理M3508_SetPairPositionDegrees对应的输入并更新相关状态。 */
+void M3508_SetPairPositionDegrees(m3508_t motors[2]                         ,
                                   float degrees                            );
 
-
-/* 功能：执行 M3508_Calc 模块操作并维护相关状态。 */
-int16_t M3508_Calc(m3508_t *motor                             , /* 成员变量。 */
+/* 功能：计算M3508_Calc对应的控制量或规划结果。 */
+int16_t M3508_Calc(m3508_t *motor                             ,
                    float dt_s                          );
 
-
-/* 功能：构建待发送的通信帧。 */
-void M3508_BuildGroupFrame(uint8_t first_id                               , /* 成员变量。 */
-                           const int16_t current[4]                             , /* 成员变量。 */
+/* 功能：构建M3508_BuildGroupFrame需要发送的通信帧或控制指令。 */
+void M3508_BuildGroupFrame(uint8_t first_id                               ,
+                           const int16_t current[4]                             ,
                            can_frame_t *frame                              );
 
-
-/* 功能：执行 M3508_ResetFeedback 模块操作并维护相关状态。 */
+/* 功能：重置或释放M3508_ResetFeedback对应的内部状态和资源。 */
 void M3508_ResetFeedback(m3508_t *motor                            );
 
-/* 功能：执行周期性服务并维护运行状态。 */
-void M3508_Service(m3508_t *motor                             , /* 成员变量。 */
+/* 功能：执行M3508_Service对应的周期任务并维护运行状态。 */
+void M3508_Service(m3508_t *motor                             ,
                    float dt_s                   );
 
-/* 功能：读取设备当前位置。 */
-void M3508_GetPositionDegrees(const m3508_t *motor                         , /* 成员变量。 */
+/* 功能：读取M3508_GetPositionDegrees对应的数据或运行状态。 */
+void M3508_GetPositionDegrees(const m3508_t *motor                         ,
                               volatile float *position_degrees                      );
 
 #ifndef M3508_BUILD_SPECIAL_DECLARED
 #define M3508_BUILD_SPECIAL_DECLARED
 
-
-/* 功能：构建待发送的通信帧。 */
+/* 功能：构建M3508_BuildSpecial需要发送的通信帧或控制指令。 */
 void M3508_BuildSpecial(m3508_t *motor                        , uint8_t command             );
 #endif
 
-
-/* 功能：设置设备目标值。 */
+/* 功能：设置M3508_SetTargetDeferred对应的目标值或工作模式。 */
 void M3508_SetTargetDeferred(m3508_t *motor, m3508_mode_t mode, float target);
-
 
 #define M3508_POSITION_KP 10.4720f
 #define M3508_POSITION_KI 0.0f

@@ -15,7 +15,7 @@
 #include "spi.h"
 #include "fdcan.h"
 #include "remote.h"
-#include "suction_cup.h"
+#include "cup_task.h"
 #include "../Mechanism/Upper/arm_config.h"
 #include "../Mechanism/Upper/cup_config.h"
 
@@ -27,7 +27,6 @@ rs00_t rs00_larm[2], rs00_rarm[2];
 rs05_t rs05_larm, rs05_rarm;
 j4310_t j4310_larm, j4310_rarm;
 rs01_t rs01_rarm;
-
 
 volatile Error_Code g_error_code = ERROR_CODE_NONE;
 volatile const char *g_error_handler_file = NULL;
@@ -41,6 +40,7 @@ volatile uint32_t g_error_handler_mmfar = 0U;
 
 static osThreadId_t can_rx_task_handle;
 static osThreadId_t uart_task_handle;
+static osThreadId_t suction_cup_task_handle;
 static const osThreadAttr_t uart_task_attributes = {
     .name = "Uart_Task",
     .stack_size = 2048U,
@@ -48,6 +48,11 @@ static const osThreadAttr_t uart_task_attributes = {
 };
 static const osThreadAttr_t can_rx_task_attributes = {
     .name = "Can_Rx_Task",
+    .stack_size = 2048U,
+    .priority = osPriorityNormal,
+};
+static const osThreadAttr_t suction_cup_task_attributes = {
+    .name = "Suction_Cup_Task",
     .stack_size = 2048U,
     .priority = osPriorityNormal,
 };
@@ -91,14 +96,14 @@ void My_Init(void)
         g_error_code = ERROR_CODE_CAN_INIT;
     }
 
-    M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, -1);
+    M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, 1);
     M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, -1);
     M3508_Init(&m3508_dcup[0], &hfdcan2, 5U, 1);
 
     M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, 1);
-    M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, 1);
+    M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, -1);
 
-    M2006_Init(&m2006_larm, &hfdcan2, 1U, 1);
+    M2006_Init(&m2006_larm, &hfdcan2, 1U, -1);
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
     RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
     J4310_Init(&j4310_larm, &hfdcan2, 4U, 1);
@@ -107,12 +112,11 @@ void My_Init(void)
     RS01_Init(&rs01_rarm, &hfdcan3, 1U, -1);
     RS00_Init(&rs00_rarm[0], &hfdcan3, 2U, -1);
     RS00_Init(&rs00_rarm[1], &hfdcan3, 3U, -1);
-    J4310_Init(&j4310_rarm, &hfdcan3, 4U, -1);
+    J4310_Init(&j4310_rarm, &hfdcan3, 4U, 1);
     RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
     configure_motor_gains();
     Arm_TaskInit();
     Upper_BindMotors(&upper_state);
-    (void)BspUart_RegisterRxCallback(BSP_UART_REMOTE, Remote_RxBytes);
     SuctionCup_Init();
     Scram_Init();
     Remote_Init();
@@ -133,5 +137,6 @@ void My_RtosInit(void)
         };
         (void)osThreadNew(Arm_TxTask, NULL, &attributes);
     }
+    suction_cup_task_handle = osThreadNew(SuctionCup_Task, NULL, &suction_cup_task_attributes);
     uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
 }

@@ -6,6 +6,7 @@
 #ifndef STATUS_TASK_H
 #define STATUS_TASK_H
 
+/* 功能：执行Status_Task对应的周期任务并维护运行状态。 */
 #include "mins_imu.h"
 #include "remote.h"
 #include "cmsis_os2.h"

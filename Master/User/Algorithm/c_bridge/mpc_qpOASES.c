@@ -20,7 +20,6 @@
 
 #include "mpc_qpOASES.h"
 
-/* Fail at compile time if the C and C++ views of real_t disagree. */
 typedef char mpc_qpoases_real_t_must_be_float[
     (sizeof(real_t) == sizeof(float)) ? 1 : -1];
 
@@ -31,9 +30,6 @@ static real_t s_obj    = 0.0f;
 static real_t s_y[MPC_QPOASES_MAX_NV];
 static qpOASES_Options s_options;
 
-/* qpOASES 每次 init/hotstart 都会调 getObjVal() 算目标值，
-   对 nV=150 要做一次完整的 nV*nV 稠密乘（H 有 90KB），在 H7 上约 0.3~0.5ms/次。
-   MPC 用不到，默认不取；要用 MPC_QPOASES_GetLastObj() 时改成 1。 */
 #define MPC_QPOASES_WANT_OBJ   0
 
 #if MPC_QPOASES_WANT_OBJ
@@ -42,7 +38,7 @@ static qpOASES_Options s_options;
 #define MPC_QPOASES_OBJ_PTR    ((real_t *)0)
 #endif
 
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化MPC_QPOASES_Init对应的外设、参数和运行状态。 */
 int MPC_QPOASES_Init(int nV)
 {
     if ((nV < 1) || (nV > MPC_QPOASES_MAX_NV))
@@ -51,11 +47,10 @@ int MPC_QPOASES_Init(int nV)
     if (QProblemB_setup((int_t)nV, HST_UNKNOWN) != 0)
         return -2;
 
-    /* 模块实现细节。 */
     if (qpOASES_Options_init(&s_options, 2) != 0)
         return -3;
 
-    s_options.printLevel = PL_NONE;   /* 模块实现细节。 */
+    s_options.printLevel = PL_NONE;
     s_nV     = (int_t)nV;
     s_status = -1;
     s_nWSR   = 0;
@@ -64,7 +59,7 @@ int MPC_QPOASES_Init(int nV)
     return 0;
 }
 
-/* 功能：求解控制器输出。 */
+/* 功能：计算MPC_QPOASES_Solve对应的控制量或规划结果。 */
 int MPC_QPOASES_Solve(const float *H,
                       const float *g,
                       const float *lb,
@@ -77,14 +72,14 @@ int MPC_QPOASES_Solve(const float *H,
     if ((s_nV < 1) || (H == 0) || (g == 0) || (lb == 0) || (ub == 0) || (x == 0))
         return -1;
 
-    nWSR = 200;   /* 模块实现细节。 */
+    nWSR = 200;
 
     ret = QProblemB_init((const real_t *)H,
                          (const real_t *)g,
                          (const real_t *)lb,
                          (const real_t *)ub,
                          &nWSR,
-                         0,                 /* 模块实现细节。 */
+                         0,
                          &s_options,
                          (real_t *)x,
                          s_y,
@@ -93,13 +88,13 @@ int MPC_QPOASES_Solve(const float *H,
 
     s_nWSR = nWSR;
 
-    if (ret != 0)   /* 模块实现细节。 */
+    if (ret != 0)
         return (int)ret;
 
     return (int)s_status;
 }
 
-/* 功能：执行 MPC_QPOASES_Hotstart 模块操作并维护相关状态。 */
+/* 功能：使用上一周期结果热启动 qpOASES 求解器。 */
 int MPC_QPOASES_Hotstart(const float *g,
                          const float *lb,
                          const float *ub,
@@ -131,25 +126,25 @@ int MPC_QPOASES_Hotstart(const float *g,
     return (int)s_status;
 }
 
-/* 功能：执行 MPC_QPOASES_GetLastStatus 模块操作并维护相关状态。 */
+/* 功能：读取MPC_QPOASES_GetLastStatus对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastStatus(void)
 {
     return (int)s_status;
 }
 
-/* 功能：执行 MPC_QPOASES_GetLastNWSR 模块操作并维护相关状态。 */
+/* 功能：读取MPC_QPOASES_GetLastNWSR对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastNWSR(void)
 {
     return (int)s_nWSR;
 }
 
-/* 功能：执行 MPC_QPOASES_GetLastObj 模块操作并维护相关状态。 */
+/* 功能：读取MPC_QPOASES_GetLastObj对应的数据或运行状态。 */
 float MPC_QPOASES_GetLastObj(void)
 {
     return (float)s_obj;
 }
 
-/* 功能：执行 MPC_QPOASES_Cleanup 模块操作并维护相关状态。 */
+/* 功能：重置或释放MPC_QPOASES_Cleanup对应的内部状态和资源。 */
 void MPC_QPOASES_Cleanup(void)
 {
     QProblemB_cleanup();

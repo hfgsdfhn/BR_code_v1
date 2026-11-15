@@ -3,31 +3,13 @@
  * @brief qpOASES_wrapper模块的用户接口与实现。
  */
 
-/* 模块实现细节。 */
-
-
-/**
- *	\file interfaces/c/qpOASES_wrapper.cpp
- *	\author Hans Joachim Ferreau
- *	\version 3.2
- *	\date 2014-2017
- *
- *	Interface that enables to call qpOASES from plain C.
- *
- */
-
-
 #include <qpOASES.hpp>
 
 USING_NAMESPACE_QPOASES
 
-
 extern "C" {
 #include "qpOASES_wrapper.h"
 }
-
-
-
 
 /*
  *	q p O A S E S _ O p t i o n s _ i n i t
@@ -42,8 +24,6 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 	if ( options == 0 )
 		return -1;
 
-
-	/* 模块实现细节。 */
 	options->printLevel = PL_MEDIUM;
 	#ifdef __DEBUG__
 	options->printLevel = PL_HIGH;
@@ -112,16 +92,14 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
     options->dropEqConPriority             =  1;
     options->dropIneqConPriority           =  1;
 
-
 	switch ( mode )
 	{
 		case 0:
-			/* 模块实现细节。 */
+
 			break;
 
-
 		case 1:
-			/* 模块实现细节。 */
+
 			options->enableFullLITests             =  BT_TRUE;
 			options->enableCholeskyRefactorisation =  1;
 
@@ -131,9 +109,8 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 			options->numRefinementSteps            =  2;
 			#endif
 
-
 		case 2:
-			/* 模块实现细节。 */
+
 			options->enableRamping                 =  BT_FALSE;
 			options->enableFarBounds               =  BT_TRUE;
 			options->enableFlippingBounds          =  BT_FALSE;
@@ -160,7 +137,6 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 	return 0;
 }
 
-
 /*
  *	q p O A S E S _ O p t i o n s _ c o p y
  */
@@ -170,7 +146,6 @@ int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
 {
 	if ( ( from == 0 ) || ( to == 0 ) )
 		return -1;
-
 
 	to->printLevel                    =  (PrintLevel)(from->printLevel);
 
@@ -213,8 +188,6 @@ int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
 	return 0;
 }
 
-
-
 /*
  *	q p O A S E S _ o b t a i n O u t p u t s
  */
@@ -229,7 +202,6 @@ int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 	if ( globalQpObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	if ( x != 0 ) { globalQpObject->getPrimalSolution( x ); }
 	if ( y != 0 ) { globalQpObject->getDualSolution( y ); }
 	if ( obj != 0 ) { *obj = globalQpObject->getObjVal( ); }
@@ -237,8 +209,6 @@ int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 
 	return 0;
 }
-
-
 
 /*
  *	Q P r o b l e m _ s e t u p
@@ -262,7 +232,6 @@ int_t QProblem_setup(	int_t nV,
 	return 0;
 }
 
-
 /*
  *	Q P r o b l e m _ i n i t
  */
@@ -282,24 +251,20 @@ int_t QProblem_init(	const real_t* const H,
 						int_t* const status
 						)
 {
-	/* abort if QProblem_setup has not been called */
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 }
-
 
 /*
  *	Q P r o b l e m _ h o t s t a r t
@@ -317,19 +282,16 @@ int_t QProblem_hotstart(	const real_t* const g,
 							int_t* const status
 							)
 {
-	/* abort if QProblem_setup has not been called */
 	if ( globalQProblemObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemObject->hotstart( g,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
-
 
 /*
  *	Q P r o b l e m _ c l e a n u p
@@ -344,8 +306,6 @@ int_t QProblem_cleanup( )
 
 	return 0;
 }
-
-
 
 /*
  *	Q P r o b l e m B _ s e t u p
@@ -368,7 +328,6 @@ int_t QProblemB_setup(	int_t nV,
 	return 0;
 }
 
-
 /*
  *	Q P r o b l e m B _ i n i t
  */
@@ -385,24 +344,20 @@ int_t QProblemB_init(	const real_t* const H,
 						int_t* const status
 						)
 {
-	/* abort if QProblemB_setup has not been called */
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalQProblemBObject->setOptions( globalOptionsObject );
 	}
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemBObject->init( H,g,lb,ub, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 }
-
 
 /*
  *	Q P r o b l e m B _ h o t s t a r t
@@ -418,19 +373,16 @@ int_t QProblemB_hotstart(	const real_t* const g,
 							int_t* const status
 							)
 {
-	/* abort if QProblemB_setup has not been called */
 	if ( globalQProblemBObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalQProblemBObject->hotstart( g,lb,ub, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
-
 
 /*
  *	Q P r o b l e m B _ c l e a n u p
@@ -445,8 +397,6 @@ int_t QProblemB_cleanup( )
 
 	return 0;
 }
-
-
 
 /*
  *	S Q P r o b l e m _ s e t u p
@@ -470,7 +420,6 @@ int_t SQProblem_setup(	int_t nV,
 	return 0;
 }
 
-
 /*
  *	S Q P r o b l e m _ i n i t
  */
@@ -490,24 +439,20 @@ int_t SQProblem_init(	const real_t* const H,
 						int_t* const status
 						)
 {
-	/* abort if SQProblem_setup has not been called */
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	if ( options != 0 )
 	{
 		qpOASES_Options_copy( options,&globalOptionsObject );
 		globalSQProblemObject->setOptions( globalOptionsObject );
 	}
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalSQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 }
-
 
 /*
  *	S Q P r o b l e m _ h o t s t a r t
@@ -527,19 +472,16 @@ int_t SQProblem_hotstart(	const real_t* const H,
 							int_t* const status
 							)
 {
-	/* abort if SQProblem_setup has not been called */
 	if ( globalSQProblemObject == 0 )
 		return -1;
 
-	/* 模块实现细节。 */
 	returnValue returnvalue = globalSQProblemObject->hotstart( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-	/* 模块实现细节。 */
+/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
-
 
 /*
  *	S Q P r o b l e m _ c l e a n u p
@@ -554,6 +496,3 @@ int_t SQProblem_cleanup( )
 
 	return 0;
 }
-
-
-/* 模块实现细节。 */

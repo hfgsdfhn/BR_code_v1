@@ -20,10 +20,10 @@
 
 typedef struct
 {
-    uint32_t magic; /* 成员变量。 */
-    uint32_t sequence; /* 成员变量。 */
-    float angle; /* 成员变量。 */
-    uint32_t crc; /* 成员变量。 */
+    uint32_t magic;
+    uint32_t sequence;
+    float angle;
+    uint32_t crc;
 } motor_angle_record_t;
 
 #define FLASH_CMD_WRITE_ENABLE 0x06U
@@ -33,31 +33,26 @@ typedef struct
 #define FLASH_CMD_SECTOR_ERASE 0x20U
 #define FLASH_CMD_DEVICE_ID 0x90U
 
-
-/* 功能：读取设备参数。 */
+/* 功能：处理Flash_ReadId对应的输入并更新相关状态。 */
 uint16_t Flash_ReadId(void);
 
-
-/* 功能：读取设备参数。 */
-bool Flash_Read(uint32_t address                      , uint8_t *data                    , /* 数据缓冲区或数据帧。 */
+/* 功能：处理Flash_Read对应的输入并更新相关状态。 */
+bool Flash_Read(uint32_t address                      , uint8_t *data                    ,
                 uint16_t size                );
 
-
-/* 功能：写入设备参数。 */
-bool Flash_WritePage(uint32_t address                       , /* 成员变量。 */
+/* 功能：处理Flash_WritePage对应的输入并更新相关状态。 */
+bool Flash_WritePage(uint32_t address                       ,
                      const uint8_t *data                  , uint16_t size                 );
 
-
-/* 功能：执行 Flash_EraseSector 模块操作并维护相关状态。 */
+/* 功能：处理Flash_EraseSector对应的输入并更新相关状态。 */
 bool Flash_EraseSector(uint32_t address                   );
 
-
-/* 功能：执行 Flash_LoadMotorAngle 模块操作并维护相关状态。 */
-bool Flash_LoadMotorAngle(uint8_t slot                       , /* 成员变量。 */
+/* 功能：处理Flash_LoadMotorAngle对应的输入并更新相关状态。 */
+bool Flash_LoadMotorAngle(uint8_t slot                       ,
                           float *angle                          );
 
-/* 功能：执行 Flash_SaveMotorAngle 模块操作并维护相关状态。 */
-bool Flash_SaveMotorAngle(uint8_t slot                       , /* 成员变量。 */
+/* 功能：处理Flash_SaveMotorAngle对应的输入并更新相关状态。 */
+bool Flash_SaveMotorAngle(uint8_t slot                       ,
                           float angle                      );
 
 #endif

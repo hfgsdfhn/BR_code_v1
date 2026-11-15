@@ -5,11 +5,7 @@
 
 #include "kalman.h"
 
-
-/**
- * @brief 卡尔曼滤波器初始化
- * @param kalman 卡尔曼滤波器实例
- */
+/* 功能：初始化kalman_init对应的外设、参数和运行状态。 */
 void kalman_init(kalman_t *kalman)
 {
     uint16_t N = kalman->state_dim;
@@ -49,18 +45,7 @@ void kalman_init(kalman_t *kalman)
     arm_mat_init_f32(&kalman->temp_zz_2, Z, Z, workspace);
 }
 
-
-/**
- * @brief 卡尔曼滤波预测
- *
- * 状态预测：
- * x = A * x + B * u
- *
- * 协方差预测：
- * P = A * P * A^T + Q
- *
- * @param kalman 卡尔曼滤波器实例
- */
+/* 功能：处理kalman_predict对应的输入并更新相关状态。 */
 void kalman_predict(kalman_t *kalman)
 {
     /* x = A * x + B * u */
@@ -75,18 +60,12 @@ void kalman_predict(kalman_t *kalman)
     arm_mat_add_f32(&kalman->P, &kalman->Q, &kalman->P);
 }
 
-/**
- * @brief 卡尔曼滤波观测更新
- *
- * @param kalman 卡尔曼滤波器实例
- */
+/* 功能：轮询并更新kalman_update对应的输入和状态。 */
 void kalman_update(kalman_t *kalman)
 {
     uint16_t i;
     uint16_t j;
     uint16_t N = kalman->state_dim;
-
-    /* 模块实现细节。 */
 
     /* H^T */
     arm_mat_trans_f32(&kalman->H, &kalman->temp_zn);
@@ -112,9 +91,6 @@ void kalman_update(kalman_t *kalman)
     arm_mat_mult_f32(&kalman->K, &kalman->temp_z1, &kalman->temp_n1_1);
     /* x = x + K * (z - H * x) */
     arm_mat_add_f32(&kalman->x, &kalman->temp_n1_1, &kalman->x);
-
-
-    /* 模块实现细节。 */
 
     /* K * H */
     arm_mat_mult_f32(&kalman->K, &kalman->H, &kalman->temp_nn_1);

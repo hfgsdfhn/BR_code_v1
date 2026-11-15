@@ -8,50 +8,41 @@
 
 #include <stdint.h>
 
-
 typedef struct
 {
-    float speed; /* 成员变量。 */
-    float accel; /* 成员变量。 */
-    float a_acc; /* 成员变量。 */
-    float a_dec; /* 成员变量。 */
+    float speed;
+    float accel;
+    float a_acc;
+    float a_dec;
 } trapezoid_t;
 
-
 typedef struct
 {
-    float vx; /* 成员变量。 */
-    float vy; /* 成员变量。 */
-    float a_acc; /* 成员变量。 */
-    float a_dec; /* 成员变量。 */
+    float vx;
+    float vy;
+    float a_acc;
+    float a_dec;
 } trapezoid_2d_t;
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Trapezoid_Init对应的外设、参数和运行状态。 */
 void Trapezoid_Init(trapezoid_t *tp, float a_acc, float a_dec);
 
-
-/* 功能：执行 Trapezoid_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放Trapezoid_Reset对应的内部状态和资源。 */
 void Trapezoid_Reset(trapezoid_t *tp, float speed);
 
-
-/* 功能：更新控制状态或轨迹数据。 */
+/* 功能：轮询并更新Trapezoid_Update对应的输入和状态。 */
 float Trapezoid_Update(trapezoid_t *tp, float target, float dt);
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Trapezoid2D_Init对应的外设、参数和运行状态。 */
 void Trapezoid2D_Init(trapezoid_2d_t *tp, float a_acc, float a_dec);
 
-
-/* 功能：执行 Trapezoid2D_Reset 模块操作并维护相关状态。 */
+/* 功能：重置或释放Trapezoid2D_Reset对应的内部状态和资源。 */
 void Trapezoid2D_Reset(trapezoid_2d_t *tp, float vx, float vy);
 
-
-/* 功能：更新控制状态或轨迹数据。 */
+/* 功能：轮询并更新Trapezoid2D_Update对应的输入和状态。 */
 void Trapezoid2D_Update(trapezoid_2d_t *tp, float tx, float ty, float dt, float *vx, float *vy);
 
-
-/* 功能：执行 Trapezoid_BrakeSpeedLimit 模块操作并维护相关状态。 */
+/* 功能：处理Trapezoid_BrakeSpeedLimit对应的输入并更新相关状态。 */
 float Trapezoid_BrakeSpeedLimit(float remaining, float a_dec);
 
 #endif

@@ -51,41 +51,20 @@ static HAL_StatusTypeDef CAN_Transmit(FDCAN_HandleTypeDef *hfdcan, uint8_t Heade
 	return Sta;
 }
 
-/**
- * @brief 底盘速度 CAN 发送
- * @param hfdcan FDCAN 句柄
- * @param speed 底盘目标速度
- * @return HAL_OK 发送成功，其他值发送失败
- */
 HAL_StatusTypeDef Chassis_SendSpeed(FDCAN_HandleTypeDef *hfdcan,
                                     const chassis_speed_t *speed)
 {
-    int16_t raw_vx;
-    int16_t raw_vy;
-    int16_t raw_vw;
-
+    int16_t raw_vx, raw_vy, raw_vw;
     uint8_t tx_data[8] = {0};
-
-    if ((hfdcan == NULL) || (speed == NULL))
-    {
-        return HAL_ERROR;
-    }
-
-    /* 浮点速度转换为 int16_t */
+    if ((hfdcan == NULL) || (speed == NULL)) return HAL_ERROR;
     raw_vx = (int16_t)(speed->vx * 1000.0f);
     raw_vy = (int16_t)(speed->vy * 1000.0f);
     raw_vw = (int16_t)(speed->vw * 1000.0f);
-
-    /* vx */
-    tx_data[0] = (uint8_t)(raw_vx & 0xFF);
+    tx_data[0] = (uint8_t)raw_vx;
     tx_data[1] = (uint8_t)((uint16_t)raw_vx >> 8);
-
-    /* vy */
-    tx_data[2] = (uint8_t)(raw_vy & 0xFF);
+    tx_data[2] = (uint8_t)raw_vy;
     tx_data[3] = (uint8_t)((uint16_t)raw_vy >> 8);
-
-    /* vw */
-    tx_data[4] = (uint8_t)(raw_vw & 0xFF);
+    tx_data[4] = (uint8_t)raw_vw;
     tx_data[5] = (uint8_t)((uint16_t)raw_vw >> 8);
 
     /* 发送标准 CAN 数据帧 */

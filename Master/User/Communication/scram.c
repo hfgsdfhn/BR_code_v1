@@ -12,8 +12,7 @@ static uint32_t rx_write;
 static uint32_t rx_read;
 static scram_stats_t rx_stats;
 
-
-/* 功能：初始化模块并准备外设资源。 */
+/* 功能：初始化Scram_Init对应的外设、参数和运行状态。 */
 void Scram_Init(void)
 {
     rx_write = 0U;
@@ -22,8 +21,7 @@ void Scram_Init(void)
     (void)BspUart_RegisterRxCallback(BSP_UART_SCRAM, Scram_RxBytes);
 }
 
-
-/* 功能：执行 Scram_RxBytes 模块操作并维护相关状态。 */
+/* 功能：接收并解析Scram_RxBytes对应的输入数据，更新模块状态。 */
 void Scram_RxBytes(const uint8_t *data, uint16_t size)
 {
     uint32_t primask;
@@ -46,8 +44,7 @@ void Scram_RxBytes(const uint8_t *data, uint16_t size)
     __set_PRIMASK(primask);
 }
 
-
-/* 功能：读取设备参数。 */
+/* 功能：处理Scram_Read对应的输入并更新相关状态。 */
 uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
 {
     uint32_t primask, available;
@@ -67,8 +64,7 @@ uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
     return count;
 }
 
-
-/* 功能：执行 Scram_GetStats 模块操作并维护相关状态。 */
+/* 功能：读取Scram_GetStats对应的数据或运行状态。 */
 void Scram_GetStats(scram_stats_t *stats)
 {
     uint32_t primask;
