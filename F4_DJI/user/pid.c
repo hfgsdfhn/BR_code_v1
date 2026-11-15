@@ -98,7 +98,7 @@ float PID_Calc(pid_t *pid, float target, float feedback)
     {
         pid->integral = 0.0f;
     }
-    
+
     else
     {
         pid->integral += error;      //积分值累加

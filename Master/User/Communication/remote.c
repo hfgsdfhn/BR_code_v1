@@ -153,9 +153,9 @@ uint8_t Remote_Receive(const uint8_t *data, uint16_t len)
     return parsed_frames;
 }
 
-void Remote_RxBytes(const uint8_t *data, uint16_t size)
+void Remote_RxBytes(const uint8_t *data, uint16_t len)
 {
-    (void)Remote_Receive(data, size);
+    (void)Remote_Receive(data, len);
 }
 
 void Remote_UartError(void)

@@ -5,56 +5,20 @@
 #include "main.h"
 #include "pid.h"
 
-extern pid_t M2006_pid[4];
-extern pid_t position_pid[4];
+// 减速比 19.2，周长 60mm
+#define encoder_to_mm 0.00038147f 
+#define RPM_TO_MPS_DIV 0.00016357f
+#define RPM_TO_SPEED 0.0000582f
+// 统一变量名
+extern pid_t leg_position_pid[4];
+extern pid_t leg_speed_pid[4];
+extern pid_t wheel_speed_pid[4];
+
 extern dji_motor_t M2006[4];
 extern dji_motor_t M3508[4];
-extern volatile float m2006_current;
-
-#define lf 0
-#define rf 1
-#define rr 2
-#define lr 3
-
-typedef enum
-{
-    all_up = 1,
-    all_back,
-    front_up,
-    front_back,
-    behind_up,
-    behind_back,
-    qigang_up,
-    qigang_down,
-}position_case;
-
-typedef enum
-{
-    step1 = 1,
-    step2,
-    step3,
-    step4,
-    step5,
-    step6,
-    step7,
-    step8,
-}up_stpe;
-
-typedef struct
-{
-    float distance;
-    float left_current;
-    float right_current;
-}leg_t;
-
-extern leg_t front;
-extern leg_t behind;
-extern position_case my_case;
-extern up_stpe up_;
 
 void DJI_OnData(const CAN_RxHeaderTypeDef *header, const uint8_t *data);
 void My_Init(void);
-
 void My_Loop(void);
 
 #endif

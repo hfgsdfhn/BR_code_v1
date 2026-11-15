@@ -3,6 +3,7 @@
 #include "board_can.h"
 #include "can.h"
 #include "my_main.h"
+#include <stm32f4xx_hal_can.h>
 
 HAL_StatusTypeDef CAN1_init(void)
 {
@@ -77,26 +78,22 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     CAN_RxHeaderTypeDef rx_header;
     uint8_t rx_data[8];
 
-    if (hcan == NULL)
-    {
-        return;
-    }
+    if (hcan == NULL) return;
 
     while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0U)
     {
-        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0,
-                                 &rx_header, rx_data) != HAL_OK)
+        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data) != HAL_OK)
         {
             break;
         }
 
         if (hcan->Instance == CAN1)
         {
-            Board_DJI_Rx(&rx_header, rx_data);
+            CAN_Parse_SmallBoard(&rx_header, rx_data); 
         }
         else if (hcan->Instance == CAN2)
         {
-            DJI_OnData(&rx_header, rx_data);
+            DJI_OnData(&rx_header, rx_data); 
         }
     }
 }
