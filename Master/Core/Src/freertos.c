@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+﻿/* USER CODE BEGIN Header */
 /* CubeMX RTOS entry point with the user task setup kept in this file. */
 /* USER CODE END Header */
 
@@ -113,6 +113,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
+
+  /* Initialize R2-style status fan-out queues before creating consumers. */
+  Queue_Init();
 
   /* Create the thread(s) */
   /* creation of Status_Task */

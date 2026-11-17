@@ -1,7 +1,6 @@
-/*
+﻿/*
  * @file suction_cup.c
- * @brief cup_task 模块的用户接口与实现。
- */
+ * @brief cup_task 妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆? */
 
 #include "cup_task.h"
 
@@ -31,13 +30,13 @@ volatile float dstp23l_distance_cm;
 static suction_stp23l_parser_t up_stp23l_parser;
 static suction_stp23l_parser_t down_stp23l_parser;
 
-/* 功能：处理SuctionCup_ReadU16对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哠uctionCup_ReadU16瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static uint16_t SuctionCup_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
-/* 功能：处理SuctionCup_KeepTrailingHeader对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哠uctionCup_KeepTrailingHeader瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
 {
     uint16_t trailing_count = 0U;
@@ -53,7 +52,7 @@ static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
     parser->index = trailing_count;
 }
 
-/* 功能：解析并校验SuctionCup_IsValidFrame对应的通信数据。 */
+/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_IsValidFrame瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
 {
     uint8_t checksum = 0U;
@@ -68,7 +67,7 @@ static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
     return (uint8_t)(checksum == parser->frame[STP23L_CHECKSUM_OFFSET]);
 }
 
-/* 功能：解析并校验SuctionCup_DecodeDistanceCm对应的通信数据。 */
+/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_DecodeDistanceCm瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
 {
     uint32_t sum = 0U;
@@ -88,7 +87,7 @@ static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
     return (count == 0U) ? 0.0f : ((float)sum / (float)count) / 10.0f;
 }
 
-/* 功能：解析并校验SuctionCup_ParseBytes对应的通信数据。 */
+/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_ParseBytes瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
                                   const uint8_t *data, uint16_t size,
                                   volatile float *distance_cm)
@@ -122,26 +121,26 @@ static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
     }
 }
 
-/* 功能：处理SuctionCup_UStp23lRx对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哠uctionCup_UStp23lRx瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 void UStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &ustp23l_distance_cm);
 }
 
-/* 功能：处理SuctionCup_DStp23lRx对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哠uctionCup_DStp23lRx瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 void DStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &dstp23l_distance_cm);
 }
 
-/* 功能：初始化SuctionCup_Init对应的外设、参数和运行状态。 */
+/* 鍔熻兘锛氬垵濮嬪寲SuctionCup_Init瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
 void SuctionCup_Init(void)
 {
     (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, UStp23lRx);
     (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, DStp23lRx);
 }
 
-/* 功能：接收并解析SuctionCup_OnFrame对应的输入数据，更新模块状态。 */
+/* 鍔熻兘锛氭帴鏀跺苟瑙ｆ瀽SuctionCup_OnFrame瀵瑰簲鐨勮緭鍏ユ暟鎹紝鏇存柊妯″潡鐘舵€併€?*/
 void SuctionCup_OnFrame(const can_frame_t *frame)
 {
     unsigned i;
@@ -169,7 +168,7 @@ void SuctionCup_OnFrame(const can_frame_t *frame)
     }
 }
 
-/* 功能：发送SuctionCup_SendGroupFrames对应的数据或控制指令。 */
+/* 鍔熻兘锛氬彂閫丼uctionCup_SendGroupFrames瀵瑰簲鐨勬暟鎹垨鎺у埗鎸囦护銆?*/
 static void SuctionCup_SendGroupFrames(void)
 {
     can_frame_t frame;
@@ -195,7 +194,7 @@ static void SuctionCup_SendGroupFrames(void)
     frame.hfdcan = &hfdcan3;
     (void)BspCan_Send(&frame);
 }
-/* 功能：处理SuctionCup_MotorWatchdog对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哠uctionCup_MotorWatchdog瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void SuctionCup_MotorWatchdog(void)
 {
     bool online_now[5];
@@ -255,7 +254,7 @@ static void SuctionCup_MotorWatchdog(void)
     }
 }
 
-/* 功能：执行SuctionCup_Service对应的周期任务并维护运行状态。 */
+/* 鍔熻兘锛氭墽琛孲uctionCup_Service瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 static bool SuctionCup_StartupZeroCalibrationComplete(void)
 {
     unsigned i;
@@ -296,7 +295,7 @@ void SuctionCup_Service(void)
                             (enabled && m3508_dcup[0].feedback_online) ? suction_target[dcup][2U] : 0.0f);
     SuctionCup_SendGroupFrames();
 }
-static void SuctionCup_ProcessRemote(const status_snapshot_t *status)
+static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
 {
     static uint16_t previous_keys;
     static bool previous_keys_valid;
@@ -304,7 +303,7 @@ static void SuctionCup_ProcessRemote(const status_snapshot_t *status)
     uint16_t pressed_keys;
     if (status == NULL)
         return;
-    /* 仅在遥控 PA6 为低电平时（switch_state bit0=1）响应按键。 */
+    /* 浠呭湪閬ユ帶 PA6 涓轰綆鐢靛钩鏃讹紙switch_state bit0=1锛夊搷搴旀寜閿€?*/
     if ((status->remote.switch_state & (1U << 0)) == 0U)
     {
         previous_keys = 0U;
@@ -349,16 +348,17 @@ static void SuctionCup_ProcessRemote(const status_snapshot_t *status)
     previous_keys = current_keys;
 }
 
-/* 功能：执行SuctionCup_Task对应的周期任务并维护运行状态。 */
+/* 鍔熻兘锛氭墽琛孲uctionCup_Task瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void SuctionCup_Task(void *argument)
 {
     (void)argument;
     for (;;)
     {
-        status_snapshot_t status;
-        if (Status_GetSnapshot(&status))
+        send_to_cup_t status;
+        if (osMessageQueueGet(Cup_QueueHandle, &status, NULL, 0U) == osOK)
             SuctionCup_ProcessRemote(&status);
         SuctionCup_Service();
         osDelay((osKernelGetTickFreq() * 2U + 999U) / 1000U);
     }
 }
+

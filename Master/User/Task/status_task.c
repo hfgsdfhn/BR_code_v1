@@ -1,9 +1,13 @@
 ﻿#include "status_task.h"
 #include "bsp_can.h"
 #include "my_main.h"
-#include "arm_task.h"
+#include "cup_task.h"
+#include <string.h>
 
-volatile status_snapshot_t g_status_snapshot;
+osMessageQueueId_t Chassis_QueueHandle;
+osMessageQueueId_t Arm_QueueHandle;
+osMessageQueueId_t Climb_QueueHandle;
+osMessageQueueId_t Cup_QueueHandle;
 
 volatile uint8_t gpio_pb6 = 0U;
 volatile uint8_t gpio_pb7 = 0U;
@@ -14,93 +18,118 @@ volatile uint8_t gpio_pd3 = 0U;
 volatile uint8_t gpio_pd4 = 0U;
 volatile uint8_t gpio_pd5 = 0U;
 
+static uint32_t status_sequence;
+static chassis_speed_t planned_speed;
+
+typedef struct
+{
+    float dt35_right;
+    float dt35_behind;
+    remote_t remote;
+    chassis_speed_t target_speed;
+    imu_t imu;
+    float stp23l_up_distance_cm;
+    float stp23l_down_distance_cm;
+    uint32_t sequence;
+} status_common_t;
+
+static status_common_t common;
 
 void Status_InitGpio(void)
 {
-    gpio_pb6 = 0U;
-    gpio_pb7 = 0U;
-    gpio_pd7 = 0U;
-    gpio_pd6 = 0U;
-    gpio_pd1 = 0U;
-    gpio_pd3 = 0U;
-    gpio_pd4 = 0U;
-    gpio_pd5 = 0U;
+    gpio_pb6 = 0U; gpio_pb7 = 0U; gpio_pd7 = 0U; gpio_pd6 = 0U;
+    gpio_pd1 = 0U; gpio_pd3 = 0U; gpio_pd4 = 0U; gpio_pd5 = 0U;
 }
 
 void Status_ApplyGpio(void)
 {
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, gpio_pb6 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, gpio_pb7 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, gpio_pd7 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, gpio_pd6 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, gpio_pd1 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, gpio_pd3 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, gpio_pb6 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, gpio_pb7 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, gpio_pd7 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, gpio_pd6 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, gpio_pd1 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, gpio_pd3 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-
-
-bool Status_GetSnapshot(status_snapshot_t *snapshot)
+void Queue_Init(void)
 {
-    uint32_t primask;
-    if (snapshot == NULL)
-        return false;
-    primask = __get_PRIMASK();
-    __disable_irq();
-    *snapshot = g_status_snapshot;
-    __set_PRIMASK(primask);
-    return true;
+    Chassis_QueueHandle = osMessageQueueNew(1U, sizeof(send_to_chassis_t), NULL);
+    Arm_QueueHandle = osMessageQueueNew(1U, sizeof(send_to_arm_t), NULL);
+    Climb_QueueHandle = osMessageQueueNew(1U, sizeof(send_to_climb_t), NULL);
+    Cup_QueueHandle = osMessageQueueNew(1U, sizeof(send_to_cup_t), NULL);
 }
 
-void Status_UpdateSnapshot(void)
+static void Status_ReadAll(void)
 {
-    static chassis_speed_t planned_speed = {0.0f, 0.0f, 0.0f};
-    status_snapshot_t next = {0};
+    memset(&common, 0, sizeof(common));
+    (void)Remote_GetState(&common.remote);
+    joy_to_mps(&common.remote, &planned_speed);
+    common.target_speed = planned_speed;
+    common.imu = g_imu;
+    common.stp23l_up_distance_cm = ustp23l_distance_cm;
+    common.stp23l_down_distance_cm = dstp23l_distance_cm;
+    common.sequence = ++status_sequence;
+}
 
-    (void)Remote_GetState(&next.remote);
-    {
-        static uint8_t switch_raw_prev;
-        static uint8_t switch_stable;
-        static uint8_t switch_count;
-        static bool switch_initialized;
-        uint8_t switch_raw = next.remote.switch_state;
-        if (!switch_initialized)
-        {
-            switch_raw_prev = switch_raw;
-            switch_stable = switch_raw;
-            switch_initialized = true;
-        }
-        else if (switch_raw != switch_raw_prev)
-        {
-            switch_raw_prev = switch_raw;
-            switch_count = 0U;
-        }
-        else if (switch_count < 3U)
-        {
-            switch_count++;
-            if (switch_count >= 3U)
-                switch_stable = switch_raw;
-        }
-        next.remote.switch_state = switch_stable;
-    }
-    joy_to_mps(&next.remote, &planned_speed);
-    next.target_speed = planned_speed;
-    next.control = (next.remote.online != 0U) ? STATUS_CONTROL_REMOTE : STATUS_CONTROL_OFFLINE;
+static void Queue_PublishLatest(osMessageQueueId_t queue, const void *message)
+{
+    uint8_t discarded[sizeof(send_to_chassis_t)];
+    if (queue == NULL || message == NULL)
+        return;
+    if (osMessageQueuePut(queue, message, 0U, 0U) != osOK &&
+        osMessageQueueGet(queue, discarded, NULL, 0U) == osOK)
+        (void)osMessageQueuePut(queue, message, 0U, 0U);
+}
 
-    {
-        uint32_t primask = __get_PRIMASK();
-        __disable_irq();
-        next.sequence = g_status_snapshot.sequence + 1U;
-        g_status_snapshot = next;
-        __set_PRIMASK(primask);
-    }
+void Send_to_Chassis(void)
+{
+    send_to_chassis_t chassis;
+    chassis.dt35_right = common.dt35_right;
+    chassis.dt35_behind = common.dt35_behind;
+    chassis.remote = common.remote;
+    chassis.target_speed = common.target_speed;
+    chassis.imu = common.imu;
+    chassis.sequence = common.sequence;
+    Queue_PublishLatest(Chassis_QueueHandle, &chassis);
+}
+
+void Send_to_Arm(void)
+{
+    send_to_arm_t arm;
+    arm.dt35_right = common.dt35_right;
+    arm.dt35_behind = common.dt35_behind;
+    arm.remote = common.remote;
+    arm.sequence = common.sequence;
+    Queue_PublishLatest(Arm_QueueHandle, &arm);
+}
+
+void Send_to_Climb(void)
+{
+    send_to_climb_t climb;
+    climb.dt35_right = common.dt35_right;
+    climb.dt35_behind = common.dt35_behind;
+    climb.remote = common.remote;
+    climb.sequence = common.sequence;
+    Queue_PublishLatest(Climb_QueueHandle, &climb);
+}
+
+void Send_to_Cup(void)
+{
+    send_to_cup_t cup;
+    cup.dt35_right = common.dt35_right;
+    cup.dt35_behind = common.dt35_behind;
+    cup.remote = common.remote;
+    cup.stp23l_up_distance_cm = common.stp23l_up_distance_cm;
+    cup.stp23l_down_distance_cm = common.stp23l_down_distance_cm;
+    cup.sequence = common.sequence;
+    Queue_PublishLatest(Cup_QueueHandle, &cup);
 }
 
 void Status_Task(void *argument)
 {
     (void)argument;
-    Status_InitGpio();
     uint32_t tick = osKernelGetTickCount();
     static bool can1_bus_off_prev;
     static bool can2_bus_off_prev;
@@ -118,7 +147,11 @@ void Status_Task(void *argument)
         can2_bus_off_prev = can2_bus_off;
         can3_bus_off_prev = can3_bus_off;
         BspCan_Service();
-        Status_UpdateSnapshot();
+        Status_ReadAll();
+        Send_to_Chassis();
+        Send_to_Arm();
+        Send_to_Climb();
+        Send_to_Cup();
         Status_ApplyGpio();
         tick += 2U;
         osDelayUntil(tick);
