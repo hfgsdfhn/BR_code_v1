@@ -26,10 +26,6 @@
 #include "usart.h"
 #include "gpio.h"
 
-/* arm_target is edited by the debugger during live tuning.  Keep this small
- * command area outside D-Cache so debugger writes are immediately visible. */
-extern volatile float arm_target[2][5];
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* BR: no TR down mechanism. */
@@ -136,7 +132,6 @@ int main(void)
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   (void)HAL_SPI_Init(&hspi1);
-
   My_Init();
 
   /* USER CODE END 2 */
@@ -280,22 +275,6 @@ void MPU_Config(void)
   MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-  /* Make the arm command buffer non-cacheable.  The debugger writes physical
-   * RAM directly, therefore a cacheable mapping can leave the CPU reading an
-   * old cache line after a live variable edit. */
-  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-  MPU_InitStruct.BaseAddress = ((uint32_t)arm_target) & ~0xFFU;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_256B;
-  MPU_InitStruct.SubRegionDisable = 0x00U;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);

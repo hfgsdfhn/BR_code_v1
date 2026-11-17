@@ -57,7 +57,6 @@ typedef struct
     uint32_t cascade_tick;
     bool cascade_configured;
     float mit_kp, mit_kd;
-    float output_ratio;
 
     FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
     uint8_t id;

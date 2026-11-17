@@ -14,14 +14,6 @@
 
 void Status_Task(void *argument);
 
-typedef struct
-{
-    float dt35_right;
-    float dt35_behind;
-    remote_t remote;
-    chassis_speed_t target_speed;
-    imu_t imu;
-}send_to_chassis_t;
 extern osMessageQueueId_t Chassis_QueueHandle;
 
 void Queue_Init(void);

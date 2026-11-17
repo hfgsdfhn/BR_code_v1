@@ -25,10 +25,12 @@ typedef struct
 {
     uint8_t id;             //电机id
     dji_motor_type_t type;  //电机种类（2006/3508）
+    int8_t dir;             // 方向
+    int32_t offset;         //绝对零位偏移量
     uint16_t encoder;       //编码器返回值
     uint16_t last_encoder;
     int32_t encoder_turns;  //转子转动圈数
-    float total_encoder;
+    int32_t total_encoder;  
     uint8_t encoder_ready;
     float speed_rpm;        //转子速度
     float current;          //电流
@@ -37,11 +39,10 @@ typedef struct
     CAN_HandleTypeDef *can;
 } dji_motor_t;
 
-void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id,
-                   dji_motor_type_t type);
+void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id, dji_motor_type_t type, int8_t dir);
 void DjiMotor_SetCurrent(dji_motor_t *motor, int16_t current);
 void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data);
-
 bool DjiMotor_SendGroup(dji_motor_t *motor, uint8_t number);
+void DjiMotor_SetZero(dji_motor_t *motor, uint8_t number);
 
 #endif

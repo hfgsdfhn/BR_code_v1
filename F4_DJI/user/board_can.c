@@ -1,8 +1,8 @@
 #include "board_can.h"
 
 volatile float PID_K[3][3] = {
-    {0.5f, 0.0f, 0.0f},  // 第 0 套：腿部位置环
-    {2.5f, 0.0f, 0.0f},  // 第 1 套：腿部速度环
+    {1.0f, 0.0f, 0.0f},  // 第 0 套：腿部位置环
+    {4.0f, 0.0f,0.0f},  // 第 1 套：腿部速度环
     {8.1f, 1.3f, 0.0f}   // 第 2 套：轮子速度环
 };
 volatile float leg_height_mm[4] = {0};
@@ -153,7 +153,7 @@ void Send_Feedback_Pos(CAN_HandleTypeDef *hcan, float pos_mm[4])
 
     for (int i = 0; i < 4; i++) 
     {
-        val = (int16_t)pos_mm[i]; // 转 int16
+        val = (int16_t)pos_mm[i] ; // 转 int16
         tx_data[i*2]     = (uint8_t)(val & 0xFF);        // 低字节
         tx_data[i*2 + 1] = (uint8_t)((val >> 8) & 0xFF); // 高字节
     }

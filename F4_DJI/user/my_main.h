@@ -6,7 +6,7 @@
 #include "pid.h"
 
 // 减速比 19.2，周长 60mm
-#define encoder_to_mm 0.00038147f 
+#define encoder_to_mm 0.001197815f
 #define RPM_TO_MPS_DIV 0.00016357f
 #define RPM_TO_SPEED 0.0000582f
 // 统一变量名
