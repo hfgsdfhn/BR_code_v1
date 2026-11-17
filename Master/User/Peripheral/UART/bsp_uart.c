@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @file bsp_uart.c
  * @brief bsp_uart模块的用户接口与实现。
  */
@@ -19,11 +19,6 @@ __ALIGNED(CACHE_LINE_SIZE) static uint8_t ustp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dstp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t scram_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t remote_rx[UART_RX_BUFFER_SIZE];
-
-static uint8_t BspUart_ImuRxCallback(const uint8_t *data, uint16_t size)
-{
-    return Mins_Imu_receive_omega(data, size);
-}
 
 bsp_uart_t uart_list[BSP_UART_COUNT] = {
     [BSP_UART_IMU] = {&huart3, imu_rx, 0U, NULL},

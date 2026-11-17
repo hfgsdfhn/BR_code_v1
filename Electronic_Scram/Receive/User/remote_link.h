@@ -1,7 +1,6 @@
 /*
  * @file remote_link.h
- * @brief remote_link模块的用户接口与实现。
- */
+ * @brief remote_link妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆? */
 
 #pragma once
 
@@ -19,6 +18,7 @@ typedef struct
     uint8_t tx_buffer[REMOTE_TX_SIZE];
     volatile uint32_t rx_produced;
     uint32_t rx_consumed;
+    uint32_t lora_parsed;
     volatile uint16_t rx_position;
     volatile uint32_t tx_write;
     volatile uint32_t tx_read;
@@ -35,10 +35,10 @@ extern "C"
 {
 #endif
 
-/* 功能：初始化RemoteLink_Init对应的外设、参数和运行状态。 */
+/* 鍔熻兘锛氬垵濮嬪寲RemoteLink_Init瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
 void RemoteLink_Init(void);
 
-/* 功能：轮询并更新RemoteLink_Process对应的输入和状态。 */
+/* 鍔熻兘锛氳疆璇㈠苟鏇存柊RemoteLink_Process瀵瑰簲鐨勮緭鍏ュ拰鐘舵€併€?*/
 void RemoteLink_Process(void);
 
 #ifdef __cplusplus

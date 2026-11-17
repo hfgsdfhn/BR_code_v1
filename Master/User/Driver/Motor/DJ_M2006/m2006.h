@@ -58,6 +58,7 @@ typedef struct
     int16_t speed_rpm;
     int16_t current_raw;
     float position_rad;
+    bool recovery_trajectory;
     float speed_rad_s;
     float target;
     float target_current_a;
@@ -67,6 +68,7 @@ typedef struct
     float reference_speed_rad_s;
     float reference_acceleration_rad_s2;
     float trajectory_time_s;
+    bool trajectory_enabled;
     float trajectory_start_rad;
     float trajectory_delta_rad;
     float trajectory_k0;

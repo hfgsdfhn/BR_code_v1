@@ -435,7 +435,6 @@ bool J4310_OnFrame(j4310_t *motor                         ,
     uint16_t torque;
     float raw_position_rad;
     bool was_fault_active;
-    bool first_feedback;
 
     if ((motor == NULL) || (frame == NULL) || (frame->hfdcan != motor->hcan) ||
         (frame->id_type != FDCAN_STANDARD_ID) || (frame->id != motor->master_id) || (frame->length != 8U) ||
@@ -448,7 +447,6 @@ bool J4310_OnFrame(j4310_t *motor                         ,
     speed = ((uint16_t)frame->data[3] << 4U) | (frame->data[4] >> 4U);
     torque = ((uint16_t)(frame->data[4] & 0x0FU) << 8U) | frame->data[5];
     was_fault_active = motor->fault_active;
-    first_feedback = !motor->position_tracking_valid;
     motor->feedback.state = frame->data[0] >> 4U;
     raw_position_rad = motor->direction * J4310_UintToFloat(position, -J4310_POSITION_MAX, J4310_POSITION_MAX, 16U);
     if (!motor->position_tracking_valid)
@@ -509,40 +507,20 @@ bool J4310_OnFrame(j4310_t *motor                         ,
     }
     if (motor->startup_hold_pending && (motor->feedback.state == J4310_STATE_ENABLED))
     {
+        /* Re-anchor to the first enabled feedback sample without
+         * creating an automatic trajectory to software zero. */
+        motor->target_position_rad = motor->feedback.position_rad;
+        motor->target_speed_rad_s = 0.0f;
         motor->reference_position_rad = motor->feedback.position_rad;
         motor->reference_speed_rad_s = 0.0f;
         motor->trajectory_start_rad = motor->feedback.position_rad;
+        motor->trajectory_pending = false;
         motor->trajectory_active = false;
-        if (!motor->trajectory_pending)
-        {
-            motor->target_position_rad = motor->feedback.position_rad;
-            motor->target_speed_rad_s = 0.0f;
-
-            motor->kp = 0.0f;
-            motor->kd = 0.0f;
-            motor->target_torque_nm = 0.0f;
-            motor->startup_hold_active = false;
-        }
-        if (first_feedback)
-        {
-            motor->mode = J4310_MODE_MIT;
-            motor->target_position_rad = 0.0f;
-            motor->target_speed_rad_s = 0.0f;
-            motor->reference_position_rad = motor->feedback.position_rad;
-            motor->trajectory_start_rad = motor->feedback.position_rad;
-            motor->trajectory_pending = true;
-            motor->trajectory_active = false;
-            motor->startup_hold_active = true;
-            motor->recovery_trajectory = true;
-            if (motor->kp <= 0.0f)
-            {
-                motor->kp = J4310_STARTUP_HOLD_KP;
-            }
-            if (motor->kd <= 0.0f)
-            {
-                motor->kd = J4310_STARTUP_HOLD_KD;
-            }
-        }
+        motor->kp = 0.0f;
+        motor->kd = 0.0f;
+        motor->target_torque_nm = 0.0f;
+        motor->startup_hold_active = false;
+        motor->recovery_trajectory = false;
         motor->startup_hold_pending = false;
     }
     return true;
@@ -821,7 +799,6 @@ void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float o
     motor->target_torque_nm = tau_nm;
     motor->mode = J4310_MODE_MIT;
     motor->startup_hold_active = true;
-    motor->recovery_trajectory = false;
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }

@@ -54,6 +54,7 @@ typedef struct
     int16_t speed_rpm;
     int16_t current_raw;
     float position_rad;
+    bool recovery_trajectory;
     float speed_rad_s;
     float target_current_a;
     float target_position_rad;

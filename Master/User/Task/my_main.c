@@ -15,6 +15,7 @@
 #include "spi.h"
 #include "fdcan.h"
 #include "remote.h"
+#include "status_task.h"
 #include "cup_task.h"
 #include "../Mechanism/Upper/arm_config.h"
 #include "../Mechanism/Upper/cup_config.h"
@@ -40,7 +41,6 @@ volatile uint32_t g_error_handler_mmfar = 0U;
 
 static osThreadId_t can_rx_task_handle;
 static osThreadId_t uart_task_handle;
-static osThreadId_t suction_cup_task_handle;
 static const osThreadAttr_t uart_task_attributes = {
     .name = "Uart_Task",
     .stack_size = 2048U,
@@ -48,11 +48,6 @@ static const osThreadAttr_t uart_task_attributes = {
 };
 static const osThreadAttr_t can_rx_task_attributes = {
     .name = "Can_Rx_Task",
-    .stack_size = 2048U,
-    .priority = osPriorityNormal,
-};
-static const osThreadAttr_t suction_cup_task_attributes = {
-    .name = "Suction_Cup_Task",
     .stack_size = 2048U,
     .priority = osPriorityNormal,
 };
@@ -106,7 +101,7 @@ void My_Init(void)
     M2006_Init(&m2006_larm, &hfdcan2, 1U, -1);
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
     RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
-    J4310_Init(&j4310_larm, &hfdcan2, 4U, 1);
+    J4310_Init(&j4310_larm, &hfdcan2, 4U, -1);
     RS05_Init(&rs05_larm, &hfdcan2, 5U, 1);
 
     RS01_Init(&rs01_rarm, &hfdcan3, 1U, -1);
@@ -116,6 +111,8 @@ void My_Init(void)
     RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
     configure_motor_gains();
     Arm_TaskInit();
+    Status_InitGpio();
+    Status_ApplyGpio();
     Upper_BindMotors(&upper_state);
     SuctionCup_Init();
     Scram_Init();
@@ -137,6 +134,5 @@ void My_RtosInit(void)
         };
         (void)osThreadNew(Arm_TxTask, NULL, &attributes);
     }
-    suction_cup_task_handle = osThreadNew(SuctionCup_Task, NULL, &suction_cup_task_attributes);
     uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
 }

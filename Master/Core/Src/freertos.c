@@ -6,8 +6,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "FreeRTOS.h"
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -76,7 +75,7 @@ extern void Chassis_Task_(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* Hook prototypes */
-void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName);
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName);
 
 /* USER CODE BEGIN 4 */
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
@@ -130,7 +129,6 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   My_RtosInit();
-  Queue_Init();
 
   /* USER CODE END RTOS_THREADS */
 

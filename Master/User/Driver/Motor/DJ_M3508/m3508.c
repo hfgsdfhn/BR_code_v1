@@ -85,7 +85,7 @@ static void M3508_BeginPositionTrajectory(m3508_t *motor)
     quintic_plan_t plan;
     float distance = motor->target_position_rad - motor->position_rad;
 
-    Quintic_SetDefaultLimits(m3508_trajectory_max_speed_rad_s, m3508_trajectory_max_acceleration_rad_s2,
+    Quintic_SetDefaultLimits(motor->recovery_trajectory ? (m3508_trajectory_max_speed_rad_s * 0.3333333333f) : m3508_trajectory_max_speed_rad_s, m3508_trajectory_max_acceleration_rad_s2,
                              M3508_MIN_TRAJECTORY_S);
     Quintic_Plan(&plan, motor->position_rad, motor->target_position_rad, motor->speed_rad_s, Quintic_DefaultDuration(motor->target_position_rad - motor->position_rad, motor->speed_rad_s, motor->trajectory_time_s));
     motor->trajectory_start_rad = motor->position_rad;

@@ -79,16 +79,15 @@ uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len)
     return 1U;
 }
 
-uint8_t Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len)
+void Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len)
 {
     if (!Mins_Imu_CheckFrame(frame, len, 9U, MINS_IMU_RESPONSE_2_3))
     {
-        return 0U;
+        return;
     }
 
     g_imu.pitch = Mins_Imu_DecodeBcd(&frame[4], 3U, 2U);
     g_imu.roll = Mins_Imu_DecodeBcd(&frame[7], 3U, 2U);
-    return 1U;
 }
 
 HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)

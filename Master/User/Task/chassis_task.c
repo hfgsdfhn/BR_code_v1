@@ -1,9 +1,8 @@
-#include "chassis_task.h"
+﻿#include "chassis_task.h"
 #include "status_task.h"
 #include "chassis.h"
 #include "board_can.h"
 #include "fdcan.h"
-send_to_chassis_t chassis_data_;
 float dji_pid[3][3];
 uint8_t dji_flag = 0;   //调试用
 
@@ -14,9 +13,10 @@ void Chassis_Task_(void *argument)
     const uint32_t period = 2U;  // 2ms，假设系统Tick为1kHz
     for (;;)
     {
-        if(osMessageQueueGet(Chassis_QueueHandle,&chassis_data_,0,0) == osOK)
+        status_snapshot_t status;
+        if (Status_GetSnapshot(&status))
         {
-            Chassis_SendSpeed(&hfdcan1,&chassis_data_.target_speed);
+            Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             Send_Target_Pos(&hfdcan1, DJI_Board_Target.leg_height_mm);
             if(dji_flag)
             {

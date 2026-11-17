@@ -84,7 +84,7 @@ static void M2006_BeginPositionTrajectory(m2006_t *motor)
     quintic_plan_t plan;
     float distance = motor->target_position_rad - motor->position_rad;
 
-    Quintic_SetDefaultLimits(m2006_trajectory_max_speed_rad_s, m2006_trajectory_max_acceleration_rad_s2,
+    Quintic_SetDefaultLimits(motor->recovery_trajectory ? (m2006_trajectory_max_speed_rad_s * 0.3333333333f) : m2006_trajectory_max_speed_rad_s, m2006_trajectory_max_acceleration_rad_s2,
                              M2006_MIN_TRAJECTORY_S);
     Quintic_Plan(&plan, motor->position_rad, motor->target_position_rad, motor->speed_rad_s, Quintic_DefaultDuration(motor->target_position_rad - motor->position_rad, motor->speed_rad_s, motor->trajectory_time_s));
     motor->trajectory_start_rad = motor->position_rad;
@@ -176,6 +176,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
     motor->output_ratio = 1.0f;
+    motor->trajectory_enabled = true;
     PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, M2006_POSITION_OUTPUT_LIMIT, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
     PID_SetIntegralSeparationRange(&motor->position_pid, M2006_POSITION_I_FULL, M2006_POSITION_I_SEPARATION);
@@ -313,7 +314,18 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
         motor->target_position_rad = target_position_rad;
         if (target_changed)
         {
-            motor->trajectory_pending = true;
+            if (motor->trajectory_enabled)
+            {
+                motor->trajectory_pending = true;
+            }
+            else
+            {
+                motor->reference_position_rad = target_position_rad;
+                motor->reference_speed_rad_s = 0.0f;
+                motor->reference_acceleration_rad_s2 = 0.0f;
+                motor->trajectory_pending = false;
+                motor->trajectory_active = false;
+            }
         }
         motor->speed_reference_valid = false;
     }
@@ -441,11 +453,20 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     else if (motor->mode == M2006_MODE_POSITION)
     {
         float speed_limit = m2006_trajectory_max_speed_rad_s;
-        if (motor->trajectory_pending)
+        if (motor->trajectory_enabled)
         {
-            M2006_BeginPositionTrajectory(motor);
+            if (motor->trajectory_pending)
+            {
+                M2006_BeginPositionTrajectory(motor);
+            }
+            M2006_UpdatePositionTrajectory(motor, dt_s);
         }
-        M2006_UpdatePositionTrajectory(motor, dt_s);
+        else
+        {
+            motor->reference_position_rad = motor->target_position_rad;
+            motor->reference_speed_rad_s = 0.0f;
+            motor->reference_acceleration_rad_s2 = 0.0f;
+        }
         target_speed = motor->reference_speed_rad_s +
                        PID_Calc(&motor->position_pid, motor->reference_position_rad, motor->position_rad, dt_s);
         target_speed = M2006_Clamp(target_speed, -speed_limit, speed_limit);
