@@ -35,7 +35,15 @@ typedef struct
     uint32_t sequence;
 } send_to_cup_t;
 
-typedef send_to_arm_t send_to_climb_t;
+typedef struct
+{
+    float dt35_right;
+    float dt35_behind;
+    remote_t remote;
+    chassis_speed_t target_speed;
+    imu_t imu;
+    uint32_t sequence;
+} send_to_climb_t;
 
 extern osMessageQueueId_t Chassis_QueueHandle;
 extern osMessageQueueId_t Arm_QueueHandle;

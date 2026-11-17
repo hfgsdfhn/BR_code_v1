@@ -140,6 +140,9 @@ bool BR_GravityEvaluate(const br_gravity_model_t *model,
         tau[3] += br_torque(joint[3], tool, model->payload_mass_kg, model->gravity_base);
     }
 
+    /* Motor-axis convention: RS00_2 and J4310 use the opposite sign. */
+    tau[2] = -tau[2];
+    tau[3] = -tau[3];
     tau[0] = 0.0f;
     tau[4] = 0.0f;
     if (potential_j != NULL)
