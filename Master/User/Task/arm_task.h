@@ -1,36 +1,42 @@
-/*
+﻿/*
  * @file arm_task.h
- * @brief arm_task模块的用户接口与实现。
+ * @brief arm_task妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆?
  */
 
 #ifndef ARM_TASK_H
 #define ARM_TASK_H
 #include "../Peripheral/CAN/bsp_can.h"
+#include "../Mechanism/Upper/upper.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-extern volatile uint8_t arm_gpio_pb6;
-extern volatile uint8_t arm_gpio_pb7;
-extern volatile uint8_t arm_gpio_pd7;
-extern volatile uint8_t arm_gpio_pd6;
-extern volatile uint8_t arm_gpio_pd1;
-extern volatile uint8_t arm_gpio_pd3;
-extern volatile uint8_t arm_gpio_pd4;
-extern volatile uint8_t arm_gpio_pd5;
+extern volatile uint8_t gpio_pb6;
+extern volatile uint8_t gpio_pb7;
+extern volatile uint8_t gpio_pd7;
+extern volatile uint8_t gpio_pd6;
+extern volatile uint8_t gpio_pd1;
+extern volatile uint8_t gpio_pd3;
+extern volatile uint8_t gpio_pd4;
+extern volatile uint8_t gpio_pd5;
 
+extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd14[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd14_2[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
 extern volatile uint8_t arm_joint_zero_calibration[2][5];
 
-/* 功能：初始化Arm_TaskInit对应的外设、参数和运行状态。 */
+/* 鍔熻兘锛氬垵濮嬪寲Arm_TaskInit瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
 void Arm_TaskInit(void);
-/* 功能：停止Arm_TaskStop对应的输出并清理运行状态。 */
+/* 鍔熻兘锛氬仠姝rm_TaskStop瀵瑰簲鐨勮緭鍑哄苟娓呯悊杩愯鐘舵€併€?*/
 void Arm_TaskStop(void);
-/* 功能：执行Arm_Task对应的周期任务并维护运行状态。 */
+/* 鍔熻兘锛氭墽琛孉rm_Task瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void Arm_Task(void *argument);
-/* 功能：执行Arm_TxTask对应的周期任务并维护运行状态。 */
+/* 鍔熻兘锛氭墽琛孉rm_TxTask瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void Arm_TxTask(void *argument);
-/* 功能：接收并解析Arm_OnFrame对应的输入数据，更新模块状态。 */
+/* 鍔熻兘锛氭帴鏀跺苟瑙ｆ瀽Arm_OnFrame瀵瑰簲鐨勮緭鍏ユ暟鎹紝鏇存柊妯″潡鐘舵€併€?*/
 void Arm_OnFrame(const can_frame_t *frame);
-/* 功能：将Arm_TxQueueInit对应的目标数据加入执行队列。 */
+/* 鍔熻兘锛氬皢Arm_TxQueueInit瀵瑰簲鐨勭洰鏍囨暟鎹姞鍏ユ墽琛岄槦鍒椼€?*/
 bool Arm_TxQueueInit(void);
 
 #endif

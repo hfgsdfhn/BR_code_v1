@@ -24,7 +24,6 @@ typedef struct
 } mins_imu_t;
 
 void Mins_Imu_Init(mins_imu_t *imu, bsp_uart_t *uart);
-
 void Mins_Imu_RequestEuler(mins_imu_t *imu);
 
 void Mins_Imu_OnRx(const uint8_t *data, uint16_t len);

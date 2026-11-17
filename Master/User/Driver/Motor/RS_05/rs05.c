@@ -66,7 +66,7 @@ static void RS05_PlanTrajectory(rs05_t *m, float start, float target)
     quintic_plan_t plan;
     float duration_ms;
 
-    Quintic_SetDefaultLimits(rs05_trajectory_max_speed_rad_s, rs05_trajectory_max_acceleration_rad_s2,
+    Quintic_SetDefaultLimits(m->recovery_trajectory ? (rs05_trajectory_max_speed_rad_s * 0.3333333333f) : rs05_trajectory_max_speed_rad_s, rs05_trajectory_max_acceleration_rad_s2,
                              (float)RS05_TRAJECTORY_PERIOD_MS * 0.001f);
     Quintic_Plan(&plan, start, target, m->velocity, Quintic_DefaultDuration(target - start, m->velocity, m->trajectory_time_s));
     m->trajectory_start_position = start;
@@ -508,6 +508,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     m->velocity = dec(rdbe(&f->data[2]), -RS05_VELOCITY_MAX, RS05_VELOCITY_MAX);
 
     m->torque = dec(rdbe(&f->data[4]), -RS05_TORQUE_MAX, RS05_TORQUE_MAX);
+    m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
 
     recovering = !m->feedback_valid;
 
@@ -537,41 +538,15 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
 
     if (recovering)
     {
-
+        /* Re-anchor to feedback without an automatic move to software zero. */
         m->hold_position = m->position;
         m->reference_position = m->position;
-
         m->reference_velocity = 0.0f;
-
-        m->trajectory_pending = (m->mode == RS_MODE_POSITION && m->startup_hold_active);
-
+        m->target = m->position;
+        m->trajectory_pending = false;
         m->trajectory_active = false;
-
-        if (!m->trajectory_pending)
-        {
-            m->target = 0.0f;
-        }
-
-        if (!m->startup_hold_initialized)
-        {
-            m->recovery_trajectory = true;
-            m->mode = m->recovery_trajectory ? RS_MODE_POSITION : RS_MODE_STOP;
-            m->target = 0.0f;
-            m->startup_hold_active = m->recovery_trajectory;
-            m->trajectory_pending = m->recovery_trajectory;
-            m->trajectory_active = false;
-            m->startup_hold_initialized = true;
-        }
-
-        if (true)
-        {
-            m->recovery_trajectory = true;
-            m->mode = RS_MODE_POSITION;
-            m->target = 0.0f;
-            m->trajectory_pending = true;
-            m->trajectory_active = false;
-            m->startup_hold_active = true;
-        }
+        m->startup_hold_active = false;
+        m->recovery_trajectory = false;
     }
 
     m->offline_latched = false;
@@ -670,7 +645,6 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
     motor->mode = RS_MODE_MIT;
     motor->tau_ff_nm = tau_nm;
     motor->startup_hold_active = true;
-    motor->recovery_trajectory = false;
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }

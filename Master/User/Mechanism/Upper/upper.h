@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define ARM_OVERTEMP_PROTECTION_ENABLED 0U
 #define ARM_JOINT_COUNT 5U
 #define ARM_LARM_INDEX 0U
 #define ARM_RARM_INDEX 1U
@@ -41,6 +42,7 @@ typedef struct { volatile uint8_t online; volatile uint32_t last_tick; volatile 
 typedef struct { arm_group_t arm[2]; upper_board_t board[2]; volatile uint8_t enable; } upper_t;
 
 extern volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
+extern volatile float arm_end_position_world[2][3]; /* centimetres for debugging */
 extern upper_t upper_state;
 extern Arm_Pos Arm_larm, Arm_rarm;
 extern m2006_t m2006_larm;
@@ -55,25 +57,26 @@ extern volatile float br_elbow_tau_nm;
 extern volatile float br_wrist_tau_nm;
 extern volatile float br_rotation_tau_nm;
 
-/* 功能：处理Upper_BindMotors对应的输入并更新相关状态。 */
+/* 閸旂喕鍏橀敍姘槱閻炲摙pper_BindMotors鐎电懓绨查惃鍕翻閸忋儱鑻熼弴瀛樻煀閻╃鍙ч悩鑸碘偓浣碘偓?*/
 void Upper_BindMotors(upper_t *upper);
-/* 功能：接收并解析Upper_OnFrame对应的输入数据，更新模块状态。 */
+/* 閸旂喕鍏橀敍姘复閺€璺鸿嫙鐟欙絾鐎経pper_OnFrame鐎电懓绨查惃鍕翻閸忋儲鏆熼幑顕嗙礉閺囧瓨鏌婂Ο鈥虫健閻樿埖鈧降鈧?*/
 void Upper_OnFrame(upper_t *upper, const can_frame_t *frame);
-/* 功能：执行Upper_Service对应的周期任务并维护运行状态。 */
+/* 閸旂喕鍏橀敍姘⒔鐞涘pper_Service鐎电懓绨查惃鍕噯閺堢喍鎹㈤崝鈥宠嫙缂佸瓨濮㈡潻鎰攽閻樿埖鈧降鈧?*/
 void Upper_Service(uint32_t now);
+bool Upper_IsArmOvertemperature(uint8_t arm);
 
 typedef enum { ARM_JOINT_ROOT, ARM_JOINT_SHOULDER, ARM_JOINT_ELBOW, ARM_JOINT_WRIST, ARM_JOINT_ROTATION } arm_joint_t;
-/* 功能：设置Upper_SetJointMIT对应的目标值或工作模式。 */
+/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointMIT鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointMIT(uint8_t arm, arm_joint_t joint, float tau_nm, float output_degrees);
-/* 功能：设置Upper_SetJointModeTarget对应的目标值或工作模式。 */
+/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointModeTarget鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointModeTarget(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target_degrees);
-/* 功能：设置Upper_SetJointDegrees对应的目标值或工作模式。 */
+/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointDegrees鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointDegrees(uint8_t arm, arm_joint_t joint, float degrees);
-/* 功能：将Upper_QueueArmPositions对应的目标数据加入执行队列。 */
+/* 閸旂喕鍏橀敍姘殺Upper_QueueArmPositions鐎电懓绨查惃鍕窗閺嶅洦鏆熼幑顔煎閸忋儲澧界悰宀勬Е閸掓ぜ鈧?*/
 void Upper_QueueArmPositions(bool enable);
-/* 功能：将机械臂关节目标写入对应的执行机构。 */
+/* 閸旂喕鍏橀敍姘殺閺堢儤顫懛鍌氬彠閼哄倻娲伴弽鍥у晸閸忋儱顕惔鏃傛畱閹笛嗩攽閺堢儤鐎妴?*/
 bool apply_arm(uint8_t arm, uint8_t joint_index, float target_degrees);
-/* 功能：设置吸盘目标位置并开启吸盘控制。 */
+/* 閸旂喕鍏橀敍姘愁啎缂冾喖鎯涢惄妯兼窗閺嶅洣缍呯純顔艰嫙瀵偓閸氼垰鎯涢惄妯诲付閸掕翰鈧?*/
 bool apply_cup(uint8_t cup, uint8_t index, float target_degrees);
 
 #endif

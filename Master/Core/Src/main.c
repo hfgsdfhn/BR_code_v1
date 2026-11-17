@@ -18,8 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "FreeRTOS.h"
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 #include "dma.h"
 #include "fdcan.h"
 #include "spi.h"
@@ -92,6 +91,7 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -125,10 +125,6 @@ int main(void)
   MX_USART6_UART_Init();
   MX_USART10_UART_Init();
   /* USER CODE BEGIN 2 */
-  /* 外设初始化完成后再次将 PC4、PC5 置为高电平，与 gpio.c 中的初始电平保持一致。
-     保留在 USER CODE 2 区域内，以便 CubeMX 重新生成代码时保留此设置。 */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   (void)HAL_SPI_Init(&hspi1);

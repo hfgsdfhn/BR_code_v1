@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @file suction_cup.c
  * @brief cup_task 模块的用户接口与实现。
  */
@@ -11,11 +11,13 @@
 #include "STP-23L.h"
 #include "my_main.h"
 #include "fdcan.h"
+#include "status_task.h"
+#include "arm_task.h"
 
 #include <stddef.h>
 #include <stdbool.h>
 
-volatile uint8_t suction_enable;
+volatile uint8_t suction_enable = 0U;
 volatile float suction_target[2][3];
 
 volatile uint32_t cup_motor_offline_count = 0U;
@@ -254,12 +256,28 @@ static void SuctionCup_MotorWatchdog(void)
 }
 
 /* 功能：执行SuctionCup_Service对应的周期任务并维护运行状态。 */
+static bool SuctionCup_StartupZeroCalibrationComplete(void)
+{
+    unsigned i;
+
+    for (i = 0U; i < 2U; i++)
+    {
+        if (!m2006_ucup[i].received || !m2006_dcup[i].received)
+            return false;
+    }
+    return m3508_dcup[0].received;
+}
 void SuctionCup_Service(void)
 {
     unsigned i;
-    bool enabled = suction_enable != 0U;
+    bool enabled;
 
     SuctionCup_MotorWatchdog();
+
+    // if (SuctionCup_StartupZeroCalibrationComplete())
+    //     suction_enable = 1U;
+
+    enabled = suction_enable != 0U;
 
     for (i = 0U; i < 2U; i++)
     {
@@ -278,12 +296,68 @@ void SuctionCup_Service(void)
                             (enabled && m3508_dcup[0].feedback_online) ? suction_target[dcup][2U] : 0.0f);
     SuctionCup_SendGroupFrames();
 }
+static void SuctionCup_ProcessRemote(const status_snapshot_t *status)
+{
+    static uint16_t previous_keys;
+    static bool previous_keys_valid;
+    uint16_t current_keys;
+    uint16_t pressed_keys;
+    if (status == NULL)
+        return;
+    /* 仅在遥控 PA6 为低电平时（switch_state bit0=1）响应按键。 */
+    if ((status->remote.switch_state & (1U << 0)) == 0U)
+    {
+        previous_keys = 0U;
+        previous_keys_valid = false;
+        return;
+    }
+    /* K0=PD10, K1=PD11, K2=PD12, K3=PD13, K4=PD14, K5=PD15, K6=PA8. */
+    current_keys = (uint16_t)(status->remote.key[0] & ((1U << 0) | (1U << 1) | (1U << 2) | (1U << 3) | (1U << 4) | (1U << 5) | (1U << 6)));
+    if (!previous_keys_valid)
+    {
+        previous_keys = current_keys;
+        previous_keys_valid = true;
+        return;
+    }
+    pressed_keys = (uint16_t)(current_keys & (uint16_t)~previous_keys);
+    if ((pressed_keys & (1U << 0)) != 0U)
+        suction_enable ^= 1U;
+    if ((pressed_keys & (1U << 1)) != 0U)
+    {
+        gpio_pd7 ^= 1U;
+        gpio_pb6 ^= 1U;
+    }
+    if ((pressed_keys & (1U << 2)) != 0U)
+    {
+        gpio_pb7 ^= 1U;
+        gpio_pd4 ^= 1U;
+    }
+    if ((pressed_keys & (1U << 3)) != 0U)
+        gpio_pd1 ^= 1U;
+    if ((pressed_keys & (1U << 6)) != 0U)
+        suction_target[dcup][2U] = (suction_target[dcup][2U] == 300.0f) ? 0.0f : 300.0f;
+    if ((pressed_keys & (1U << 4)) != 0U)
+    {
+        suction_target[ucup][0U] = (suction_target[ucup][0U] == 700.0f) ? 100.0f : 700.0f;
+        suction_target[dcup][0U] = (suction_target[dcup][0U] == 600.0f) ? 100.0f : 600.0f;
+    }
+    if ((pressed_keys & (1U << 5)) != 0U)
+    {
+        suction_target[ucup][1U] = (suction_target[ucup][1U] == 90.0f) ? 0.0f : 90.0f;
+        suction_target[dcup][1U] = (suction_target[dcup][1U] == 90.0f) ? 0.0f : 90.0f;
+    }
+    previous_keys = current_keys;
+}
+
 /* 功能：执行SuctionCup_Task对应的周期任务并维护运行状态。 */
 void SuctionCup_Task(void *argument)
 {
     (void)argument;
     for (;;)
     {
+        status_snapshot_t status;
+        if (Status_GetSnapshot(&status))
+            SuctionCup_ProcessRemote(&status);
         SuctionCup_Service();
         osDelay((osKernelGetTickFreq() * 2U + 999U) / 1000U);
     }

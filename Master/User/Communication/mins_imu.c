@@ -61,7 +61,7 @@ static float Mins_Imu_DecodeAngle(const uint8_t *bcd)
     angle += (float)(bcd[1] & 0x0FU);
     angle += (float)((bcd[2] >> 4U) & 0x0FU) * 0.1f;
     angle += (float)(bcd[2] & 0x0FU) * 0.01f;
-    return ((bcd[0] & 0xF0U) == 0x10U) ? -angle : angle;
+    return ((bcd[0] & 0x80U) != 0U) ? -angle : angle;
 }
 
 /**

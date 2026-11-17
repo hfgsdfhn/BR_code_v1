@@ -1,9 +1,4 @@
-/*
- * @file arm_task.c
- * @brief arm_task模块的用户接口与实现。
- */
-
-/**
+﻿/**
  * @file arm_task.c
  * @brief Arm task state and target management.
  */
@@ -13,6 +8,7 @@
 #include "my_main.h"
 #include "upper.h"
 #include "cup_task.h"
+#include "status_task.h"
 #include "../Peripheral/CAN/bsp_can.h"
 #include <math.h>
 #include <string.h>
@@ -21,17 +17,16 @@ osMutexId_t br_mutex;
 volatile float arm_target[2][ARM_JOINT_COUNT];
 volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
+volatile uint8_t arm_remote_select;
+
+volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 20.0f, 20.0f, 20.0f, 0.0f}, {0.0f, 20.0f, 20.0f, 20.0f, 0.0f}};
+volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 230.0f, 90.0f, 0.0f, 0.0f}, {0.0f, 230.0f, 90.0f, 0.0f, 0.0f}};
+volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 20.0f, 40.0f, 10.0f, 0.0f}, {0.0f, 20.0f, 40.0f, 10.0f, 0.0f}};
+volatile float arm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 120.0f, 85.0f, 40.0f, 0.0f}, {0.0f, 120.0f, 85.0f, 40.0f, 0.0f}};
+volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 110.0f, 100.0f, 20.0f, 0.0f}, {0.0f, 110.0f, 100.0f, 20.0f, 0.0f}};
+// volatile float arm_pose_pa11[2][ARM_JOINT_COUNT] = {{0.0f, 60.0f, 60.0f, 0.0f, 0.0f}, {0.0f, 60.0f, 60.0f, 0.0f, 0.0f}};
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
-
-volatile uint8_t arm_gpio_pb6 = 0U;
-volatile uint8_t arm_gpio_pb7 = 0U;
-volatile uint8_t arm_gpio_pd7 = 0U;
-volatile uint8_t arm_gpio_pd6 = 0U;
-volatile uint8_t arm_gpio_pd1 = 0U;
-volatile uint8_t arm_gpio_pd3 = 0U;
-volatile uint8_t arm_gpio_pd4 = 0U;
-volatile uint8_t arm_gpio_pd5 = 0U;
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 
 /* 功能：接收并解析Arm_OnFrame对应的输入数据，更新模块状态。 */
@@ -42,27 +37,6 @@ void Arm_OnFrame(const can_frame_t *frame)
     SCB_CleanDCache_by_Addr(arm_feedback_angle, sizeof(arm_feedback_angle));
     SCB_CleanDCache_by_Addr(suction_feedback_angle, sizeof(suction_feedback_angle));
 }
-/* 功能：执行Arm_ServiceGpio对应的周期任务并维护运行状态。 */
-static void Arm_ServiceGpio(void)
-{
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,
-                      arm_gpio_pb6 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7,
-                      arm_gpio_pb7 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7,
-                      arm_gpio_pd7 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6,
-                      arm_gpio_pd6 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1,
-                      arm_gpio_pd1 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3,
-                      arm_gpio_pd3 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4,
-                      arm_gpio_pd4 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5,
-                      arm_gpio_pd5 != 0U ? GPIO_PIN_SET : GPIO_PIN_RESET);
-}
-
 /* 功能：初始化Arm_TaskInit对应的外设、参数和运行状态。 */
 void Arm_TaskInit(void)
 {
@@ -71,14 +45,7 @@ void Arm_TaskInit(void)
     memset((void *)br_mit_tau, 0, sizeof(br_mit_tau));
     memset(br_joint_velocity, 0, sizeof(br_joint_velocity));
     memset(br_grip, 0, sizeof(br_grip));
-    arm_gpio_pb6 = 0U;
-    arm_gpio_pb7 = 0U;
-    arm_gpio_pd7 = 0U;
-    arm_gpio_pd6 = 0U;
-    arm_gpio_pd1 = 0U;
-    arm_gpio_pd3 = 0U;
-    arm_gpio_pd4 = 0U;
-    arm_gpio_pd5 = 0U;
+    arm_remote_select = 0U;
     memset((void *)arm_joint_zero_calibration, 0, sizeof(arm_joint_zero_calibration));
     memset(&Arm_larm, 0, sizeof(Arm_larm));
     memset(&Arm_rarm, 0, sizeof(Arm_rarm));
@@ -155,13 +122,77 @@ void Upper_QueueArmPositions(bool enable)
         Arm_TaskStop();
 }
 
+static void Arm_ApplyRemotePose(const volatile float pose[2][ARM_JOINT_COUNT])
+{
+    uint8_t arm = arm_remote_select != 0U ? ARM_RARM_INDEX : ARM_LARM_INDEX;
+    if (pose == NULL || br_mutex == NULL)
+        return;
+    osMutexAcquire(br_mutex, osWaitForever);
+    for (uint8_t joint = 0U; joint < ARM_JOINT_COUNT; joint++)
+        arm_target[arm][joint] = pose[arm][joint];
+    osMutexRelease(br_mutex);
+}
+
+static void Arm_ProcessRemote(const status_snapshot_t *status)
+{
+    static uint16_t previous_keys;
+    static bool previous_keys_valid;
+    static uint8_t pd14_pose_index = 1U;
+    uint16_t current_keys;
+    uint16_t pressed_keys;
+    if (status == NULL)
+        return;
+    current_keys = (uint16_t)status->remote.key[0] |
+                   ((uint16_t)(status->remote.key[1] & 1U) << 8);
+    /* PA6 低电平模式的 K0~K6 由 SuctionCup_ProcessRemote 统一处理。 */
+    if ((status->remote.switch_state & (1U << 0)) != 0U)
+    {
+        previous_keys = 0U;
+        previous_keys_valid = false;
+        return;
+    }
+    if (!previous_keys_valid)
+    {
+        previous_keys = current_keys;
+        previous_keys_valid = true;
+        return;
+    }
+    pressed_keys = (uint16_t)(current_keys & (uint16_t)~previous_keys);
+    if ((pressed_keys & (1U << 0)) != 0U) arm_remote_select ^= 1U;
+    if ((pressed_keys & (1U << 2)) != 0U) upper_state.enable ^= 1U;
+    if ((pressed_keys & (1U << 3)) != 0U)
+        Arm_ApplyRemotePose(arm_pose_pd13);
+    if ((pressed_keys & (1U << 4)) != 0U)
+    {
+        pd14_pose_index = (uint8_t)((pd14_pose_index + 1U) % 2U);
+        if (pd14_pose_index == 0U) Arm_ApplyRemotePose(arm_pose_pd14);
+        else Arm_ApplyRemotePose(arm_pose_pd14_2);
+    }
+    if ((pressed_keys & (1U << 5)) != 0U) Arm_ApplyRemotePose(arm_pose_pd15);
+    if ((pressed_keys & (1U << 1)) != 0U)
+    {
+        Arm_ApplyRemotePose(arm_pose_pd11);
+    }
+    if ((pressed_keys & (1U << 7)) != 0U)
+    {
+        uint8_t arm = arm_remote_select != 0U ? ARM_RARM_INDEX : ARM_LARM_INDEX;
+        arm_target[arm][ARM_JOINT_ROTATION] =
+            (arm_target[arm][ARM_JOINT_ROTATION] == 180.0f) ? 0.0f : 180.0f;
+    }
+    if ((pressed_keys & (1U << 6)) != 0U) gpio_pd5 ^= 1U;
+    if ((pressed_keys & (1U << 8)) != 0U) gpio_pd6 ^= 1U;
+    previous_keys = current_keys;
+}
+
 /* 功能：执行Arm_Task对应的周期任务并维护运行状态。 */
 void Arm_Task(void *argument)
 {
     uint32_t next = osKernelGetTickCount();
     (void)argument;
     for (;;) {
-        Arm_ServiceGpio();
+        status_snapshot_t status;
+        if (Status_GetSnapshot(&status))
+            Arm_ProcessRemote(&status);
         next += (osKernelGetTickFreq() * 2U + 999U) / 1000U;
         if (osDelayUntil(next) != osOK)
             next = osKernelGetTickCount();

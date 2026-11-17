@@ -1,27 +1,43 @@
-/*
- * @file gravity.h
- * @brief gravity模块的用户接口与实现。
- */
-
 #ifndef BR_GRAVITY_H
 #define BR_GRAVITY_H
+
 #include <stdbool.h>
+#include <stdint.h>
+
 #define BR_ARM_DOF 5U
+#define BR_GRAVITY_LINK_COUNT 4U
 
 typedef struct
 {
-    float origin[3], fixed_rotation[3][3], axis[3];
-    float mass_kg, com_m[3];
+    float origin[3];
+    const float (*fixed_rotation)[3];
+    float axis[3];
+    float mass_kg;
+    float com_m[3];
+    uint8_t joint_index;
 } br_gravity_link_t;
+
 typedef struct
 {
-    br_gravity_link_t link[BR_ARM_DOF];
+    const br_gravity_link_t *link;
     float gravity_base[3];
-    float payload_mass_kg, payload_com_m[3];
+    float payload_mass_kg;
+    float payload_com_m[3];
+    const float *tool_offset_m;
     bool calibrated;
 } br_gravity_model_t;
 
-/* 功能：计算BR_GravityEvaluate对应的控制量或规划结果。 */
-bool BR_GravityEvaluate(const br_gravity_model_t *model, const float q[BR_ARM_DOF], bool grip, float tau[BR_ARM_DOF],
+extern br_gravity_model_t br_gravity_models[2];
+
+
+bool BR_GravityEvaluate(const br_gravity_model_t *model,
+                        const float q[BR_ARM_DOF],
+                        bool grip,
+                        float tau[BR_ARM_DOF],
                         float *potential_j);
+
+bool BR_ForwardKinematics(const br_gravity_model_t *model,
+                          const float q[BR_ARM_DOF],
+                          float end_world_m[3]);
+
 #endif

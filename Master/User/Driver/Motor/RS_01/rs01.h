@@ -77,6 +77,7 @@ typedef struct
     volatile float single_position;
     volatile float velocity;
     volatile float torque;
+    volatile float temperature_c;
     volatile uint8_t fault;
     volatile bool feedback_valid;
     volatile bool feedback_recovery_pending;

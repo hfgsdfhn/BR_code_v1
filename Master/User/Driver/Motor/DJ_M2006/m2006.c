@@ -1,6 +1,6 @@
-/*
+﻿/*
  * @file m2006.c
- * @brief m2006模块的用户接口与实现。
+ * @brief m2006妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆?
  */
 
 #include "m2006.h"
@@ -16,19 +16,19 @@ volatile float m2006_trajectory_time_s = 0.0f;
 
 static int16_t m2006_command_current[M2006_MOTOR_COUNT];
 
-/* 功能：处理M2006_ReadU16对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哅2006_ReadU16瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static uint16_t M2006_ReadU16(const uint8_t *data                               )
 {
     return ((uint16_t)data[0] << 8U) | data[1];
 }
 
-/* 功能：处理M2006_Abs对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哅2006_Abs瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static float M2006_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：处理M2006_Clamp对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哅2006_Clamp瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static float M2006_Clamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -42,7 +42,7 @@ static float M2006_Clamp(float value, float minimum, float maximum)
     return value;
 }
 
-/* 功能：重置或释放M2006_ResetMotion对应的内部状态和资源。 */
+/* 鍔熻兘锛氶噸缃垨閲婃斁M2006_ResetMotion瀵瑰簲鐨勫唴閮ㄧ姸鎬佸拰璧勬簮銆?*/
 static void M2006_ResetMotion(m2006_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -57,7 +57,7 @@ static void M2006_ResetMotion(m2006_t *motor)
     motor->trajectory_active = false;
 }
 
-/* 功能：重置或释放M2006_ResetFeedback对应的内部状态和资源。 */
+/* 鍔熻兘锛氶噸缃垨閲婃斁M2006_ResetFeedback瀵瑰簲鐨勫唴閮ㄧ姸鎬佸拰璧勬簮銆?*/
 void M2006_ResetFeedback(m2006_t *motor)
 {
     if (motor == NULL)
@@ -78,13 +78,13 @@ void M2006_ResetFeedback(m2006_t *motor)
     M2006_ResetMotion(motor);
 }
 
-/* 功能：处理M2006_BeginPositionTrajectory对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哅2006_BeginPositionTrajectory瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void M2006_BeginPositionTrajectory(m2006_t *motor)
 {
     quintic_plan_t plan;
     float distance = motor->target_position_rad - motor->position_rad;
 
-    Quintic_SetDefaultLimits(m2006_trajectory_max_speed_rad_s, m2006_trajectory_max_acceleration_rad_s2,
+    Quintic_SetDefaultLimits(motor->recovery_trajectory ? (m2006_trajectory_max_speed_rad_s * 0.3333333333f) : m2006_trajectory_max_speed_rad_s, m2006_trajectory_max_acceleration_rad_s2,
                              M2006_MIN_TRAJECTORY_S);
     Quintic_Plan(&plan, motor->position_rad, motor->target_position_rad, motor->speed_rad_s, Quintic_DefaultDuration(motor->target_position_rad - motor->position_rad, motor->speed_rad_s, motor->trajectory_time_s));
     motor->trajectory_start_rad = motor->position_rad;
@@ -108,7 +108,7 @@ static void M2006_BeginPositionTrajectory(m2006_t *motor)
     }
 }
 
-/* 功能：轮询并更新M2006_UpdatePositionTrajectory对应的输入和状态。 */
+/* 鍔熻兘锛氳疆璇㈠苟鏇存柊M2006_UpdatePositionTrajectory瀵瑰簲鐨勮緭鍏ュ拰鐘舵€併€?*/
 static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
 {
     quintic_plan_t plan;
@@ -140,7 +140,7 @@ static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
     motor->trajectory_elapsed_s += dt_s;
 }
 
-/* 功能：轮询并更新M2006_UpdateSpeedRamp对应的输入和状态。 */
+/* 鍔熻兘锛氳疆璇㈠苟鏇存柊M2006_UpdateSpeedRamp瀵瑰簲鐨勮緭鍏ュ拰鐘舵€併€?*/
 static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
 {
     float delta;
@@ -160,7 +160,7 @@ static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
         M2006_Abs(motor->target_speed_rad_s - motor->reference_speed_rad_s) > M2006_TRAJECTORY_EPSILON;
 }
 
-/* 功能：初始化M2006_Init对应的外设、参数和运行状态。 */
+/* 鍔熻兘锛氬垵濮嬪寲M2006_Init瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
 HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
                              FDCAN_HandleTypeDef *hcan                  ,
                              uint8_t id                                    ,
@@ -175,6 +175,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     motor->hcan = hcan;
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
+    motor->trajectory_enabled = true;
     PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, M2006_POSITION_OUTPUT_LIMIT, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
     PID_SetIntegralSeparationRange(&motor->position_pid, M2006_POSITION_I_FULL, M2006_POSITION_I_SEPARATION);
@@ -183,7 +184,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     return HAL_OK;
 }
 
-/* 功能：接收并解析M2006_OnFrame对应的输入数据，更新模块状态。 */
+/* 鍔熻兘锛氭帴鏀跺苟瑙ｆ瀽M2006_OnFrame瀵瑰簲鐨勮緭鍏ユ暟鎹紝鏇存柊妯″潡鐘舵€併€?*/
 bool M2006_OnFrame(m2006_t *motor                         ,
                    const can_frame_t *frame                      )
 {
@@ -268,7 +269,7 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     return true;
 }
 
-/* 功能：设置M2006_SetTargetDeferred对应的目标值或工作模式。 */
+/* 鍔熻兘锛氳缃甅2006_SetTargetDeferred瀵瑰簲鐨勭洰鏍囧€兼垨宸ヤ綔妯″紡銆?*/
 void M2006_SetTargetDeferred(m2006_t *motor                         ,
                      m2006_mode_t mode                          ,
                      float target                               )
@@ -310,7 +311,18 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
         motor->target_position_rad = target_position_rad;
         if (target_changed)
         {
-            motor->trajectory_pending = true;
+            if (motor->trajectory_enabled)
+            {
+                motor->trajectory_pending = true;
+            }
+            else
+            {
+                motor->reference_position_rad = target_position_rad;
+                motor->reference_speed_rad_s = 0.0f;
+                motor->reference_acceleration_rad_s2 = 0.0f;
+                motor->trajectory_pending = false;
+                motor->trajectory_active = false;
+            }
         }
         motor->speed_reference_valid = false;
     }
@@ -348,7 +360,7 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
 
 }
 
-/* 功能：设置M2006_SetTarget对应的目标值或工作模式。 */
+/* 鍔熻兘锛氳缃甅2006_SetTarget瀵瑰簲鐨勭洰鏍囧€兼垨宸ヤ綔妯″紡銆?*/
 void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
 {
     if (motor && motor->target_sink) { motor->target_sink(motor, (int)mode, target, 0.0f); return; }
@@ -367,7 +379,7 @@ void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
     }
 }
 
-/* 功能：执行M2006_Service对应的周期任务并维护运行状态。 */
+/* 鍔熻兘锛氭墽琛孧2006_Service瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void M2006_Service(m2006_t *motor, float dt_s)
 {
     can_frame_t frame;
@@ -388,7 +400,7 @@ void M2006_Service(m2006_t *motor, float dt_s)
     (void)BspCan_Send(&frame);
 }
 
-/* 功能：停止M2006_Stop对应的输出并清理运行状态。 */
+/* 鍔熻兘锛氬仠姝2006_Stop瀵瑰簲鐨勮緭鍑哄苟娓呯悊杩愯鐘舵€併€?*/
 bool M2006_Stop(m2006_t *motor)
 {
     if (motor == NULL)
@@ -401,14 +413,14 @@ bool M2006_Stop(m2006_t *motor)
     return true;
 }
 
-/* 功能：处理M2006_SetPositionDegrees对应的输入并更新相关状态。 */
+/* 鍔熻兘锛氬鐞哅2006_SetPositionDegrees瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 void M2006_SetPositionDegrees(m2006_t *motor                     ,
                               float degrees                          )
 {
     M2006_SetTarget(motor, M2006_MODE_POSITION, degrees);
 }
 
-/* 功能：计算M2006_Calc对应的控制量或规划结果。 */
+/* 鍔熻兘锛氳绠桵2006_Calc瀵瑰簲鐨勬帶鍒堕噺鎴栬鍒掔粨鏋溿€?*/
 int16_t M2006_Calc(m2006_t *motor                             ,
                    float dt_s                          )
 {
@@ -438,11 +450,20 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     else if (motor->mode == M2006_MODE_POSITION)
     {
         float speed_limit = m2006_trajectory_max_speed_rad_s;
-        if (motor->trajectory_pending)
+        if (motor->trajectory_enabled)
         {
-            M2006_BeginPositionTrajectory(motor);
+            if (motor->trajectory_pending)
+            {
+                M2006_BeginPositionTrajectory(motor);
+            }
+            M2006_UpdatePositionTrajectory(motor, dt_s);
         }
-        M2006_UpdatePositionTrajectory(motor, dt_s);
+        else
+        {
+            motor->reference_position_rad = motor->target_position_rad;
+            motor->reference_speed_rad_s = 0.0f;
+            motor->reference_acceleration_rad_s2 = 0.0f;
+        }
         target_speed = motor->reference_speed_rad_s +
                        PID_Calc(&motor->position_pid, motor->reference_position_rad, motor->position_rad, dt_s);
         target_speed = M2006_Clamp(target_speed, -speed_limit, speed_limit);
@@ -469,7 +490,7 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     return (int16_t)(current_raw - 0.5f);
 }
 
-/* 功能：读取M2006_GetPositionDegrees对应的数据或运行状态。 */
+/* 鍔熻兘锛氳鍙朚2006_GetPositionDegrees瀵瑰簲鐨勬暟鎹垨杩愯鐘舵€併€?*/
 void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -478,7 +499,7 @@ void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_deg
     }
 }
 
-/* 功能：构建M2006_BuildGroupFrame需要发送的通信帧或控制指令。 */
+/* 鍔熻兘锛氭瀯寤篗2006_BuildGroupFrame闇€瑕佸彂閫佺殑閫氫俊甯ф垨鎺у埗鎸囦护銆?*/
 void M2006_BuildGroupFrame(uint8_t first_id                               ,
                            const int16_t current[4]                             ,
                            can_frame_t *frame                              )
@@ -495,7 +516,7 @@ void M2006_BuildGroupFrame(uint8_t first_id                               ,
     }
 }
 
-/* 功能：构建M2006_BuildSpecial需要发送的通信帧或控制指令。 */
+/* 鍔熻兘锛氭瀯寤篗2006_BuildSpecial闇€瑕佸彂閫佺殑閫氫俊甯ф垨鎺у埗鎸囦护銆?*/
 void M2006_BuildSpecial(m2006_t *motor, uint8_t command)
 {
     if (motor == NULL)

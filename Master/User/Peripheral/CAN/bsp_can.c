@@ -9,6 +9,8 @@
 
 #include "cmsis_os2.h"
 #include "fdcan.h"
+#include "board_can.h"
+#include "arm_task.h"
 
 volatile uint32_t can1_cnt = 0U;
 volatile uint32_t can2_cnt = 0U;
@@ -406,4 +408,14 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                      
             }
         }
     }
+}
+/* 功能：接收并解析BspCan_OnFrame对应的输入数据，更新模块状态。 */
+void BspCan_OnFrame(const can_frame_t *frame)
+{
+    if (frame == NULL)
+    {
+        return;
+    }
+    CAN_Parse_SmallBoard(frame);
+    Arm_OnFrame(frame);
 }

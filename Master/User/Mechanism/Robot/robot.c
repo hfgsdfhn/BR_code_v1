@@ -1,4 +1,4 @@
-#include "robot.h"
+﻿#include "robot.h"
 #include "bsp_can.h"
 #include "board_can.h"
 #include "upper.h"
@@ -17,15 +17,4 @@ void Robot_Stop(void)
 {
     robot = ROBOT_STOP;
     Arm_TaskStop();
-}
-
-/* 功能：接收并解析BspCan_OnFrame对应的输入数据，更新模块状态。 */
-void BspCan_OnFrame(const can_frame_t *frame)
-{
-    if (frame == NULL)
-    {
-        return;
-    }
-    CAN_Parse_SmallBoard(frame);
-    Arm_OnFrame(frame);
 }

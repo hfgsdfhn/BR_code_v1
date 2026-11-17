@@ -1,6 +1,5 @@
-#include "chassis_task.h"
+﻿#include "chassis_task.h"
 #include "status_task.h"
-#include "pid.h"
 #include "chassis.h"
 #include "board_can.h"
 #include "fdcan.h"
@@ -17,11 +16,11 @@ void Chassis_Task_(void *argument)
     const uint32_t period = 2U;  // 2ms，假设系统Tick为1kHz
     for (;;)
     {
-        if(osMessageQueueGet(Chassis_QueueHandle,&chassis_data_,0,0) == osOK)
+        status_snapshot_t status;
+        if (Status_GetSnapshot(&status))
         {
-            Chassis_SendSpeed(&hfdcan1,&chassis_data_.target_speed);
-            set_target_position(leg_target_pos_a,leg_target_pos_f,leg_target_pos_b);
-            PID_Calc(&yaw_pid,chassis_data_.target_yaw,chassis_data_.current_yaw,2.0f);
+            Chassis_SendSpeed(&hfdcan1, &status.target_speed);
+            set_target_position(leg_target_pos_a, leg_target_pos_f, leg_target_pos_b);
             if(dji_flag)
             {
                 dji_flag = 0;
