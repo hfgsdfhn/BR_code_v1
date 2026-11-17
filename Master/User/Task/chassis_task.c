@@ -11,18 +11,22 @@ float leg_target_pos_f = 0;
 float leg_target_pos_b = 0;
 void Chassis_Task_(void *argument)
 {
-        uint32_t tick = osKernelGetTickCount();
-
-    const uint32_t period = 2U;  // 2ms，假设系统Tick为1kHz
+    uint32_t tick = osKernelGetTickCount();
+    const uint32_t period = 2U;
+    (void)argument;
     for (;;)
     {
-        status_snapshot_t status;
-        if (Status_GetSnapshot(&status))
+        send_to_chassis_t status;
+        if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
             Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             set_target_position(leg_target_pos_a, leg_target_pos_f, leg_target_pos_b);
             if(dji_flag)
             {
+                dji_flag = 0U;
+                SmallBoard_Send_PID(&hfdcan1, 0U, dji_pid[0][0], dji_pid[0][1], dji_pid[0][2]);
+                SmallBoard_Send_PID(&hfdcan1, 1U, dji_pid[1][0], dji_pid[1][1], dji_pid[1][2]);
+                SmallBoard_Send_PID(&hfdcan1, 2U, dji_pid[2][0], dji_pid[2][1], dji_pid[2][2]);
                 dji_flag = 0;
                 SmallBoard_Send_PID(&hfdcan1, 0U, DJI_Board_Target.PID_K[0][0], DJI_Board_Target.PID_K[0][1], DJI_Board_Target.PID_K[0][2]);
                 SmallBoard_Send_PID(&hfdcan1, 1U, DJI_Board_Target.PID_K[1][0], DJI_Board_Target.PID_K[1][1], DJI_Board_Target.PID_K[1][2]);

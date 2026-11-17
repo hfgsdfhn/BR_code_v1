@@ -133,7 +133,7 @@ static void Arm_ApplyRemotePose(const volatile float pose[2][ARM_JOINT_COUNT])
     osMutexRelease(br_mutex);
 }
 
-static void Arm_ProcessRemote(const status_snapshot_t *status)
+static void Arm_ProcessRemote(const send_to_arm_t *status)
 {
     static uint16_t previous_keys;
     static bool previous_keys_valid;
@@ -190,11 +190,12 @@ void Arm_Task(void *argument)
     uint32_t next = osKernelGetTickCount();
     (void)argument;
     for (;;) {
-        status_snapshot_t status;
-        if (Status_GetSnapshot(&status))
+        send_to_arm_t status;
+        if (osMessageQueueGet(Arm_QueueHandle, &status, NULL, 0U) == osOK)
             Arm_ProcessRemote(&status);
         next += (osKernelGetTickFreq() * 2U + 999U) / 1000U;
         if (osDelayUntil(next) != osOK)
             next = osKernelGetTickCount();
     }
 }
+
