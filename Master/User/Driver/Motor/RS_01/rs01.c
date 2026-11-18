@@ -383,8 +383,8 @@ bool RS01_Send(rs01_t *m)
         if (m->trajectory_pending)
             RS01_BeginPositionTrajectory(m, now);
         RS01_UpdatePositionTrajectory(m, now);
-        pos = (float)m->direction * m->reference_position;
-        vel = (float)m->direction * m->reference_velocity;
+        pos = (float)m->direction * m->reference_position * RS01_REDUCTION_RATIO / m->output_ratio;
+        vel = (float)m->direction * m->reference_velocity * RS01_REDUCTION_RATIO / m->output_ratio;
         kp = m->mit_kp;
         kd = m->mit_kd;
         tq = (float)m->direction * m->tau_ff_nm;
@@ -430,10 +430,9 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     m->feedback_state = (uint8_t)((f->id >> 22) & 0x03U);
     m->enabled = (m->feedback_state == 2U) && (m->fault == 0U);
 
-    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX);
+    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX) * m->output_ratio / RS01_REDUCTION_RATIO;
 
-    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) *
-                  RS01_ROOT_OUTPUT_RATIO;
+    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio / RS01_REDUCTION_RATIO;
 
     m->torque = dec(rdbe(&f->data[4]), -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
