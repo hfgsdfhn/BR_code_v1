@@ -1,24 +1,34 @@
-
 #ifndef MINS_IMU_H
 #define MINS_IMU_H
 
 #include <stdint.h>
-#include "stm32h7xx_hal.h"
+
+#include "bsp_uart.h"
+
 
 typedef struct
 {
-    float yaw;
     float pitch;
     float roll;
-    float accel[3];
-    float gyro[3];
-    float quaternion[4];
-} imu_t;
+    float yaw;
+} mins_imu_euler_t;
 
-extern imu_t g_imu;
+typedef struct
+{
+    bsp_uart_t *uart;
+    mins_imu_euler_t euler;
+    float yaw_last_raw;
+    float yaw_total;
+    uint8_t yaw_last_valid;
+    uint32_t update_count;
+} mins_imu_t;
 
-uint8_t Mins_Imu_receive_all(const uint8_t *frame, uint16_t len);
-void Mins_Imu_receive_omega(const uint8_t *frame, uint16_t len);
-HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart);
+void Mins_Imu_Init(mins_imu_t *imu, bsp_uart_t *uart);
+void Mins_Imu_RequestEuler(mins_imu_t *imu);
 
-#endif
+void Mins_Imu_OnRx(const uint8_t *data, uint16_t len);
+
+extern mins_imu_t g_imu;
+
+
+#endif /* MINS_IMU_H */

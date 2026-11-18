@@ -217,7 +217,6 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
-    m->output_ratio = 1.0f;
     m->mode = RS_MODE_STOP;
     m->continuous_valid = false;
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
@@ -277,7 +276,7 @@ void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
     }
     if (mode == RS_MODE_POSITION)
     {
-        position_target = clampf(target * RS01_DEG_TO_RAD * m->output_ratio,
+        position_target = clampf(target * RS01_DEG_TO_RAD,
                                 RS01_POSITION_MIN, RS01_POSITION_MAX);
         target_changed = (m->mode != RS_MODE_POSITION) || m->recovery_trajectory ||
                          (fabsf(position_target - m->target) > RS01_TRAJECTORY_EPSILON_RAD);
@@ -294,7 +293,7 @@ void RS01_SetTargetBasic(rs01_t *m, rs_mode_t mode, float target)
     else if (mode == RS_MODE_SPEED)
     {
         m->mode = mode;
-        m->target = clampf(target * m->output_ratio, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
+        m->target = clampf(target, -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
         m->trajectory_pending = false;
         m->trajectory_active = false;
         m->recovery_trajectory = false;

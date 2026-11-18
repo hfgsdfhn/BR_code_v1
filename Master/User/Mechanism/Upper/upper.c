@@ -1,4 +1,4 @@
-
+﻿
 #include "upper.h"
 #include "cup_config.h"
 #include "cup_task.h"
@@ -275,14 +275,14 @@ void Upper_OnFrame(upper_t *upper, const can_frame_t *frame)
         rs00_t *rs00 = a == 0U ? rs00_larm : rs00_rarm;
         rs05_t *rs05 = a == 0U ? &rs05_larm : &rs05_rarm;
         j4310_t *j4310 = a == 0U ? &j4310_larm : &j4310_rarm;
-        if (RS00_OnFrame(&rs00[0], frame)) { arm_feedback_angle[a][ARM_JOINT_SHOULDER] = rs00[0].position * ARM_RAD_TO_DEG; telemetry(&upper->board[a], ARM_JOINT_SHOULDER, rs00[0].position, rs00[0].velocity, rs00[0].torque, rs00[0].temperature_c, rs00[0].fault, now); return; }
+        if (RS00_OnFrame(&rs00[0], frame)) { arm_feedback_angle[a][ARM_JOINT_SHOULDER] = rs00[0].position * ARM_RAD_TO_DEG * 20.0f / 36.0f; telemetry(&upper->board[a], ARM_JOINT_SHOULDER, rs00[0].position, rs00[0].velocity, rs00[0].torque, rs00[0].temperature_c, rs00[0].fault, now); return; }
         if (RS00_OnFrame(&rs00[1], frame)) { arm_feedback_angle[a][ARM_JOINT_ELBOW] = rs00[1].position * ARM_RAD_TO_DEG; telemetry(&upper->board[a], ARM_JOINT_ELBOW, rs00[1].position, rs00[1].velocity, rs00[1].torque, rs00[1].temperature_c, rs00[1].fault, now); return; }
         if (J4310_OnFrame(j4310, frame)) { arm_feedback_angle[a][ARM_JOINT_WRIST] = j4310->feedback.position_rad * ARM_RAD_TO_DEG; telemetry(&upper->board[a], ARM_JOINT_WRIST, j4310->feedback.position_rad, j4310->feedback.speed_rad_s, j4310->feedback.torque_nm, j4310->feedback.mos_temperature, j4310->feedback.state, now); return; }
         if (RS05_OnFrame(rs05, frame)) { arm_feedback_angle[a][ARM_JOINT_ROTATION] = rs05->position * ARM_RAD_TO_DEG; telemetry(&upper->board[a], ARM_JOINT_ROTATION, rs05->position, rs05->velocity, rs05->torque, rs05->temperature_c, rs05->fault, now); return; }
     }
     if (M2006_OnFrame(&m2006_larm, frame))
     {
-        arm_feedback_angle[ARM_LARM_INDEX][ARM_JOINT_ROOT] = m2006_larm.position_rad * ARM_RAD_TO_DEG;
+        arm_feedback_angle[ARM_LARM_INDEX][ARM_JOINT_ROOT] = m2006_larm.position_rad * ARM_RAD_TO_DEG * 14.0f / 45.0f;
         telemetry(&upper->board[0], ARM_JOINT_ROOT, m2006_larm.position_rad, m2006_larm.speed_rad_s,
                   m2006_larm.current_raw * M2006_CURRENT_SCALE * BR_LEFT_ROOT_NM_PER_A, 0, 0, now);
         return;
@@ -443,7 +443,7 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
             (void)mode;
             (void)tau;
             M2006_SetTargetDeferred(root_motor, M2006_MODE_POSITION,
-                                    (target * ARM_DEG_TO_RAD - BR_LEFT_ROOT_START_RAD) /
+                                    ((target * 45.0f / 14.0f) * ARM_DEG_TO_RAD - BR_LEFT_ROOT_START_RAD) /
                                         BR_LEFT_ROOT_JOINT_PER_OUTPUT * ARM_RAD_TO_DEG);
         }
         else if (arm == ARM_RARM_INDEX)
@@ -460,6 +460,8 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
     if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
     {
         rs00_t *m = (rs00_t *)motor;
+        if (joint == ARM_JOINT_SHOULDER)
+            target *= 36.0f / 20.0f;
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS00_SetTargetMIT(m, RS_MODE_MIT, tau, target);
 

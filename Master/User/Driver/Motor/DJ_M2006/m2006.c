@@ -178,7 +178,6 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor,
     motor->hcan = hcan;
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
-    motor->output_ratio = 1.0f;
     motor->trajectory_enabled = true;
     PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, m2006_trajectory_max_speed_rad_s, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
@@ -235,8 +234,6 @@ bool M2006_OnFrame(m2006_t *motor,
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M2006_ENCODER_COUNT * M2006_REDUCTION_RATIO);
     motor->speed_rad_s = motor->direction * (float)motor->speed_rpm * RPM_TO_RAD_S / M2006_REDUCTION_RATIO;
-    motor->position_rad *= motor->output_ratio;
-    motor->speed_rad_s *= motor->output_ratio;
 
     if (first_feedback)
     {

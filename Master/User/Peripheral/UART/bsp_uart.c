@@ -17,7 +17,7 @@ __ALIGNED(CACHE_LINE_SIZE) static uint8_t scram_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t remote_rx[UART_RX_BUFFER_SIZE];
 
 bsp_uart_t uart_list[BSP_UART_COUNT] = {
-    [BSP_UART_IMU] = {&huart3, imu_rx, 0U, NULL},
+    [BSP_UART_IMU] = {&huart3, imu_rx, 0U, Mins_Imu_OnRx},
     [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, NULL},
     [BSP_UART_DOWN_STP23L] = {&huart5, dstp23l_rx, 0U, DStp23lRx},
     [BSP_UART_UP_STP23L] = {&huart6, ustp23l_rx, 0U, UStp23lRx},

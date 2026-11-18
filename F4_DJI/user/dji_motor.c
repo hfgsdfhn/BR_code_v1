@@ -22,29 +22,24 @@ static void DjiMotor_WriteI16Be(uint8_t *data, int16_t value)
     data[1] = (uint8_t)raw;
 }
 
-/**
- * @brief 电机初始化
- * 
- * @param motor     电机结构体指针
- * @param can       CAN句柄指针
- * @param id        电机ID
- * @param type      电机类型
- */
-void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id,
-                   dji_motor_type_t type)
+void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id, dji_motor_type_t type, int8_t dir)
 {
+    // 方向必须是 +1 或 -1，避免非单位值缩放目标电流。
     if ((motor == NULL) || (can == NULL) || (id < DJI_MOTOR_MIN_ID)
-        || (id > DJI_MOTOR_MAX_ID) || (type > DJI_MOTOR_TYPE_M3508))
+        || (id > DJI_MOTOR_MAX_ID) || (type > DJI_MOTOR_TYPE_M3508)
+        || ((dir != 1) && (dir != -1)))
     {
         return;
     }
 
     motor->id = id;
     motor->type = type;
+    motor->dir = dir;
     motor->encoder = 0U;
     motor->last_encoder = 0U;
     motor->encoder_turns = 0;
     motor->total_encoder = 0;
+    motor->offset = 0;
     motor->encoder_ready = 0U;
     motor->speed_rpm = 0;
     motor->current = 0;
@@ -53,12 +48,6 @@ void DjiMotor_Init(dji_motor_t *motor, CAN_HandleTypeDef *can, uint8_t id,
     motor->can = can;
 }
 
-/**
- * @brief 设置电机目标电流
- * 
- * @param motor 
- * @param current 
- */
 void DjiMotor_SetCurrent(dji_motor_t *motor, int16_t current)
 {
     int16_t limit;
@@ -70,59 +59,106 @@ void DjiMotor_SetCurrent(dji_motor_t *motor, int16_t current)
 
     limit = (motor->type == DJI_MOTOR_TYPE_M2006) ? DJI_M2006_MAX_CURRENT
                                                    : DJI_M3508_MAX_CURRENT;
-    if (current > limit)
+
+    // 在限制范围之前，先将上层控制的电流乘上方向
+    int32_t actual_current = (int32_t)current * motor->dir;
+
+    if (actual_current > limit)
     {
-        current = limit;
+        actual_current = limit;
     }
-    else if (current < -limit)
+    else if (actual_current < -limit)
     {
-        current = -limit;
+        actual_current = -limit;
     }
 
-    motor->target_current = current;
+    motor->target_current = (int16_t)actual_current;
 }
 
-/**
- * @brief 解析电机反馈
- * 
- * @param motor 
- * @param data 
- */
 void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data)
 {
     uint16_t encoder;
-    int32_t delta;
+    int32_t raw_total;
+    int32_t half_range;
+    int32_t full_range;
 
-    if ((motor == NULL) || (data == NULL))
-    {
-        return;
-    }
+    if ((motor == NULL) || (data == NULL)) return;
 
     encoder = (uint16_t)(((uint16_t)data[0] << 8U) | data[1]);
+
+    if (motor->type == DJI_MOTOR_TYPE_M3508) {
+        full_range = 8192; half_range = 4096;
+    } else {
+        full_range = 4096; half_range = 2048;
+    }
+
     if (motor->encoder_ready != 0U)
     {
-        delta = (int32_t)encoder - (int32_t)motor->last_encoder;
-        if (delta > 4096)
-        {
-            delta -= 8192;
+        int32_t delta = (int32_t)encoder - (int32_t)motor->last_encoder;
+
+        if (delta > half_range) {
             motor->encoder_turns--;
-        }
-        else if (delta < -4096)
-        {
-            delta += 8192;
+        } 
+        else if (delta < -half_range) {
             motor->encoder_turns++;
         }
-        motor->total_encoder += delta;
+
+        // 绝对位置解算
+        raw_total = (motor->encoder_turns * full_range) + (int32_t)encoder;
+
+        // 纯整数方向修正 + Offset 补偿
+        if (motor->dir > 0) {
+            motor->total_encoder = raw_total - motor->offset;
+        } else {
+            motor->total_encoder = -raw_total - motor->offset;
+        }
     }
     else
     {
         motor->encoder_ready = 1U;
+        motor->encoder_turns = 0;
+        // 第一次收到数据
+        raw_total = (int32_t)encoder;
+        // 如果是第一次，offset 可能还没设置，如果没设默认为 0
+        if (motor->dir > 0) {
+            motor->total_encoder = raw_total - motor->offset;
+        } else {
+            motor->total_encoder = -raw_total - motor->offset; 
+        }
     }
+    
     motor->encoder = encoder;
     motor->last_encoder = encoder;
-    motor->speed_rpm = DjiMotor_ReadI16Be(&data[2]);
-    motor->current = DjiMotor_ReadI16Be(&data[4]);
+    
+    // 速度和电流解析 (纯整数，性能更好)
+    int16_t raw_speed = DjiMotor_ReadI16Be(&data[2]);
+    motor->speed_rpm = (motor->dir > 0) ? (float)raw_speed : -(float)raw_speed;
+    
+    int16_t raw_current = DjiMotor_ReadI16Be(&data[4]);
+    motor->current = (motor->dir > 0) ? (float)raw_current : -(float)raw_current;
+    
     motor->temperature = data[6];
+}
+
+void DjiMotor_SetZero(dji_motor_t *motor, uint8_t number)
+{
+    for (uint8_t i = 0; i < number; i++)
+    {
+        if (motor[i].encoder_ready != 0U) 
+        {
+            int32_t full_range = (motor[i].type == DJI_MOTOR_TYPE_M3508) ? 8192 : 4096;
+            int32_t raw_total = (motor[i].encoder_turns * full_range) + (int32_t)motor[i].encoder;
+            
+            if (motor[i].dir > 0) {
+                motor[i].offset = raw_total;
+            } else {
+                motor[i].offset = -raw_total;
+            }
+            
+            // 强制刷新一下 total_encoder
+            motor[i].total_encoder = 0; 
+        }
+    }
 }
 
 /**

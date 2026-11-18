@@ -6,6 +6,7 @@
 remote_t remote = {0};
 
 #define REMOTE_FRAME_LEN 15U
+#define REMOTE_TIMEOUT_MS 100U
 static uint8_t rx_buffer[64] = {0};
 static uint16_t rx_index = 0;
 
@@ -152,15 +153,91 @@ void Remote_UartError(void)
 uint8_t Remote_GetState(remote_t *state)
 {
     uint32_t primask;
+    uint32_t current_tick;
 
     if (state == NULL)
     {
         return 0U;
     }
 
+    current_tick = HAL_GetTick();
     primask = __get_PRIMASK();
     __disable_irq();
+    if ((remote.online != 0U) &&
+        ((uint32_t)(current_tick - remote.last_update_tick) >= REMOTE_TIMEOUT_MS))
+    {
+        remote.online = 0U;
+    }
     *state = remote;
     __set_PRIMASK(primask);
     return state->online;
+}
+
+uint8_t key_is_pressed(remote_key_id_t key_id)
+{
+    static struct
+    {
+        uint8_t candidate;
+        uint8_t stable;
+    } key_state[REMOTE_KEY_COUNT];
+    uint8_t pressed;
+
+    if ((uint32_t)key_id >= (uint32_t)REMOTE_KEY_COUNT)
+    {
+        return 0U;
+    }
+
+    switch (key_id)
+    {
+        case REMOTE_KEY_PE0:
+            pressed = KEY_PE0;
+            break;
+        case REMOTE_KEY_PE1:
+            pressed = KEY_PE1;
+            break;
+        case REMOTE_KEY_PE2:
+            pressed = KEY_PE2;
+            break;
+        case REMOTE_KEY_PE3:
+            pressed = KEY_PE3;
+            break;
+        case REMOTE_KEY_PE4:
+            pressed = KEY_PE4;
+            break;
+        case REMOTE_KEY_PE5:
+            pressed = KEY_PE5;
+            break;
+        case REMOTE_KEY_PE6:
+            pressed = KEY_PE6;
+            break;
+        case REMOTE_KEY_SHOULDER_RIGHT_0:
+            pressed = (uint8_t)(remote.shoulder_right == 0U);
+            break;
+        case REMOTE_KEY_SHOULDER_RIGHT_1:
+            pressed = (uint8_t)(remote.shoulder_right == 1U);
+            break;
+        case REMOTE_KEY_SHOULDER_RIGHT_2:
+            pressed = (uint8_t)(remote.shoulder_right == 2U);
+            break;
+        case REMOTE_KEY_SHOULDER_RIGHT_3:
+            pressed = (uint8_t)(remote.shoulder_right == 3U);
+            break;
+        default:
+            return 0U;
+    }
+
+    pressed = (pressed != 0U) ? 1U : 0U;
+    if (pressed != key_state[key_id].candidate)
+    {
+        key_state[key_id].candidate = pressed;
+        return 0U;
+    }
+
+    if (pressed != key_state[key_id].stable)
+    {
+        key_state[key_id].stable = pressed;
+        return pressed;
+    }
+
+    return 0U;
 }

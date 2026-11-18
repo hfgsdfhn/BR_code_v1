@@ -128,7 +128,6 @@ int main(void)
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   (void)HAL_SPI_Init(&hspi1);
-
   My_Init();
 
   /* USER CODE END 2 */

@@ -1,8 +1,13 @@
 #include "board_can.h"
-
+#include "string.h"
+static float leg_pid_config[3][3] = 
+{
+    {0.1f, 0.0f,  0.0f},
+    {10.0f, 0.0f, 10.0f},
+    {15.0f, 0.5f,  10.0f},
+};
 DJI_Board DJI_Board_Target;
 DJI_Board DJI_Board_FeedBack;
-
 
 static HAL_StatusTypeDef CAN_Transmit(FDCAN_HandleTypeDef *hfdcan, uint8_t Header, uint32_t Id, uint8_t *data,uint8_t len)
 {
@@ -107,13 +112,14 @@ HAL_StatusTypeDef Send_Target_Pos(FDCAN_HandleTypeDef *hfdcan, float pos_mm[4])
     uint8_t tx_data[8];
     int16_t val;
 
-    for (int i = 0; i < 4; i++)
-    {
-        val = (int16_t)pos_mm[i];
-        tx_data[i*2]     = (uint8_t)(val & 0xFF);
-        tx_data[i*2 + 1] = (uint8_t)((val >> 8) & 0xFF);
-    }
-
+for (int i = 0; i < 4; i++) 
+{
+    val = (int16_t)pos_mm[i]; // 转 int16
+    if(val> 330) val = 330;
+    if(val<0) val = 0;
+    tx_data[i*2]     = (uint8_t)(val & 0xFF);        // 低字节
+    tx_data[i*2 + 1] = (uint8_t)((val >> 8) & 0xFF); // 高字节
+}
     return CAN_Transmit(hfdcan, 0U, 0x110U, tx_data, 8U);
 }
 
@@ -188,4 +194,9 @@ void CAN_Parse_SmallBoard(const can_frame_t *frame)
         default:
             break;
     }
+}
+
+void init_board(void)
+{
+    memcpy(DJI_Board_Target.PID_K, leg_pid_config, sizeof(leg_pid_config));
 }

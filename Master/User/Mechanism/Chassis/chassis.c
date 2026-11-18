@@ -1,8 +1,25 @@
 #include "chassis.h"
+#include "status_task.h"
+#include "mins_imu.h"
 #include <stddef.h>
+#include <stdlib.h>
+#include "chassis_task.h"
 #include "board_can.h"
 #include "math.h"
-#include <stdlib.h>
+#include "pid.h"
+ 
+#define use_imu 1
+
+#define CHASSIS_WHEEL_JOG_SPEED_MPS 0.5f
+float leg_pos = 100.0f;
+pid_t yaw_pid;
+pid_t turn_pid;
+float persent = 0.0f;
+
+float chassis_pid[2][4] = {
+    {6.0f, 0.0f, 0.0f,6.0f},
+    {4.0f, 0.0f, 0.0f, 5.0f}
+	};
 static float joystick_axis_to_unit(int16_t value)
 {
     if (value > 100) value = 100;
@@ -31,67 +48,160 @@ static float T_Speed_Control(float current, float target, float step)
             current = target;
         }
     }
-
     return current;
 }
-void joy_to_mps(const remote_t *remote, chassis_speed_t *speed)
+
+void chassis_init()
+{
+    init_board();
+    PID_Init(&yaw_pid, chassis_pid[0][0], chassis_pid[0][1], chassis_pid[0][2],chassis_pid[0][3], 1.0f);
+    PID_Init(&turn_pid, chassis_pid[1][0], chassis_pid[1][1],chassis_pid[1][2],chassis_pid[1][3], 1.0f);
+}
+
+
+void joy_to_mps(send_to_chassis_t *send)
 {
     float target_vx;
     float target_vy;
     float target_vw;
 
-    if (speed == NULL)
+    if (send == NULL)
     {
         return;
     }
 
-    if ((remote == NULL) || (remote->online == 0U))
+    if (send->remote.online == 0U)
     {
-        speed->vx = 0.0f;
-        speed->vy = 0.0f;
-        speed->vw = 0.0f;
+        send->target_speed.vx = 0.0f;
+        send->target_speed.vy = 0.0f;
+        send->target_speed.vw = 0.0f;
         return;
     }
+    
+    target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
+    target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
+    if (use_imu)
+    {
+        float target_yaw_step = 0.001;
 
-    target_vx = joystick_axis_to_unit(remote->joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
-    target_vy = joystick_axis_to_unit(remote->joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
-    if(remote->shoulder_left == 1) target_vw = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
-    else if(remote->shoulder_left == 3) target_vw = -CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
-    else target_vw = 0.0f;
-
-    speed->vx = T_Speed_Control(speed->vx, target_vx, CHASSIS_LINEAR_SPEED_STEP_MPS);
-    speed->vy = T_Speed_Control(speed->vy, target_vy, CHASSIS_LINEAR_SPEED_STEP_MPS);
-    speed->vw = T_Speed_Control(speed->vw, target_vw, CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
+        if (send->remote.shoulder_left == 1U)
+        {
+            send->target_yaw -= target_yaw_step;
+        }
+        else if (send->remote.shoulder_left == 3U)
+        {
+            send->target_yaw += target_yaw_step;
+        }
+        float yaw_error = fabsf(send->target_yaw - send->current_yaw);
+        if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
+        else if(yaw_error >=1.57f)                target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
+        else target_vw = 0.0f;
+        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
+                                             0.08f);
+    }
+    else
+    {
+        if (send->remote.shoulder_left == 1U)
+        {
+            target_vw = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
+        }
+        else if (send->remote.shoulder_left == 3U)
+        {
+            target_vw = -CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
+        }
+        else
+        {
+            target_vw = 0.0f;
+        } 
+           send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
+                                             CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
+    }
+    send->target_speed.vx = T_Speed_Control(send->target_speed.vx, target_vx,
+                                             CHASSIS_LINEAR_SPEED_STEP_MPS);
+    send->target_speed.vy = T_Speed_Control(send->target_speed.vy, target_vy,
+                                             CHASSIS_LINEAR_SPEED_STEP_MPS);
 }
 
-void leg_M3508_ctrl(DJI_Board *dji_board,
-                    DJI_PID_type_e pid_type,
-                    uint8_t motor_id,
-                    float ki,
-                    float kd,
-                    float target)
+void key_to_chassis(send_to_chassis_t *send)
 {
-    uint8_t leg_index;
-    uint8_t pid_index;
+    uint8_t pe0_pressed;
+    uint8_t pe1_pressed;
 
-    if ((dji_board == NULL) ||
-        (motor_id < M3508_LEG_MOTOR_ID_MIN) ||
-        (motor_id > M3508_LEG_MOTOR_ID_MAX))
+    if (send == NULL)
     {
         return;
     }
 
-    pid_index = (uint8_t)pid_type;
-    leg_index = (uint8_t)(motor_id - M3508_LEG_MOTOR_ID_MIN);
+    pe0_pressed = (uint8_t)((send->remote.key[1] & (1U << 7)) != 0U);
+    pe1_pressed = (uint8_t)((send->remote.key[1] & (1U << 6)) != 0U);
+    if (send->remote.online == 0U || pe0_pressed == pe1_pressed)
+    {
+        M2006_wheel_ctrl(0.0f);
+        persent = 0.0f;
+    }
+    else
+    {
+        persent += 0.001f;
+        if(persent >1.0f) persent = 1.0f;
+        M2006_wheel_ctrl(pe1_pressed ? CHASSIS_WHEEL_JOG_SPEED_MPS * persent
+                                    : -CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
+    }
 
-    dji_board->PID_K[pid_index][1] = ki;
-    dji_board->PID_K[pid_index][2] = kd;
-    dji_board->leg_height_mm[leg_index] = target;
+    if ((send->remote.online == 0U) || (g_imu.update_count == 0U))
+    {
+        return;
+    }
 
-    (void)SmallBoard_Send_PID(&hfdcan1,
-                              pid_index,
-                              dji_board->PID_K[pid_index][0],
-                              ki,
-                              kd);
-    (void)Send_Target_Pos(&hfdcan1, dji_board->leg_height_mm);
+    // if (key_is_pressed(REMOTE_KEY_PE6))
+    // {
+    //     leg_target_pos_a +=  leg_pos;     //一块升
+
+    // }
+    // if (key_is_pressed(REMOTE_KEY_PE3))
+    // {
+    //     leg_target_pos_f -=  leg_pos;     //前腿收
+    // }
+    // if (key_is_pressed(REMOTE_KEY_PE5))
+    // {
+    //     leg_target_pos_b -=  leg_pos;    //后退收 
+    // }
+    // if (key_is_pressed(REMOTE_KEY_PE4))
+    // {
+    //     gpio_pd3 != gpio_pd3;
+    // }
+    // if (key_is_pressed(REMOTE_KEY_PE2))
+    // {
+    //     leg_target_pos_a -=  leg_pos;
+    // }
+
+    if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_1))
+    {
+        send->target_yaw += 1.5708f;
+    }
+    if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_2))
+    {
+        send->target_yaw += 3.1415f;
+    }
+    if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_3))
+    {  
+        send->target_yaw -= 1.5708f;
+    }
+}
+
+void M2006_wheel_ctrl(float speed)
+{
+    for(int i = 0; i <4 ; i++)
+    {
+        DJI_Board_Target.wheel_speed_mps[i] = speed;
+    }
+    Send_Target_Speed(&hfdcan1, DJI_Board_Target.wheel_speed_mps);
+}
+
+void set_target_position(float posa,float front, float behind)
+{
+            DJI_Board_Target.leg_height_mm[0] = posa +behind; 
+            DJI_Board_Target.leg_height_mm[1] = posa +front; 
+            DJI_Board_Target.leg_height_mm[2] = posa +front; 
+            DJI_Board_Target.leg_height_mm[3] = posa +behind; 
+    Send_Target_Pos(&hfdcan1, DJI_Board_Target.leg_height_mm);
 }

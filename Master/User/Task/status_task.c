@@ -1,7 +1,9 @@
 #include "status_task.h"
 #include "bsp_can.h"
+#include "mins_imu.h"
 #include "my_main.h"
 #include "cup_task.h"
+#include <stdbool.h>
 #include <string.h>
 
 osMessageQueueId_t Chassis_QueueHandle;
@@ -20,6 +22,8 @@ volatile uint8_t gpio_pd5 = 0U;
 
 static uint32_t status_sequence;
 static chassis_speed_t planned_speed;
+static float planned_yaw;
+static bool planned_yaw_initialized;
 
 typedef struct
 {
@@ -27,7 +31,8 @@ typedef struct
     float dt35_behind;
     remote_t remote;
     chassis_speed_t target_speed;
-    imu_t imu;
+    float target_yaw;
+    float current_yaw;
     float stp23l_up_distance_cm;
     float stp23l_down_distance_cm;
     uint32_t sequence;
@@ -65,9 +70,12 @@ static void Status_ReadAll(void)
 {
     memset(&common, 0, sizeof(common));
     (void)Remote_GetState(&common.remote);
-    joy_to_mps(&common.remote, &planned_speed);
-    common.target_speed = planned_speed;
-    common.imu = g_imu;
+    common.current_yaw = g_imu.euler.yaw / CHASSIS_RAD_TO_DEG;
+    if ((g_imu.update_count != 0U) && !planned_yaw_initialized)
+    {
+        planned_yaw = common.current_yaw;
+        planned_yaw_initialized = true;
+    }
     common.stp23l_up_distance_cm = ustp23l_distance_cm;
     common.stp23l_down_distance_cm = dstp23l_distance_cm;
     common.sequence = ++status_sequence;
@@ -85,13 +93,16 @@ static void Queue_PublishLatest(osMessageQueueId_t queue, const void *message)
 
 void Send_to_Chassis(void)
 {
-    send_to_chassis_t chassis;
-    chassis.dt35_right = common.dt35_right;
-    chassis.dt35_behind = common.dt35_behind;
+    send_to_chassis_t chassis = {0};
+
     chassis.remote = common.remote;
-    chassis.target_speed = common.target_speed;
-    chassis.imu = common.imu;
-    chassis.sequence = common.sequence;
+    chassis.target_speed = planned_speed;
+    chassis.target_yaw = planned_yaw;
+    chassis.current_yaw = common.current_yaw;
+    key_to_chassis(&chassis);
+    joy_to_mps(&chassis);
+    planned_speed = chassis.target_speed;
+    planned_yaw = chassis.target_yaw;
     Queue_PublishLatest(Chassis_QueueHandle, &chassis);
 }
 
@@ -130,22 +141,27 @@ void Send_to_Cup(void)
 void Status_Task(void *argument)
 {
     (void)argument;
-    uint32_t tick = osKernelGetTickCount();
+    uint32_t tick;
     static bool can1_bus_off_prev;
     static bool can2_bus_off_prev;
     static bool can3_bus_off_prev;
+
+    Status_InitGpio();
+    tick = osKernelGetTickCount();
 
     for (;;)
     {
         bool can1_bus_off = ((hfdcan1.Instance->PSR & FDCAN_PSR_BO) != 0U);
         bool can2_bus_off = ((hfdcan2.Instance->PSR & FDCAN_PSR_BO) != 0U);
         bool can3_bus_off = ((hfdcan3.Instance->PSR & FDCAN_PSR_BO) != 0U);
+
         if (can1_bus_off && !can1_bus_off_prev) can1_diag.bus_off_count++;
         if (can2_bus_off && !can2_bus_off_prev) can2_diag.bus_off_count++;
         if (can3_bus_off && !can3_bus_off_prev) can3_diag.bus_off_count++;
         can1_bus_off_prev = can1_bus_off;
         can2_bus_off_prev = can2_bus_off;
         can3_bus_off_prev = can3_bus_off;
+
         BspCan_Service();
         Status_ReadAll();
         Send_to_Chassis();

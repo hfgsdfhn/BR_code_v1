@@ -9,6 +9,7 @@
 #include "flash.h"
 #include "usart.h"
 #include "spi.h"
+#include "chassis.h"
 #include "fdcan.h"
 #include "remote.h"
 #include "status_task.h"
@@ -110,6 +111,8 @@ void My_Init(void)
     SuctionCup_Init();
     Scram_Init();
     Remote_Init();
+
+    chassis_init();
 }
 
 void My_RtosInit(void)

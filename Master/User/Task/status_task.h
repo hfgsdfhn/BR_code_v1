@@ -1,21 +1,20 @@
 #ifndef STATUS_TASK_H
 #define STATUS_TASK_H
 
-#include "mins_imu.h"
 #include "remote.h"
 #include "cmsis_os2.h"
 #include "chassis.h"
 #include <stdint.h>
 
-typedef struct
+struct send_to_chassis_t
 {
     float dt35_right;
     float dt35_behind;
     remote_t remote;
     chassis_speed_t target_speed;
-    imu_t imu;
-    uint32_t sequence;
-} send_to_chassis_t;
+    float target_yaw;
+    float current_yaw;
+};
 
 typedef struct
 {
@@ -35,15 +34,7 @@ typedef struct
     uint32_t sequence;
 } send_to_cup_t;
 
-typedef struct
-{
-    float dt35_right;
-    float dt35_behind;
-    remote_t remote;
-    chassis_speed_t target_speed;
-    imu_t imu;
-    uint32_t sequence;
-} send_to_climb_t;
+typedef send_to_arm_t send_to_climb_t;
 
 extern osMessageQueueId_t Chassis_QueueHandle;
 extern osMessageQueueId_t Arm_QueueHandle;
