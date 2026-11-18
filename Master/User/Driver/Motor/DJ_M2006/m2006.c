@@ -1,34 +1,29 @@
-﻿/*
- * @file m2006.c
- * @brief m2006妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆?
- */
 
 #include "m2006.h"
 
 #include <math.h>
 #include "quintic_planner.h"
 
-volatile float m2006_trajectory_max_speed_rad_s = 5.235987756f;
+volatile float m2006_trajectory_max_speed_rad_s = 25.35987756f;
 volatile float m2006_trajectory_max_acceleration_rad_s2 = 62.832f;
 
 volatile float m2006_trajectory_time_s = 0.0f;
+
+
 #include <string.h>
 
 static int16_t m2006_command_current[M2006_MOTOR_COUNT];
 
-/* 鍔熻兘锛氬鐞哅2006_ReadU16瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
-static uint16_t M2006_ReadU16(const uint8_t *data                               )
+static uint16_t M2006_ReadU16(const uint8_t *data)
 {
     return ((uint16_t)data[0] << 8U) | data[1];
 }
 
-/* 鍔熻兘锛氬鐞哅2006_Abs瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static float M2006_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 鍔熻兘锛氬鐞哅2006_Clamp瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static float M2006_Clamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -42,7 +37,6 @@ static float M2006_Clamp(float value, float minimum, float maximum)
     return value;
 }
 
-/* 鍔熻兘锛氶噸缃垨閲婃斁M2006_ResetMotion瀵瑰簲鐨勫唴閮ㄧ姸鎬佸拰璧勬簮銆?*/
 static void M2006_ResetMotion(m2006_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -57,7 +51,20 @@ static void M2006_ResetMotion(m2006_t *motor)
     motor->trajectory_active = false;
 }
 
-/* 鍔熻兘锛氶噸缃垨閲婃斁M2006_ResetFeedback瀵瑰簲鐨勫唴閮ㄧ姸鎬佸拰璧勬簮銆?*/
+void M2006_ResetSoftwareZero(m2006_t *motor)
+{
+    if (motor == NULL || !motor->received)
+        return;
+    motor->total_encoder = 0;
+    motor->position_rad = 0.0f;
+    motor->target_position_rad = 0.0f;
+    motor->reference_position_rad = 0.0f;
+    motor->trajectory_start_rad = 0.0f;
+    PID_Reset(&motor->position_pid);
+    PID_Reset(&motor->speed_pid);
+    M2006_ResetMotion(motor);
+}
+
 void M2006_ResetFeedback(m2006_t *motor)
 {
     if (motor == NULL)
@@ -78,7 +85,6 @@ void M2006_ResetFeedback(m2006_t *motor)
     M2006_ResetMotion(motor);
 }
 
-/* 鍔熻兘锛氬鐞哅2006_BeginPositionTrajectory瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void M2006_BeginPositionTrajectory(m2006_t *motor)
 {
     quintic_plan_t plan;
@@ -108,7 +114,6 @@ static void M2006_BeginPositionTrajectory(m2006_t *motor)
     }
 }
 
-/* 鍔熻兘锛氳疆璇㈠苟鏇存柊M2006_UpdatePositionTrajectory瀵瑰簲鐨勮緭鍏ュ拰鐘舵€併€?*/
 static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
 {
     quintic_plan_t plan;
@@ -140,7 +145,6 @@ static void M2006_UpdatePositionTrajectory(m2006_t *motor, float dt_s)
     motor->trajectory_elapsed_s += dt_s;
 }
 
-/* 鍔熻兘锛氳疆璇㈠苟鏇存柊M2006_UpdateSpeedRamp瀵瑰簲鐨勮緭鍏ュ拰鐘舵€併€?*/
 static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
 {
     float delta;
@@ -160,11 +164,10 @@ static void M2006_UpdateSpeedRamp(m2006_t *motor, float dt_s)
         M2006_Abs(motor->target_speed_rad_s - motor->reference_speed_rad_s) > M2006_TRAJECTORY_EPSILON;
 }
 
-/* 鍔熻兘锛氬垵濮嬪寲M2006_Init瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
-HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
-                             FDCAN_HandleTypeDef *hcan                  ,
-                             uint8_t id                                    ,
-                             int direction                                 )
+HAL_StatusTypeDef M2006_Init(m2006_t *motor,
+                             FDCAN_HandleTypeDef *hcan,
+                             uint8_t id,
+                             int direction)
 {
     if (motor == NULL || hcan == NULL || id == 0U || id > M2006_MOTOR_COUNT)
     {
@@ -176,7 +179,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
     motor->trajectory_enabled = true;
-    PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, M2006_POSITION_OUTPUT_LIMIT, M2006_POSITION_INTEGRAL_LIMIT);
+    PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, m2006_trajectory_max_speed_rad_s, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
     PID_SetIntegralSeparationRange(&motor->position_pid, M2006_POSITION_I_FULL, M2006_POSITION_I_SEPARATION);
     PID_SetIntegralSeparationRange(&motor->speed_pid, M2006_SPEED_I_FULL, M2006_SPEED_I_SEPARATION);
@@ -184,9 +187,8 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor                        ,
     return HAL_OK;
 }
 
-/* 鍔熻兘锛氭帴鏀跺苟瑙ｆ瀽M2006_OnFrame瀵瑰簲鐨勮緭鍏ユ暟鎹紝鏇存柊妯″潡鐘舵€併€?*/
-bool M2006_OnFrame(m2006_t *motor                         ,
-                   const can_frame_t *frame                      )
+bool M2006_OnFrame(m2006_t *motor,
+                   const can_frame_t *frame)
 {
     int32_t difference;
     bool first_feedback;
@@ -269,10 +271,9 @@ bool M2006_OnFrame(m2006_t *motor                         ,
     return true;
 }
 
-/* 鍔熻兘锛氳缃甅2006_SetTargetDeferred瀵瑰簲鐨勭洰鏍囧€兼垨宸ヤ綔妯″紡銆?*/
-void M2006_SetTargetDeferred(m2006_t *motor                         ,
-                     m2006_mode_t mode                          ,
-                     float target                               )
+void M2006_SetTargetDeferred(m2006_t *motor,
+                     m2006_mode_t mode,
+                     float target)
 {
     bool mode_changed = mode != motor->mode;
     bool target_changed;
@@ -360,7 +361,6 @@ void M2006_SetTargetDeferred(m2006_t *motor                         ,
 
 }
 
-/* 鍔熻兘锛氳缃甅2006_SetTarget瀵瑰簲鐨勭洰鏍囧€兼垨宸ヤ綔妯″紡銆?*/
 void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
 {
     if (motor && motor->target_sink) { motor->target_sink(motor, (int)mode, target, 0.0f); return; }
@@ -379,7 +379,6 @@ void M2006_SetTarget(m2006_t *motor, m2006_mode_t mode, float target)
     }
 }
 
-/* 鍔熻兘锛氭墽琛孧2006_Service瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void M2006_Service(m2006_t *motor, float dt_s)
 {
     can_frame_t frame;
@@ -400,7 +399,6 @@ void M2006_Service(m2006_t *motor, float dt_s)
     (void)BspCan_Send(&frame);
 }
 
-/* 鍔熻兘锛氬仠姝2006_Stop瀵瑰簲鐨勮緭鍑哄苟娓呯悊杩愯鐘舵€併€?*/
 bool M2006_Stop(m2006_t *motor)
 {
     if (motor == NULL)
@@ -413,17 +411,17 @@ bool M2006_Stop(m2006_t *motor)
     return true;
 }
 
-/* 鍔熻兘锛氬鐞哅2006_SetPositionDegrees瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
-void M2006_SetPositionDegrees(m2006_t *motor                     ,
-                              float degrees                          )
+void M2006_SetPositionDegrees(m2006_t *motor,
+                              float degrees)
 {
     M2006_SetTarget(motor, M2006_MODE_POSITION, degrees);
 }
 
-/* 鍔熻兘锛氳绠桵2006_Calc瀵瑰簲鐨勬帶鍒堕噺鎴栬鍒掔粨鏋溿€?*/
-int16_t M2006_Calc(m2006_t *motor                             ,
-                   float dt_s                          )
+int16_t M2006_Calc(m2006_t *motor,
+                   float dt_s)
 {
+
+    motor->position_pid.output_limit = m2006_trajectory_max_speed_rad_s;
     float target_speed;
     float current;
     float current_raw;
@@ -490,7 +488,6 @@ int16_t M2006_Calc(m2006_t *motor                             ,
     return (int16_t)(current_raw - 0.5f);
 }
 
-/* 鍔熻兘锛氳鍙朚2006_GetPositionDegrees瀵瑰簲鐨勬暟鎹垨杩愯鐘舵€併€?*/
 void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -499,10 +496,9 @@ void M2006_GetPositionDegrees(const m2006_t *motor, volatile float *position_deg
     }
 }
 
-/* 鍔熻兘锛氭瀯寤篗2006_BuildGroupFrame闇€瑕佸彂閫佺殑閫氫俊甯ф垨鎺у埗鎸囦护銆?*/
-void M2006_BuildGroupFrame(uint8_t first_id                               ,
-                           const int16_t current[4]                             ,
-                           can_frame_t *frame                              )
+void M2006_BuildGroupFrame(uint8_t first_id,
+                           const int16_t current[4],
+                           can_frame_t *frame)
 {
     uint8_t index;
 
@@ -516,7 +512,6 @@ void M2006_BuildGroupFrame(uint8_t first_id                               ,
     }
 }
 
-/* 鍔熻兘锛氭瀯寤篗2006_BuildSpecial闇€瑕佸彂閫佺殑閫氫俊甯ф垨鎺у埗鎸囦护銆?*/
 void M2006_BuildSpecial(m2006_t *motor, uint8_t command)
 {
     if (motor == NULL)

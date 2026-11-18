@@ -30,6 +30,8 @@ typedef struct
     volatile uint32_t dropped_bytes;
 } remote_port_t;
 
+extern remote_port_t ports[REMOTE_PORT_COUNT];
+
 #ifdef __cplusplus
 extern "C"
 {

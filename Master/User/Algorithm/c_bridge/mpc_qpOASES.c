@@ -1,20 +1,4 @@
-/*
- * @file mpc_qpOASES.c
- * @brief mpc_qpOASES模块的用户接口与实现。
- */
 
-/**
- * @file    mpc_qpOASES.c
- * @brief   C adapter for qpOASES 3.2 (QProblemB, single precision).
- *
- * Important:
- *   - qpOASES_wrapper.h has no "extern C" guard and selects real_t from
- *     __USE_SINGLE_PRECISION__ itself.  The macro MUST be defined in every
- *     C translation unit that includes the wrapper, otherwise the C side
- *     thinks real_t is double while the C++ side uses float.
- *   - The qpOASES copy in C:\Users\HP\Desktop\qpOASES already has
- *     __USE_SINGLE_PRECISION__ enabled in include/qpOASES/Types.hpp.
- */
 #define __USE_SINGLE_PRECISION__
 #include "qpOASES_wrapper.h"
 
@@ -38,7 +22,6 @@ static qpOASES_Options s_options;
 #define MPC_QPOASES_OBJ_PTR    ((real_t *)0)
 #endif
 
-/* 功能：初始化MPC_QPOASES_Init对应的外设、参数和运行状态。 */
 int MPC_QPOASES_Init(int nV)
 {
     if ((nV < 1) || (nV > MPC_QPOASES_MAX_NV))
@@ -59,7 +42,6 @@ int MPC_QPOASES_Init(int nV)
     return 0;
 }
 
-/* 功能：计算MPC_QPOASES_Solve对应的控制量或规划结果。 */
 int MPC_QPOASES_Solve(const float *H,
                       const float *g,
                       const float *lb,
@@ -94,7 +76,6 @@ int MPC_QPOASES_Solve(const float *H,
     return (int)s_status;
 }
 
-/* 功能：使用上一周期结果热启动 qpOASES 求解器。 */
 int MPC_QPOASES_Hotstart(const float *g,
                          const float *lb,
                          const float *ub,
@@ -126,25 +107,21 @@ int MPC_QPOASES_Hotstart(const float *g,
     return (int)s_status;
 }
 
-/* 功能：读取MPC_QPOASES_GetLastStatus对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastStatus(void)
 {
     return (int)s_status;
 }
 
-/* 功能：读取MPC_QPOASES_GetLastNWSR对应的数据或运行状态。 */
 int MPC_QPOASES_GetLastNWSR(void)
 {
     return (int)s_nWSR;
 }
 
-/* 功能：读取MPC_QPOASES_GetLastObj对应的数据或运行状态。 */
 float MPC_QPOASES_GetLastObj(void)
 {
     return (float)s_obj;
 }
 
-/* 功能：重置或释放MPC_QPOASES_Cleanup对应的内部状态和资源。 */
 void MPC_QPOASES_Cleanup(void)
 {
     QProblemB_cleanup();

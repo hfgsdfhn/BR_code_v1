@@ -59,6 +59,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6
                           |GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_SET);
 
+
   /*Configure GPIO pins : VIN2_ADC_Pin VIN1_ADC_Pin */
   GPIO_InitStruct.Pin = VIN2_ADC_Pin|VIN1_ADC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;

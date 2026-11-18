@@ -1,4 +1,4 @@
-﻿#include "chassis_task.h"
+#include "chassis_task.h"
 #include "status_task.h"
 #include "chassis.h"
 #include "board_can.h"

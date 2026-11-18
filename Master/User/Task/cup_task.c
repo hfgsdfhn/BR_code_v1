@@ -1,8 +1,6 @@
-﻿/*
- * @file suction_cup.c
- * @brief cup_task 妯″潡鐨勭敤鎴锋帴鍙ｄ笌瀹炵幇銆? */
 
 #include "cup_task.h"
+
 
 #include "cmsis_os2.h"
 #include "upper.h"
@@ -30,13 +28,11 @@ volatile float dstp23l_distance_cm;
 static suction_stp23l_parser_t up_stp23l_parser;
 static suction_stp23l_parser_t down_stp23l_parser;
 
-/* 鍔熻兘锛氬鐞哠uctionCup_ReadU16瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static uint16_t SuctionCup_ReadU16(const uint8_t *data)
 {
     return (uint16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8U));
 }
 
-/* 鍔熻兘锛氬鐞哠uctionCup_KeepTrailingHeader瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
 {
     uint16_t trailing_count = 0U;
@@ -52,7 +48,6 @@ static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
     parser->index = trailing_count;
 }
 
-/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_IsValidFrame瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
 {
     uint8_t checksum = 0U;
@@ -67,7 +62,6 @@ static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
     return (uint8_t)(checksum == parser->frame[STP23L_CHECKSUM_OFFSET]);
 }
 
-/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_DecodeDistanceCm瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
 {
     uint32_t sum = 0U;
@@ -87,7 +81,6 @@ static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
     return (count == 0U) ? 0.0f : ((float)sum / (float)count) / 10.0f;
 }
 
-/* 鍔熻兘锛氳В鏋愬苟鏍￠獙SuctionCup_ParseBytes瀵瑰簲鐨勯€氫俊鏁版嵁銆?*/
 static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
                                   const uint8_t *data, uint16_t size,
                                   volatile float *distance_cm)
@@ -121,26 +114,22 @@ static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
     }
 }
 
-/* 鍔熻兘锛氬鐞哠uctionCup_UStp23lRx瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 void UStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&up_stp23l_parser, data, size, &ustp23l_distance_cm);
 }
 
-/* 鍔熻兘锛氬鐞哠uctionCup_DStp23lRx瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 void DStp23lRx(const uint8_t *data, uint16_t size)
 {
     SuctionCup_ParseBytes(&down_stp23l_parser, data, size, &dstp23l_distance_cm);
 }
 
-/* 鍔熻兘锛氬垵濮嬪寲SuctionCup_Init瀵瑰簲鐨勫璁俱€佸弬鏁板拰杩愯鐘舵€併€?*/
 void SuctionCup_Init(void)
 {
     (void)BspUart_RegisterRxCallback(BSP_UART_UP_STP23L, UStp23lRx);
     (void)BspUart_RegisterRxCallback(BSP_UART_DOWN_STP23L, DStp23lRx);
 }
 
-/* 鍔熻兘锛氭帴鏀跺苟瑙ｆ瀽SuctionCup_OnFrame瀵瑰簲鐨勮緭鍏ユ暟鎹紝鏇存柊妯″潡鐘舵€併€?*/
 void SuctionCup_OnFrame(const can_frame_t *frame)
 {
     unsigned i;
@@ -168,7 +157,6 @@ void SuctionCup_OnFrame(const can_frame_t *frame)
     }
 }
 
-/* 鍔熻兘锛氬彂閫丼uctionCup_SendGroupFrames瀵瑰簲鐨勬暟鎹垨鎺у埗鎸囦护銆?*/
 static void SuctionCup_SendGroupFrames(void)
 {
     can_frame_t frame;
@@ -194,7 +182,6 @@ static void SuctionCup_SendGroupFrames(void)
     frame.hfdcan = &hfdcan3;
     (void)BspCan_Send(&frame);
 }
-/* 鍔熻兘锛氬鐞哠uctionCup_MotorWatchdog瀵瑰簲鐨勮緭鍏ュ苟鏇存柊鐩稿叧鐘舵€併€?*/
 static void SuctionCup_MotorWatchdog(void)
 {
     bool online_now[5];
@@ -254,7 +241,6 @@ static void SuctionCup_MotorWatchdog(void)
     }
 }
 
-/* 鍔熻兘锛氭墽琛孲uctionCup_Service瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 static bool SuctionCup_StartupZeroCalibrationComplete(void)
 {
     unsigned i;
@@ -273,8 +259,6 @@ void SuctionCup_Service(void)
 
     SuctionCup_MotorWatchdog();
 
-    // if (SuctionCup_StartupZeroCalibrationComplete())
-    //     suction_enable = 1U;
 
     enabled = suction_enable != 0U;
 
@@ -303,14 +287,12 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     uint16_t pressed_keys;
     if (status == NULL)
         return;
-    /* 浠呭湪閬ユ帶 PA6 涓轰綆鐢靛钩鏃讹紙switch_state bit0=1锛夊搷搴旀寜閿€?*/
     if ((status->remote.switch_state & (1U << 0)) == 0U)
     {
         previous_keys = 0U;
         previous_keys_valid = false;
         return;
     }
-    /* K0=PD10, K1=PD11, K2=PD12, K3=PD13, K4=PD14, K5=PD15, K6=PA8. */
     current_keys = (uint16_t)(status->remote.key[0] & ((1U << 0) | (1U << 1) | (1U << 2) | (1U << 3) | (1U << 4) | (1U << 5) | (1U << 6)));
     if (!previous_keys_valid)
     {
@@ -348,7 +330,6 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     previous_keys = current_keys;
 }
 
-/* 鍔熻兘锛氭墽琛孲uctionCup_Task瀵瑰簲鐨勫懆鏈熶换鍔″苟缁存姢杩愯鐘舵€併€?*/
 void SuctionCup_Task(void *argument)
 {
     (void)argument;
@@ -361,4 +342,3 @@ void SuctionCup_Task(void *argument)
         osDelay((osKernelGetTickFreq() * 2U + 999U) / 1000U);
     }
 }
-

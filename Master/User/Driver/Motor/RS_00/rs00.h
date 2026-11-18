@@ -1,7 +1,3 @@
-/*
- * @file rs00.h
- * @brief rs00模块的用户接口与实现。
- */
 
 #ifndef RS00_H
 #define RS00_H
@@ -35,11 +31,11 @@
 
 typedef enum
 {
-    RS_MODE_STOP = 0U, /* 当前工作模式或状态。 */
-    RS_MODE_DAMPING, /* 当前工作模式或状态。 */
-    RS_MODE_SPEED, /* 当前工作模式或状态。 */
-    RS_MODE_POSITION, /* 当前工作模式或状态。 */
-    RS_MODE_MIT /* 当前工作模式或状态。 */
+    RS_MODE_STOP = 0U,
+    RS_MODE_DAMPING,
+    RS_MODE_SPEED,
+    RS_MODE_POSITION,
+    RS_MODE_MIT
 } rs_mode_t;
 #endif
 
@@ -57,10 +53,10 @@ typedef struct
     bool cascade_configured;
     float mit_kp, mit_kd;
 
-    FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
+    FDCAN_HandleTypeDef *hcan;
     uint8_t id;
     int direction;
-    rs_mode_t mode; /* 当前工作模式或状态。 */
+    rs_mode_t mode;
     float target;
     float hold_position;
     float reference_position;
@@ -101,7 +97,7 @@ typedef struct
     uint32_t speed_planner_tick;
     bool speed_planner_valid;
     float tau_ff_nm;
-    uint8_t run_mode; /* 当前工作模式或状态。 */
+    uint8_t run_mode;
 } rs00_t;
 
 extern volatile float rs00_trajectory_max_speed_rad_s;
@@ -118,35 +114,26 @@ extern volatile float rs00_speed_accel_rad_s2;
 #define RS00_TRAJECTORY_PERIOD_MS (2U)
 #define RS00_TRAJECTORY_EPSILON_RAD (0.000001f)
 
-/* 功能：初始化RS00_Init对应的外设、参数和运行状态。 */
-HAL_StatusTypeDef RS00_Init(rs00_t *motor                     ,
-                            FDCAN_HandleTypeDef *hcan                    , uint8_t id                 ,
-                            int direction                       );
+HAL_StatusTypeDef RS00_Init(rs00_t *motor,
+                            FDCAN_HandleTypeDef *hcan, uint8_t id,
+                            int direction);
 
-/* 功能：构建RS00_BuildSpecial需要发送的通信帧或控制指令。 */
-bool RS00_BuildSpecial(rs00_t *motor                       , uint8_t command             );
+bool RS00_BuildSpecial(rs00_t *motor, uint8_t command);
 
-/* 功能：设置RS00_SetTargetBasic对应的目标值或工作模式。 */
-void RS00_SetTargetBasic(rs00_t *motor                      , rs_mode_t mode              , /* 当前工作模式或状态。 */
-                         float target                      );
+void RS00_SetTargetBasic(rs00_t *motor, rs_mode_t mode,
+                         float target);
 
-/* 功能：发送RS00_Send对应的数据或控制指令。 */
-bool RS00_Send(rs00_t *motor                      );
+bool RS00_Send(rs00_t *motor);
 
-/* 功能：接收并解析RS00_OnFrame对应的输入数据，更新模块状态。 */
-bool RS00_OnFrame(rs00_t *motor                      , const can_frame_t *frame                     );
+bool RS00_OnFrame(rs00_t *motor, const can_frame_t *frame);
 
-/* 功能：停止RS00_Stop对应的输出并清理运行状态。 */
-bool RS00_Stop(rs00_t *motor                    );
+bool RS00_Stop(rs00_t *motor);
 
-/* 功能：执行RS00_Service对应的周期任务并维护运行状态。 */
-void RS00_Service(rs00_t *motor                             );
+void RS00_Service(rs00_t *motor);
 
-/* 功能：读取RS00_GetPositionDegrees对应的数据或运行状态。 */
-void RS00_GetPositionDegrees(const rs00_t *motor                      ,
-                             volatile float *position_degrees                      );
+void RS00_GetPositionDegrees(const rs00_t *motor,
+                             volatile float *position_degrees);
 
-/* 功能：设置RS00_SetTargetMIT对应的 MIT 控制目标。 */
 void RS00_SetTargetMIT(rs00_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS00_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS00_SetTarget(...) RS00_TARGET_SELECT(__VA_ARGS__, RS00_SetTargetMIT, RS00_SetTargetBasic)(__VA_ARGS__)
@@ -155,7 +142,7 @@ void RS00_SetTargetMIT(rs00_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS00_POSITION_PID_KI 0.0f
 #define RS00_POSITION_PID_KD 0.0f
 #define RS00_POSITION_PID_I_LIMIT 0.0f
-#define RS00_POSITION_SPEED_LIMIT 0.5f
+#define RS00_POSITION_SPEED_LIMIT 32.9867f
 #define RS00_SPEED_PID_KP 1.0f
 #define RS00_SPEED_PID_KI 0.1f
 #define RS00_SPEED_PID_KD 0.0f

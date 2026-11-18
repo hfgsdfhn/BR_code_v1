@@ -1,7 +1,3 @@
-/*
- * @file encoder_link.h
- * @brief encoder_link模块的用户接口与实现。
- */
 
 #ifndef ENCODER_LINK_H
 #define ENCODER_LINK_H
@@ -85,13 +81,10 @@ typedef struct
 
 extern volatile encoder_link_t g_encoder_link;
 
-/* 功能：初始化EncoderLink_Init对应的外设、参数和运行状态。 */
 bool EncoderLink_Init(void);
 
-/* 功能：轮询并更新EncoderLink_Poll对应的输入和状态。 */
 bool EncoderLink_Poll(float yaw_deg);
 
-/* 功能：读取EncoderLink_GetYawRaw对应的数据或运行状态。 */
 uint16_t EncoderLink_GetYawRaw(void);
 
 #endif

@@ -1,7 +1,3 @@
-/*
- * @file bsp_can.c
- * @brief bsp_can 模块的用户接口与实现。
- */
 
 #include "bsp_can.h"
 
@@ -45,10 +41,8 @@ static volatile bsp_can_diagnostics_t *BspCan_Diagnostics(const FDCAN_HandleType
 }
 
 static osMessageQueueId_t can_rx_queue;
-/* 功能：处理BspCan_Start对应的输入并更新相关状态。 */
-static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          );
+static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan);
 
-/* 功能：发送BspCan_SendStartupZero对应的数据或控制指令。 */
 static void BspCan_SendStartupZero(void)
 {
     can_frame_t frame = {0};
@@ -65,13 +59,11 @@ static void BspCan_SendStartupZero(void)
     }
 }
 
-/* 功能：处理BspCan_IsBusOff对应的输入并更新相关状态。 */
 static bool BspCan_IsBusOff(const FDCAN_HandleTypeDef *hfdcan)
 {
     return (hfdcan != NULL) && (hfdcan->Instance != NULL) && ((hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0U);
 }
 
-/* 功能：处理BspCan_RestartChannel对应的输入并更新相关状态。 */
 static bool BspCan_RestartChannel(bsp_can_recover_t *channel)
 {
     if (channel == NULL)
@@ -102,7 +94,6 @@ static bool BspCan_RestartChannel(bsp_can_recover_t *channel)
     return true;
 }
 
-/* 功能：执行BspCan_Service对应的周期任务并维护运行状态。 */
 void BspCan_Service(void)
 {
     uint32_t now = HAL_GetTick();
@@ -139,7 +130,6 @@ void BspCan_Service(void)
     }
 }
 
-/* 功能：将BspCan_RxQueueInit对应的目标数据加入执行队列。 */
 bool BspCan_RxQueueInit(void)
 {
     if (can_rx_queue != NULL)
@@ -150,7 +140,6 @@ bool BspCan_RxQueueInit(void)
     return can_rx_queue != NULL;
 }
 
-/* 功能：执行BspCan_RxTask对应的周期任务并维护运行状态。 */
 void BspCan_RxTask(void *argument)
 {
     can_frame_t frame;
@@ -185,7 +174,6 @@ void BspCan_RxTask(void *argument)
     }
 }
 
-/* 功能：初始化BspCan_Init对应的外设、参数和运行状态。 */
 HAL_StatusTypeDef BspCan_Init(void)
 {
     static bool startup_zero_sent;
@@ -212,8 +200,7 @@ HAL_StatusTypeDef BspCan_Init(void)
     return status;
 }
 
-/* 功能：处理BspCan_Start对应的输入并更新相关状态。 */
-static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan                          )
+static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan)
 {
     FDCAN_FilterTypeDef filter = {0};
 
@@ -254,8 +241,7 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan               
     return HAL_OK;
 }
 
-/* 功能：发送BspCan_Send对应的数据或控制指令。 */
-bool BspCan_Send(const can_frame_t *frame                               )
+bool BspCan_Send(const can_frame_t *frame)
 {
     FDCAN_HandleTypeDef *hfdcan;
     FDCAN_TxHeaderTypeDef header = {0};
@@ -327,15 +313,12 @@ bool BspCan_Send(const can_frame_t *frame                               )
     }
 }
 
-/* 功能：处理BspCan_HasBusOff对应的输入并更新相关状态。 */
 bool BspCan_HasBusOff(void)
 {
 
-/* 功能：完成BspCan_IsBusOff对应的数据处理。 */
     return BspCan_IsBusOff(&hfdcan1) || BspCan_IsBusOff(&hfdcan2) || BspCan_IsBusOff(&hfdcan3);
 }
 
-/* 功能：处理BspCan_Recover对应的输入并更新相关状态。 */
 bool BspCan_Recover(void)
 {
 
@@ -343,9 +326,8 @@ bool BspCan_Recover(void)
     return !BspCan_HasBusOff();
 }
 
-/* 功能：处理HAL_FDCAN_RxFifo0Callback对应的输入并更新相关状态。 */
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                          ,
-                               uint32_t rx_fifo0_its                             )
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
+                               uint32_t rx_fifo0_its)
 {
     FDCAN_RxHeaderTypeDef header;
     can_frame_t frame;
@@ -409,7 +391,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan                      
         }
     }
 }
-/* 功能：接收并解析BspCan_OnFrame对应的输入数据，更新模块状态。 */
 void BspCan_OnFrame(const can_frame_t *frame)
 {
     if (frame == NULL)

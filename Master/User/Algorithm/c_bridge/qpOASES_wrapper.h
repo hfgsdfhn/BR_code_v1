@@ -1,7 +1,3 @@
-/*
- * @file qpOASES_wrapper.h
- * @brief qpOASES_wrapper模块的用户接口与实现。
- */
 
 #ifndef QPOASES_WRAPPER_H
 #define QPOASES_WRAPPER_H
@@ -109,25 +105,22 @@ typedef struct
 	real_t rcondSMin;
 	int_t enableInertiaCorrection;
 
-	int_t enableDropInfeasibles;			/**< ... */
-	int_t dropBoundPriority;				/**< ... */
-	int_t dropEqConPriority;				/**< ... */
-	int_t dropIneqConPriority;				/**< ... */
+	int_t enableDropInfeasibles;
+	int_t dropBoundPriority;
+	int_t dropEqConPriority;
+	int_t dropIneqConPriority;
 	int_t printResiduals;
 
 } qpOASES_Options;
 
-/* 功能：初始化qpOASES_Options_init对应的外设、参数和运行状态。 */
 int_t qpOASES_Options_init(	qpOASES_Options* const options,
 							int_t mode
 							);
 
-/* 功能：处理qpOASES_Options_copy对应的输入并更新相关状态。 */
 int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
 							OptionsClass* const to
 							);
 
-/* 功能：处理qpOASES_obtainOutputs对应的输入并更新相关状态。 */
 int_t qpOASES_obtainOutputs(	const QProblemBClass* const globalQpObject,
 								returnValue returnvalue,
 								real_t* const x,
@@ -136,13 +129,11 @@ int_t qpOASES_obtainOutputs(	const QProblemBClass* const globalQpObject,
 								int_t* const status
 								);
 
-/* 功能：处理QProblem_setup对应的输入并更新相关状态。 */
 int_t QProblem_setup(	int_t nV,
 						int_t nC,
 						int_t hessianType
 						);
 
-/* 功能：初始化QProblem_init对应的外设、参数和运行状态。 */
 int_t QProblem_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const A,
@@ -159,7 +150,6 @@ int_t QProblem_init(	const real_t* const H,
 						int_t* const status
 						);
 
-/* 功能：处理QProblem_hotstart对应的输入并更新相关状态。 */
 int_t QProblem_hotstart(	const real_t* const g,
 							const real_t* const lb,
 							const real_t* const ub,
@@ -173,15 +163,12 @@ int_t QProblem_hotstart(	const real_t* const g,
 							int_t* const status
 							);
 
-/* 功能：重置或释放QProblem_cleanup对应的内部状态和资源。 */
 int_t QProblem_cleanup( );
 
-/* 功能：处理QProblemB_setup对应的输入并更新相关状态。 */
 int_t QProblemB_setup(	int_t nV,
 						int_t hessianType
 						);
 
-/* 功能：初始化QProblemB_init对应的外设、参数和运行状态。 */
 int_t QProblemB_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const lb,
@@ -195,7 +182,6 @@ int_t QProblemB_init(	const real_t* const H,
 						int_t* const status
 						);
 
-/* 功能：处理QProblemB_hotstart对应的输入并更新相关状态。 */
 int_t QProblemB_hotstart(	const real_t* const g,
 							const real_t* const lb,
 							const real_t* const ub,
@@ -207,16 +193,13 @@ int_t QProblemB_hotstart(	const real_t* const g,
 							int_t* const status
 							);
 
-/* 功能：重置或释放QProblemB_cleanup对应的内部状态和资源。 */
 int_t QProblemB_cleanup( );
 
-/* 功能：处理SQProblem_setup对应的输入并更新相关状态。 */
 int_t SQProblem_setup(	int_t nV,
 						int_t nC,
 						int_t hessianType
 						);
 
-/* 功能：初始化SQProblem_init对应的外设、参数和运行状态。 */
 int_t SQProblem_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const A,
@@ -233,7 +216,6 @@ int_t SQProblem_init(	const real_t* const H,
 						int_t* const status
 						);
 
-/* 功能：处理SQProblem_hotstart对应的输入并更新相关状态。 */
 int_t SQProblem_hotstart(	const real_t* const H,
 							const real_t* const g,
 							const real_t* const A,
@@ -249,7 +231,6 @@ int_t SQProblem_hotstart(	const real_t* const H,
 							int_t* const status
 							);
 
-/* 功能：重置或释放SQProblem_cleanup对应的内部状态和资源。 */
 int_t SQProblem_cleanup( );
 
 #endif

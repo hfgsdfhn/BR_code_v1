@@ -1,14 +1,10 @@
-/*
- * @file m3508.c
- * @brief m3508模块的用户接口与实现。
- */
 
 #include "m3508.h"
 
 #include <math.h>
 #include "quintic_planner.h"
 
-volatile float m3508_trajectory_max_speed_rad_s = 31.416f;
+volatile float m3508_trajectory_max_speed_rad_s = 50.4757f;
 volatile float m3508_trajectory_max_acceleration_rad_s2 = 251.328f;
 
 volatile float m3508_trajectory_time_s = 0.0f;
@@ -16,19 +12,16 @@ volatile float m3508_trajectory_time_s = 0.0f;
 
 static int16_t m3508_command_current[M3508_MOTOR_COUNT];
 
-/* 功能：处理M3508_ReadU16对应的输入并更新相关状态。 */
-static uint16_t M3508_ReadU16(const uint8_t *data                               )
+static uint16_t M3508_ReadU16(const uint8_t *data)
 {
     return ((uint16_t)data[0] << 8U) | data[1];
 }
 
-/* 功能：处理M3508_Abs对应的输入并更新相关状态。 */
 static float M3508_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：处理M3508_Clamp对应的输入并更新相关状态。 */
 static float M3508_Clamp(float value, float minimum, float maximum)
 {
     if (value < minimum)
@@ -42,7 +35,6 @@ static float M3508_Clamp(float value, float minimum, float maximum)
     return value;
 }
 
-/* 功能：重置或释放M3508_ResetMotion对应的内部状态和资源。 */
 static void M3508_ResetMotion(m3508_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -57,7 +49,21 @@ static void M3508_ResetMotion(m3508_t *motor)
     motor->trajectory_active = false;
 }
 
-/* 功能：重置或释放M3508_ResetFeedback对应的内部状态和资源。 */
+void M3508_ResetSoftwareZero(m3508_t *motor)
+{
+    if (motor == NULL || !motor->received)
+        return;
+    motor->total_encoder = 0;
+    motor->position_rad = 0.0f;
+    motor->target_position_rad = 0.0f;
+    motor->reference_position_rad = 0.0f;
+    motor->trajectory_start_rad = 0.0f;
+    PID_Reset(&motor->position_pid);
+    PID_Reset(&motor->speed_pid);
+    PID_Reset(&motor->damping_pid);
+    M3508_ResetMotion(motor);
+}
+
 void M3508_ResetFeedback(m3508_t *motor)
 {
     if (motor == NULL)
@@ -79,7 +85,6 @@ void M3508_ResetFeedback(m3508_t *motor)
     M3508_ResetMotion(motor);
 }
 
-/* 功能：处理M3508_BeginPositionTrajectory对应的输入并更新相关状态。 */
 static void M3508_BeginPositionTrajectory(m3508_t *motor)
 {
     quintic_plan_t plan;
@@ -109,7 +114,6 @@ static void M3508_BeginPositionTrajectory(m3508_t *motor)
     }
 }
 
-/* 功能：轮询并更新M3508_UpdatePositionTrajectory对应的输入和状态。 */
 static void M3508_UpdatePositionTrajectory(m3508_t *motor, float dt_s)
 {
     quintic_plan_t plan;
@@ -141,7 +145,6 @@ static void M3508_UpdatePositionTrajectory(m3508_t *motor, float dt_s)
     motor->trajectory_elapsed_s += dt_s;
 }
 
-/* 功能：轮询并更新M3508_UpdateSpeedRamp对应的输入和状态。 */
 static void M3508_UpdateSpeedRamp(m3508_t *motor, float dt_s)
 {
     float delta;
@@ -161,11 +164,10 @@ static void M3508_UpdateSpeedRamp(m3508_t *motor, float dt_s)
         M3508_Abs(motor->target_speed_rad_s - motor->reference_speed_rad_s) > M3508_TRAJECTORY_EPSILON;
 }
 
-/* 功能：初始化M3508_Init对应的外设、参数和运行状态。 */
-HAL_StatusTypeDef M3508_Init(m3508_t *motor                        ,
-                             FDCAN_HandleTypeDef *hcan                  ,
-                             uint8_t id                                    ,
-                             int direction                                  )
+HAL_StatusTypeDef M3508_Init(m3508_t *motor,
+                             FDCAN_HandleTypeDef *hcan,
+                             uint8_t id,
+                             int direction)
 {
     if (motor == NULL || hcan == NULL || id == 0U || id > M3508_MOTOR_COUNT)
     {
@@ -185,9 +187,8 @@ HAL_StatusTypeDef M3508_Init(m3508_t *motor                        ,
     return HAL_OK;
 }
 
-/* 功能：接收并解析M3508_OnFrame对应的输入数据，更新模块状态。 */
-bool M3508_OnFrame(m3508_t *motor                         ,
-                   const can_frame_t *frame                      )
+bool M3508_OnFrame(m3508_t *motor,
+                   const can_frame_t *frame)
 {
     int32_t difference;
     bool first_feedback;
@@ -271,10 +272,9 @@ bool M3508_OnFrame(m3508_t *motor                         ,
     return true;
 }
 
-/* 功能：设置M3508_SetTargetDeferred对应的目标值或工作模式。 */
-void M3508_SetTargetDeferred(m3508_t *motor                         ,
-                     m3508_mode_t mode                          ,
-                     float target                               )
+void M3508_SetTargetDeferred(m3508_t *motor,
+                     m3508_mode_t mode,
+                     float target)
 {
     bool mode_changed = mode != motor->mode;
     bool target_changed;
@@ -351,7 +351,6 @@ void M3508_SetTargetDeferred(m3508_t *motor                         ,
 
 }
 
-/* 功能：设置M3508_SetTarget对应的目标值或工作模式。 */
 void M3508_SetTarget(m3508_t *motor, m3508_mode_t mode, float target)
 {
     if (motor && motor->target_sink) { motor->target_sink(motor, (int)mode, target, 0.0f); return; }
@@ -370,7 +369,6 @@ void M3508_SetTarget(m3508_t *motor, m3508_mode_t mode, float target)
     }
 }
 
-/* 功能：执行M3508_Service对应的周期任务并维护运行状态。 */
 void M3508_Service(m3508_t *motor, float dt_s)
 {
     can_frame_t frame;
@@ -391,7 +389,6 @@ void M3508_Service(m3508_t *motor, float dt_s)
     (void)BspCan_Send(&frame);
 }
 
-/* 功能：停止M3508_Stop对应的输出并清理运行状态。 */
 bool M3508_Stop(m3508_t *motor)
 {
     if (motor == NULL)
@@ -404,18 +401,18 @@ bool M3508_Stop(m3508_t *motor)
     return true;
 }
 
-/* 功能：处理M3508_SetPairPositionDegrees对应的输入并更新相关状态。 */
-void M3508_SetPairPositionDegrees(m3508_t motors[2]                         ,
-                                  float degrees                            )
+void M3508_SetPairPositionDegrees(m3508_t motors[2],
+                                  float degrees)
 {
     M3508_SetTarget(&motors[0], M3508_MODE_POSITION, degrees);
     M3508_SetTarget(&motors[1], M3508_MODE_POSITION, degrees);
 }
 
-/* 功能：计算M3508_Calc对应的控制量或规划结果。 */
-int16_t M3508_Calc(m3508_t *motor                             ,
-                   float dt_s                          )
+int16_t M3508_Calc(m3508_t *motor,
+                   float dt_s)
 {
+
+    motor->position_pid.output_limit = m3508_trajectory_max_speed_rad_s;
     float target_speed;
     float current;
     float current_raw;
@@ -475,7 +472,6 @@ int16_t M3508_Calc(m3508_t *motor                             ,
     return (int16_t)(current_raw - 0.5f);
 }
 
-/* 功能：读取M3508_GetPositionDegrees对应的数据或运行状态。 */
 void M3508_GetPositionDegrees(const m3508_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -484,10 +480,9 @@ void M3508_GetPositionDegrees(const m3508_t *motor, volatile float *position_deg
     }
 }
 
-/* 功能：构建M3508_BuildGroupFrame需要发送的通信帧或控制指令。 */
-void M3508_BuildGroupFrame(uint8_t first_id                               ,
-                           const int16_t current[4]                             ,
-                           can_frame_t *frame                              )
+void M3508_BuildGroupFrame(uint8_t first_id,
+                           const int16_t current[4],
+                           can_frame_t *frame)
 {
     uint8_t index;
 
@@ -501,7 +496,6 @@ void M3508_BuildGroupFrame(uint8_t first_id                               ,
     }
 }
 
-/* 功能：构建M3508_BuildSpecial需要发送的通信帧或控制指令。 */
 void M3508_BuildSpecial(m3508_t *motor, uint8_t command)
 {
     if (motor == NULL)

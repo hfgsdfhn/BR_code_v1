@@ -1,7 +1,3 @@
-/*
- * @file bsp_can.h
- * @brief bsp_can 模块的用户接口与实现。
- */
 
 #ifndef BSP_CAN_H
 #define BSP_CAN_H
@@ -57,28 +53,20 @@ typedef struct
     uint8_t data[8];
 } can_frame_t;
 
-/* 功能：初始化BspCan_Init对应的外设、参数和运行状态。 */
 HAL_StatusTypeDef BspCan_Init(void);
 
-/* 功能：将BspCan_RxQueueInit对应的目标数据加入执行队列。 */
 bool BspCan_RxQueueInit(void);
 
-/* 功能：执行BspCan_RxTask对应的周期任务并维护运行状态。 */
 void BspCan_RxTask(void *argument);
 
-/* 功能：接收并解析BspCan_OnFrame对应的输入数据，更新模块状态。 */
-void BspCan_OnFrame(const can_frame_t *frame                    );
+void BspCan_OnFrame(const can_frame_t *frame);
 
-/* 功能：发送BspCan_Send对应的数据或控制指令。 */
-bool BspCan_Send(const can_frame_t *frame                                      );
+bool BspCan_Send(const can_frame_t *frame);
 
-/* 功能：处理BspCan_HasBusOff对应的输入并更新相关状态。 */
 bool BspCan_HasBusOff(void);
 
-/* 功能：处理BspCan_Recover对应的输入并更新相关状态。 */
 bool BspCan_Recover(void);
 
-/* 功能：执行BspCan_Service对应的周期任务并维护运行状态。 */
 void BspCan_Service(void);
 
 #endif

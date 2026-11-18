@@ -1,11 +1,6 @@
-/*
- * @file kalman.c
- * @brief kalman模块的用户接口与实现。
- */
 
 #include "kalman.h"
 
-/* 功能：初始化kalman_init对应的外设、参数和运行状态。 */
 void kalman_init(kalman_t *kalman)
 {
     uint16_t N = kalman->state_dim;
@@ -14,25 +9,20 @@ void kalman_init(kalman_t *kalman)
 
     float32_t *workspace = kalman->data.workspace;
 
-    /* 状态变量 */
     arm_mat_init_f32(&kalman->x, N, 1, kalman->data.x_data);
     arm_mat_init_f32(&kalman->P, N, N, kalman->data.P_data);
 
-    /* 状态转移模型 */
     arm_mat_init_f32(&kalman->A, N, N, kalman->data.A_data);
     arm_mat_init_f32(&kalman->B, N, M, kalman->data.B_data);
     arm_mat_init_f32(&kalman->u, M, 1, kalman->data.u_data);
     arm_mat_init_f32(&kalman->Q, N, N, kalman->data.Q_data);
 
-    /* 观测模型 */
     arm_mat_init_f32(&kalman->H, Z, N, kalman->data.H_data);
     arm_mat_init_f32(&kalman->z, Z, 1, kalman->data.z_data);
     arm_mat_init_f32(&kalman->R, Z, Z, kalman->data.R_data);
 
-    /* 卡尔曼增益 */
     arm_mat_init_f32(&kalman->K, N, Z, kalman->data.K_data);
 
-    /* 临时矩阵 */
     arm_mat_init_f32(&kalman->temp_n1_1, N, 1, workspace);  workspace += N;
     arm_mat_init_f32(&kalman->temp_n1_2, N, 1, workspace);  workspace += N;
     arm_mat_init_f32(&kalman->temp_z1, Z, 1, workspace);    workspace += Z;
@@ -45,56 +35,38 @@ void kalman_init(kalman_t *kalman)
     arm_mat_init_f32(&kalman->temp_zz_2, Z, Z, workspace);
 }
 
-/* 功能：处理kalman_predict对应的输入并更新相关状态。 */
 void kalman_predict(kalman_t *kalman)
 {
-    /* x = A * x + B * u */
     arm_mat_mult_f32(&kalman->A, &kalman->x, &kalman->temp_n1_1);
     arm_mat_mult_f32(&kalman->B, &kalman->u, &kalman->temp_n1_2);
     arm_mat_add_f32(&kalman->temp_n1_1, &kalman->temp_n1_2, &kalman->x);
 
-    /* P = A * P * A^T + Q */
     arm_mat_mult_f32(&kalman->A, &kalman->P, &kalman->temp_nn_1);
     arm_mat_trans_f32(&kalman->A, &kalman->temp_nn_2);
     arm_mat_mult_f32(&kalman->temp_nn_1, &kalman->temp_nn_2, &kalman->P);
     arm_mat_add_f32(&kalman->P, &kalman->Q, &kalman->P);
 }
 
-/* 功能：轮询并更新kalman_update对应的输入和状态。 */
 void kalman_update(kalman_t *kalman)
 {
     uint16_t i;
     uint16_t j;
     uint16_t N = kalman->state_dim;
 
-    /* H^T */
     arm_mat_trans_f32(&kalman->H, &kalman->temp_zn);
-    /* P * H^T */
     arm_mat_mult_f32(&kalman->P, &kalman->temp_zn, &kalman->temp_nz);
-    /* S = H * P * H^T + R */
     arm_mat_mult_f32(&kalman->H, &kalman->temp_nz, &kalman->temp_zz_1);
     arm_mat_add_f32(&kalman->temp_zz_1, &kalman->R, &kalman->temp_zz_1);
-    /* S^-1 */
     arm_mat_inverse_f32(&kalman->temp_zz_1, &kalman->temp_zz_2);
-    /* K = P * H^T * S^-1 */
     arm_mat_mult_f32(&kalman->temp_nz, &kalman->temp_zz_2, &kalman->K);
 
-    /*
-     * x = x + K * (z - H * x)
-     */
 
-    /* H * x */
     arm_mat_mult_f32(&kalman->H, &kalman->x, &kalman->temp_z1);
-    /* z - H * x */
     arm_mat_sub_f32(&kalman->z, &kalman->temp_z1, &kalman->temp_z1);
-    /* K * (z - H * x) */
     arm_mat_mult_f32(&kalman->K, &kalman->temp_z1, &kalman->temp_n1_1);
-    /* x = x + K * (z - H * x) */
     arm_mat_add_f32(&kalman->x, &kalman->temp_n1_1, &kalman->x);
 
-    /* K * H */
     arm_mat_mult_f32(&kalman->K, &kalman->H, &kalman->temp_nn_1);
-    /* 生成单位矩阵 I */
     for (i = 0; i < N; i++)
     {
         for (j = 0; j < N; j++)
@@ -102,20 +74,12 @@ void kalman_update(kalman_t *kalman)
             kalman->temp_nn_2.pData[i * N + j] = (i == j) ? 1.0f : 0.0f;
         }
     }
-    /* I - K * H */
     arm_mat_sub_f32(&kalman->temp_nn_2, &kalman->temp_nn_1, &kalman->temp_nn_2);
-    /* (I - K * H) * P */
     arm_mat_mult_f32(&kalman->temp_nn_2, &kalman->P, &kalman->temp_nn_1);
-    /* (I - K * H)^T */
     arm_mat_trans_f32(&kalman->temp_nn_2, &kalman->temp_nn_3);
-    /* (I - K * H) * P * (I - K * H)^T */
     arm_mat_mult_f32(&kalman->temp_nn_1, &kalman->temp_nn_3, &kalman->P);
-    /* K * R */
     arm_mat_mult_f32(&kalman->K, &kalman->R, &kalman->temp_nz);
-    /* K^T */
     arm_mat_trans_f32(&kalman->K, &kalman->temp_zn);
-    /* K * R * K^T */
     arm_mat_mult_f32(&kalman->temp_nz, &kalman->temp_zn, &kalman->temp_nn_1);
-    /* P = P + K * R * K^T */
     arm_mat_add_f32(&kalman->P, &kalman->temp_nn_1, &kalman->P);
 }

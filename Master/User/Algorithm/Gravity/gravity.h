@@ -20,6 +20,7 @@ typedef struct
 typedef struct
 {
     const br_gravity_link_t *link;
+    float link_mass_kg[BR_GRAVITY_LINK_COUNT];
     float gravity_base[3];
     float payload_mass_kg;
     float payload_com_m[3];
@@ -40,4 +41,9 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF],
                           float end_world_m[3]);
 
+bool BR_InverseKinematics(const br_gravity_model_t *model,
+                          const float target_world_m[3],
+                          const float current_q[BR_ARM_DOF],
+                          float q_target_deg[BR_ARM_DOF],
+                          bool prefer_small_second_rs00);
 #endif

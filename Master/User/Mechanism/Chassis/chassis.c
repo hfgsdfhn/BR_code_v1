@@ -39,7 +39,6 @@ static float T_Speed_Control(float current, float target, float step)
             current = target;
         }
     }
-    /* 减速 */
     else if (current > target)
     {
         current -= step;

@@ -42,7 +42,11 @@ typedef struct { volatile uint8_t online; volatile uint32_t last_tick; volatile 
 typedef struct { arm_group_t arm[2]; upper_board_t board[2]; volatile uint8_t enable; } upper_t;
 
 extern volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
-extern volatile float arm_end_position_world[2][3]; /* centimetres for debugging */
+extern volatile float arm_end_position_world[2][3];
+extern volatile float arm_end_target_world[2][3];
+extern volatile uint8_t arm_ik_enable[2];
+extern volatile uint8_t arm_ik_second_rs00_prefer_small[2];
+extern volatile float br_arm_disable_delay_s;
 extern upper_t upper_state;
 extern Arm_Pos Arm_larm, Arm_rarm;
 extern m2006_t m2006_larm;
@@ -51,32 +55,39 @@ extern rs05_t rs05_larm, rs05_rarm;
 extern j4310_t j4310_larm, j4310_rarm;
 extern rs01_t rs01_rarm;
 
-extern volatile uint8_t br_manual_tau_enable;
-extern volatile float br_shoulder_tau_nm;
-extern volatile float br_elbow_tau_nm;
-extern volatile float br_wrist_tau_nm;
-extern volatile float br_rotation_tau_nm;
+extern volatile uint8_t larm_manual_tau_enable;
+extern volatile float larm_shoulder_tau_nm;
+extern volatile float larm_elbow_tau_nm;
+extern volatile float larm_wrist_tau_nm;
+extern volatile float larm_rotation_tau_nm;
+extern volatile uint8_t rarm_manual_tau_enable;
+extern volatile float rarm_shoulder_tau_nm;
+extern volatile float rarm_elbow_tau_nm;
+extern volatile float rarm_wrist_tau_nm;
+extern volatile float rarm_rotation_tau_nm;
+extern volatile float larm_mass_003_kg;
+extern volatile float larm_mass_004_kg;
+extern volatile float larm_mass_005_kg;
+extern volatile float larm_mass_006_kg;
+extern volatile float rarm_mass_003_kg;
+extern volatile float rarm_mass_004_kg;
+extern volatile float rarm_mass_005_kg;
+extern volatile float rarm_mass_006_kg;
 
-/* 閸旂喕鍏橀敍姘槱閻炲摙pper_BindMotors鐎电懓绨查惃鍕翻閸忋儱鑻熼弴瀛樻煀閻╃鍙ч悩鑸碘偓浣碘偓?*/
 void Upper_BindMotors(upper_t *upper);
-/* 閸旂喕鍏橀敍姘复閺€璺鸿嫙鐟欙絾鐎経pper_OnFrame鐎电懓绨查惃鍕翻閸忋儲鏆熼幑顕嗙礉閺囧瓨鏌婂Ο鈥虫健閻樿埖鈧降鈧?*/
 void Upper_OnFrame(upper_t *upper, const can_frame_t *frame);
-/* 閸旂喕鍏橀敍姘⒔鐞涘pper_Service鐎电懓绨查惃鍕噯閺堢喍鎹㈤崝鈥宠嫙缂佸瓨濮㈡潻鎰攽閻樿埖鈧降鈧?*/
 void Upper_Service(uint32_t now);
 bool Upper_IsArmOvertemperature(uint8_t arm);
 
 typedef enum { ARM_JOINT_ROOT, ARM_JOINT_SHOULDER, ARM_JOINT_ELBOW, ARM_JOINT_WRIST, ARM_JOINT_ROTATION } arm_joint_t;
-/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointMIT鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointMIT(uint8_t arm, arm_joint_t joint, float tau_nm, float output_degrees);
-/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointModeTarget鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointModeTarget(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target_degrees);
-/* 閸旂喕鍏橀敍姘愁啎缂冪攷pper_SetJointDegrees鐎电懓绨查惃鍕窗閺嶅洤鈧吋鍨ㄥ銉ょ稊濡€崇础閵?*/
 bool Upper_SetJointDegrees(uint8_t arm, arm_joint_t joint, float degrees);
-/* 閸旂喕鍏橀敍姘殺Upper_QueueArmPositions鐎电懓绨查惃鍕窗閺嶅洦鏆熼幑顔煎閸忋儲澧界悰宀勬Е閸掓ぜ鈧?*/
 void Upper_QueueArmPositions(bool enable);
-/* 閸旂喕鍏橀敍姘殺閺堢儤顫懛鍌氬彠閼哄倻娲伴弽鍥у晸閸忋儱顕惔鏃傛畱閹笛嗩攽閺堢儤鐎妴?*/
+void Upper_SetArmIKTarget(uint8_t arm, float x_cm, float y_cm, float z_cm);
+void Upper_SetArmIKEnabled(uint8_t arm, bool enable);
+void Upper_RefreshArmIK(uint8_t arm);
 bool apply_arm(uint8_t arm, uint8_t joint_index, float target_degrees);
-/* 閸旂喕鍏橀敍姘愁啎缂冾喖鎯涢惄妯兼窗閺嶅洣缍呯純顔艰嫙瀵偓閸氼垰鎯涢惄妯诲付閸掕翰鈧?*/
 bool apply_cup(uint8_t cup, uint8_t index, float target_degrees);
 
 #endif

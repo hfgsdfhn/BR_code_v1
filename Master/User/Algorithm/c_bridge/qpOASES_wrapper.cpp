@@ -1,7 +1,3 @@
-/*
- * @file qpOASES_wrapper.cpp
- * @brief qpOASES_wrapper模块的用户接口与实现。
- */
 
 #include <qpOASES.hpp>
 
@@ -11,9 +7,6 @@ extern "C" {
 #include "qpOASES_wrapper.h"
 }
 
-/*
- *	q p O A S E S _ O p t i o n s _ i n i t
- */
 int_t qpOASES_Options_init(	qpOASES_Options* const options,
 							int_t mode
 							)
@@ -137,9 +130,6 @@ int_t qpOASES_Options_init(	qpOASES_Options* const options,
 	return 0;
 }
 
-/*
- *	q p O A S E S _ O p t i o n s _ c o p y
- */
 int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
 							Options* const to
 							)
@@ -188,9 +178,6 @@ int_t qpOASES_Options_copy(	const qpOASES_Options* const from,
 	return 0;
 }
 
-/*
- *	q p O A S E S _ o b t a i n O u t p u t s
- */
 int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 								returnValue returnvalue,
 								real_t* const x,
@@ -210,9 +197,6 @@ int_t qpOASES_obtainOutputs(	const QProblemB* const globalQpObject,
 	return 0;
 }
 
-/*
- *	Q P r o b l e m _ s e t u p
- */
 int_t QProblem_setup(	int_t nV,
 						int_t nC,
 						int_t hessianType
@@ -232,9 +216,6 @@ int_t QProblem_setup(	int_t nV,
 	return 0;
 }
 
-/*
- *	Q P r o b l e m _ i n i t
- */
 int_t QProblem_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const A,
@@ -262,13 +243,9 @@ int_t QProblem_init(	const real_t* const H,
 
 	returnValue returnvalue = globalQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 }
 
-/*
- *	Q P r o b l e m _ h o t s t a r t
- */
 int_t QProblem_hotstart(	const real_t* const g,
 							const real_t* const lb,
 							const real_t* const ub,
@@ -287,15 +264,11 @@ int_t QProblem_hotstart(	const real_t* const g,
 
 	returnValue returnvalue = globalQProblemObject->hotstart( g,lb,ub,lbA,ubA, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
 
-/*
- *	Q P r o b l e m _ c l e a n u p
- */
 int_t QProblem_cleanup( )
 {
 	if ( globalQProblemObject != 0 )
@@ -307,9 +280,6 @@ int_t QProblem_cleanup( )
 	return 0;
 }
 
-/*
- *	Q P r o b l e m B _ s e t u p
- */
 int_t QProblemB_setup(	int_t nV,
 						int_t hessianType
 						)
@@ -328,9 +298,6 @@ int_t QProblemB_setup(	int_t nV,
 	return 0;
 }
 
-/*
- *	Q P r o b l e m B _ i n i t
- */
 int_t QProblemB_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const lb,
@@ -355,13 +322,9 @@ int_t QProblemB_init(	const real_t* const H,
 
 	returnValue returnvalue = globalQProblemBObject->init( H,g,lb,ub, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 }
 
-/*
- *	Q P r o b l e m B _ h o t s t a r t
- */
 int_t QProblemB_hotstart(	const real_t* const g,
 							const real_t* const lb,
 							const real_t* const ub,
@@ -378,15 +341,11 @@ int_t QProblemB_hotstart(	const real_t* const g,
 
 	returnValue returnvalue = globalQProblemBObject->hotstart( g,lb,ub, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalQProblemBObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
 
-/*
- *	Q P r o b l e m B _ c l e a n u p
- */
 int_t QProblemB_cleanup( )
 {
 	if ( globalQProblemBObject != 0 )
@@ -398,9 +357,6 @@ int_t QProblemB_cleanup( )
 	return 0;
 }
 
-/*
- *	S Q P r o b l e m _ s e t u p
- */
 int_t SQProblem_setup(	int_t nV,
 						int_t nC,
 						int_t hessianType
@@ -420,9 +376,6 @@ int_t SQProblem_setup(	int_t nV,
 	return 0;
 }
 
-/*
- *	S Q P r o b l e m _ i n i t
- */
 int_t SQProblem_init(	const real_t* const H,
 						const real_t* const g,
 						const real_t* const A,
@@ -450,13 +403,9 @@ int_t SQProblem_init(	const real_t* const H,
 
 	returnValue returnvalue = globalSQProblemObject->init( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 }
 
-/*
- *	S Q P r o b l e m _ h o t s t a r t
- */
 int_t SQProblem_hotstart(	const real_t* const H,
 							const real_t* const g,
 							const real_t* const A,
@@ -477,15 +426,11 @@ int_t SQProblem_hotstart(	const real_t* const H,
 
 	returnValue returnvalue = globalSQProblemObject->hotstart( H,g,A,lb,ub,lbA,ubA, *nWSR,cputime );
 
-/* 功能：完成qpOASES_obtainOutputs对应的数据处理。 */
 	return qpOASES_obtainOutputs( globalSQProblemObject,returnvalue, x,y,obj,status );
 
 	return 0;
 }
 
-/*
- *	S Q P r o b l e m _ c l e a n u p
- */
 int_t SQProblem_cleanup( )
 {
 	if ( globalSQProblemObject != 0 )
