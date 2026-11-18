@@ -51,6 +51,7 @@ typedef struct
     uint16_t last_encoder;
     int32_t total_encoder;
     float output_ratio;
+    bool rotor_pid_units;
     int16_t speed_rpm;
     int16_t current_raw;
     float position_rad;

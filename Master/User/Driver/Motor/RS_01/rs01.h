@@ -44,6 +44,7 @@ typedef enum
 #define RS01_ANGLE_PERIOD 6.28318530718f
 #define RS01_DEG_TO_RAD 0.017453292519943295f
 #define RS01_ROOT_OUTPUT_RATIO (14.0f / 45.0f)
+#define RS01_REDUCTION_RATIO 9.0f
 
 typedef struct
 {

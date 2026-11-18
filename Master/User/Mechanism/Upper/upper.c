@@ -243,6 +243,7 @@ void Upper_BindMotors(upper_t *upper)
         return;
 
     m2006_larm.output_ratio = 14.0f / 45.0f;
+    m2006_larm.rotor_pid_units = true;
     rs01_rarm.output_ratio = RS01_ROOT_OUTPUT_RATIO;
 
 
