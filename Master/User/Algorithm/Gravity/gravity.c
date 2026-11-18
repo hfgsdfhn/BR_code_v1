@@ -6,22 +6,12 @@
 #define BR_PI 3.14159265358979323846f
 #define BR_DEG_TO_RAD (BR_PI / 180.0f)
 
-/* 2-D drawing model, units: metre.
- * x is right, y is up; positive angle is counter-clockwise from +x.
- * When all motor commands are 0 deg, the four absolute ground angles
- * are 25, 155, 195 and 190 deg respectively.
- * The welded 6 cm + 21.5 cm bar is driven by the second RS00, so both
- * segments receive q[2]. The final 8 cm segment receives q[3].
- */
 static const float br_link_37_m = 0.370000f;
 static const float br_link_6_m = 0.060000f;
 static const float br_link_21_5_m = 0.215000f;
 static const float br_link_8_m  = 0.080000f;
-/* Absolute member angles measured from the horizontal ground at motor command 0 deg. */
 static const float br_command_zero_ground_deg[4] = {25.0f, 155.0f, 195.0f, 190.0f};
 
-/* Masses and COM distances taken from br.zip. The distances are projected
- * onto the corresponding 2-D member shown in the drawing. */
 static const float br_mass_003_kg = 0.670000000000f;
 static const float br_mass_004_kg = 0.072000000000f;
 static const float br_mass_005_kg = 0.430000000000f;
@@ -48,10 +38,10 @@ static br_gravity_link_t br_g_links[BR_GRAVITY_LINK_COUNT] =
 
 br_gravity_model_t br_gravity_models[2] =
 {
-    {.link = br_g_links, .gravity_base = {0.0f, -9.80665f, 0.0f},
+    {.link = br_g_links, .link_mass_kg = {br_mass_003_kg, br_mass_004_kg, br_mass_005_kg, br_mass_006_kg}, .gravity_base = {0.0f, -9.80665f, 0.0f},
      .payload_mass_kg = 0.174f, .payload_com_m = {0.0f, 0.0f, 0.0f},
      .tool_offset_m = br_tool_offset_m, .calibrated = true},
-    {.link = br_g_links, .gravity_base = {0.0f, -9.80665f, 0.0f},
+    {.link = br_g_links, .link_mass_kg = {br_mass_003_kg, br_mass_004_kg, br_mass_005_kg, br_mass_006_kg}, .gravity_base = {0.0f, -9.80665f, 0.0f},
      .payload_mass_kg = 0.174f, .payload_com_m = {0.0f, 0.0f, 0.0f},
      .tool_offset_m = br_tool_offset_m, .calibrated = true}
 };
@@ -97,18 +87,127 @@ static float br_torque(br_vec2_t origin, br_vec2_t center, float mass, const flo
 bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF], float end_world_m[3])
 {
-    br_vec2_t joint[4], com[4], tool;
+    const float link1_m = 0.370000f;
+    const float link2_m = 0.265000f;
+    const float link3_m = 0.080000f;
+    float alpha1;
+    float alpha2;
+    float alpha3;
+    float yaw;
+    float planar_x;
+    float planar_y;
+
     if (model == NULL || q == NULL || end_world_m == NULL || model->link == NULL)
         return false;
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         if (!isfinite(q[i])) return false;
-    br_pose(q, joint, com, &tool);
-    end_world_m[0] = tool.x;
-    end_world_m[1] = tool.y;
-    end_world_m[2] = 0.0f;
+
+    alpha1 = 155.0f * BR_DEG_TO_RAD - q[1];
+    alpha2 = 160.0f * BR_DEG_TO_RAD - q[1] + q[2];
+    alpha3 = 150.0f * BR_DEG_TO_RAD - q[1] + q[2] + q[3];
+    yaw = q[0];
+    planar_x = -link1_m * cosf(alpha1)
+             + link2_m * cosf(alpha2)
+             + link3_m * cosf(alpha3);
+    planar_y = -link1_m * sinf(alpha1)
+             + link2_m * sinf(alpha2)
+             + link3_m * sinf(alpha3);
+
+    end_world_m[0] = -planar_x * sinf(yaw);
+    end_world_m[1] = -planar_x * cosf(yaw);
+    end_world_m[2] = -planar_y;
     return true;
 }
+static float br_wrap_deg(float angle_deg)
+{
+    while (angle_deg > 180.0f) angle_deg -= 360.0f;
+    while (angle_deg < -180.0f) angle_deg += 360.0f;
+    return angle_deg;
+}
 
+bool BR_InverseKinematics(const br_gravity_model_t *model,
+                          const float target_world_m[3],
+                          const float current_q[BR_ARM_DOF],
+                          float q_target_deg[BR_ARM_DOF],
+                          bool prefer_small_second_rs00)
+{
+    const float link1_m = 0.370000f;
+    const float link2_m = 0.265000f;
+    const float link3_m = 0.080000f;
+    const float base_alpha1 = 155.0f * BR_DEG_TO_RAD;
+    const float base_alpha2 = 160.0f * BR_DEG_TO_RAD;
+    const float base_alpha3 = 150.0f * BR_DEG_TO_RAD;
+    const float pi = BR_PI;
+    float radius;
+    float yaw;
+    float alpha3;
+    float wrist_x;
+    float wrist_y;
+    float c2;
+    float s2_abs;
+    float candidate[2][BR_ARM_DOF];
+    unsigned best = 0U;
+
+    if (model == NULL || target_world_m == NULL || current_q == NULL ||
+        q_target_deg == NULL || model->link == NULL)
+        return false;
+    for (unsigned i = 0U; i < 3U; ++i)
+        if (!isfinite(target_world_m[i])) return false;
+    if (target_world_m[1] <= 0.100000f)
+        return false;
+    for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
+        if (!isfinite(current_q[i])) return false;
+    radius = sqrtf(target_world_m[0] * target_world_m[0] +
+                   target_world_m[1] * target_world_m[1]);
+    /* The target convention keeps planar_x negative: X=-planar_x*sin(yaw), Y=-planar_x*cos(yaw). */
+    yaw = radius > 1.0e-6f ? atan2f(target_world_m[0], target_world_m[1])
+                           : current_q[0];
+
+    alpha3 = base_alpha3 - current_q[1] + current_q[2] + current_q[3];
+    wrist_x = -radius - link3_m * cosf(alpha3);
+    wrist_y = -target_world_m[2] - link3_m * sinf(alpha3);
+    c2 = (wrist_x * wrist_x + wrist_y * wrist_y -
+          link1_m * link1_m - link2_m * link2_m) /
+         (2.0f * link1_m * link2_m);
+    if (c2 < -1.0f || c2 > 1.0f)
+        return false;
+    c2 = fmaxf(-1.0f, fminf(1.0f, c2));
+    s2_abs = sqrtf(fmaxf(0.0f, 1.0f - c2 * c2));
+
+    for (unsigned branch = 0U; branch < 2U; ++branch)
+    {
+        const float s2 = branch == 0U ? s2_abs : -s2_abs;
+        const float alpha2 = atan2f(s2, c2);
+        const float theta1 = atan2f(wrist_y, wrist_x) -
+                             atan2f(link2_m * s2,
+                                    link1_m + link2_m * c2);
+        const float alpha1 = theta1 - pi;
+        const float f1 = br_wrap_deg(base_alpha1 * 180.0f / pi -
+                                     alpha1 * 180.0f / pi);
+        const float f2 = br_wrap_deg(alpha2 * 180.0f / pi -
+                                     base_alpha2 * 180.0f / pi + f1);
+        const float f3 = br_wrap_deg(alpha3 * 180.0f / pi -
+                                     base_alpha3 * 180.0f / pi + f1 - f2);
+        candidate[branch][0] = br_wrap_deg(yaw * 180.0f / pi);
+        candidate[branch][1] = f1;
+        candidate[branch][2] = f2;
+        candidate[branch][3] = f3;
+        candidate[branch][4] = current_q[4] * 180.0f / pi;
+    }
+
+    {
+        const float current_second_rs00_deg = current_q[2] * 180.0f / pi;
+        const float error0 = fabsf(br_wrap_deg(candidate[0][2] - current_second_rs00_deg));
+        const float error1 = fabsf(br_wrap_deg(candidate[1][2] - current_second_rs00_deg));
+        if (prefer_small_second_rs00)
+            best = error1 < error0 ? 1U : 0U;
+        else
+            best = error1 > error0 ? 1U : 0U;
+    }
+    for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
+        q_target_deg[i] = candidate[best][i];
+    return true;
+}
 bool BR_GravityEvaluate(const br_gravity_model_t *model,
                         const float q[BR_ARM_DOF], bool grip,
                         float tau[BR_ARM_DOF], float *potential_j)
@@ -119,28 +218,25 @@ bool BR_GravityEvaluate(const br_gravity_model_t *model,
         return false;
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         if (!isfinite(q[i])) return false;
-
+    for (unsigned i = 0U; i < BR_GRAVITY_LINK_COUNT; ++i)
+        if (!isfinite(model->link_mass_kg[i]) || model->link_mass_kg[i] < 0.0f) return false;
     memset(tau, 0, sizeof(float) * BR_ARM_DOF);
     br_pose(q, joint, com, &tool);
 
-    /* q[1]: lower RS00, q[2]: upper RS00/welded 6+21.5 cm bar, q[3]: J4310. */
-    tau[1] = br_torque(joint[0], com[0], br_mass_003_kg, model->gravity_base) +
-             br_torque(joint[0], com[1], br_mass_004_kg, model->gravity_base) +
-             br_torque(joint[0], com[2], br_mass_005_kg, model->gravity_base) +
-             br_torque(joint[0], com[3], br_mass_006_kg, model->gravity_base);
-    tau[2] = br_torque(joint[1], com[1], br_mass_004_kg, model->gravity_base) +
-             br_torque(joint[1], com[2], br_mass_005_kg, model->gravity_base) +
-             br_torque(joint[1], com[3], br_mass_006_kg, model->gravity_base);
-    tau[3] = br_torque(joint[3], com[3], br_mass_006_kg, model->gravity_base);
-
+    tau[1] = br_torque(joint[0], com[0], model->link_mass_kg[0], model->gravity_base) +
+             br_torque(joint[0], com[1], model->link_mass_kg[1], model->gravity_base) +
+             br_torque(joint[0], com[2], model->link_mass_kg[2], model->gravity_base) +
+             br_torque(joint[0], com[3], model->link_mass_kg[3], model->gravity_base);
+    tau[2] = br_torque(joint[1], com[1], model->link_mass_kg[1], model->gravity_base) +
+             br_torque(joint[1], com[2], model->link_mass_kg[2], model->gravity_base) +
+             br_torque(joint[1], com[3], model->link_mass_kg[3], model->gravity_base);
+    tau[3] = br_torque(joint[3], com[3], model->link_mass_kg[3], model->gravity_base);
     if (grip && model->payload_mass_kg > 0.0f)
     {
         tau[1] += br_torque(joint[0], tool, model->payload_mass_kg, model->gravity_base);
         tau[2] += br_torque(joint[1], tool, model->payload_mass_kg, model->gravity_base);
         tau[3] += br_torque(joint[3], tool, model->payload_mass_kg, model->gravity_base);
     }
-
-    /* Motor-axis convention: RS00_2 and J4310 use the opposite sign. */
     tau[2] = -tau[2];
     tau[3] = -tau[3];
     tau[0] = 0.0f;
@@ -149,7 +245,7 @@ bool BR_GravityEvaluate(const br_gravity_model_t *model,
     {
         *potential_j = 0.0f;
         for (unsigned i = 0U; i < 4U; ++i)
-            *potential_j -= model->link[i].mass_kg * model->gravity_base[1] * com[i].y;
+            *potential_j -= model->link_mass_kg[i] * model->gravity_base[1] * com[i].y;
         if (grip) *potential_j -= model->payload_mass_kg * model->gravity_base[1] * tool.y;
     }
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)

@@ -1,4 +1,4 @@
-﻿#include "status_task.h"
+#include "status_task.h"
 #include "bsp_can.h"
 #include "my_main.h"
 #include "cup_task.h"

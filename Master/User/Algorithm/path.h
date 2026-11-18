@@ -1,7 +1,3 @@
-/*
- * @file path.h
- * @brief path模块的用户接口与实现。
- */
 
 typedef struct
 {

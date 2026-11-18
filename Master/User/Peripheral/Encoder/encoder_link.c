@@ -1,7 +1,3 @@
-/*
- * @file encoder_link.c
- * @brief encoder_link模块的用户接口与实现。
- */
 
 #include "encoder_link.h"
 #include "down.h"
@@ -18,7 +14,6 @@ static uint32_t s_consecutive_errors;
 static bool s_attempted;
 static bool s_ready;
 
-/* 功能：处理EncoderLink_Cs对应的输入并更新相关状态。 */
 static void EncoderLink_Cs(GPIO_PinState level)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -29,7 +24,6 @@ static void EncoderLink_Cs(GPIO_PinState level)
 
 }
 
-/* 功能：初始化EncoderLink_Init对应的外设、参数和运行状态。 */
 bool EncoderLink_Init(void)
 {
 #if ENCODER_LINK_CS_ENABLE
@@ -67,7 +61,6 @@ bool EncoderLink_Init(void)
     return true;
 }
 
-/* 功能：处理EncoderLink_RecordError对应的输入并更新相关状态。 */
 static void EncoderLink_RecordError(void)
 {
     g_encoder_link.error_count++;
@@ -78,7 +71,6 @@ static void EncoderLink_RecordError(void)
     }
 }
 
-/* 功能：轮询并更新EncoderLink_Poll对应的输入和状态。 */
 bool EncoderLink_Poll(float yaw_deg)
 {
     uint8_t tx[ENCODER_LINK_FRAME_BYTES];
@@ -171,7 +163,6 @@ bool EncoderLink_Poll(float yaw_deg)
     return true;
 }
 
-/* 功能：读取EncoderLink_GetYawRaw对应的数据或运行状态。 */
 uint16_t EncoderLink_GetYawRaw(void)
 {
     return g_encoder_link.yaw_raw;

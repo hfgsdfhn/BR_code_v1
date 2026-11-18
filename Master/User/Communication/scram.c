@@ -1,27 +1,24 @@
-/*
- * @file scram.c
- * @brief scram模块的用户接口与实现。
- */
-
 #include "scram.h"
 #include "bsp_uart.h"
+#include "remote.h"
+#include "usart.h"
 #include <string.h>
 
 static uint8_t rx_queue[SCRAM_RX_BUFFER_SIZE];
 static uint32_t rx_write;
 static uint32_t rx_read;
 static scram_stats_t rx_stats;
+static uint32_t last_tx_tick;
 
-/* 功能：初始化Scram_Init对应的外设、参数和运行状态。 */
 void Scram_Init(void)
 {
     rx_write = 0U;
     rx_read = 0U;
+    last_tx_tick = 0U;
     memset(&rx_stats, 0, sizeof(rx_stats));
     (void)BspUart_RegisterRxCallback(BSP_UART_SCRAM, Scram_RxBytes);
 }
 
-/* 功能：接收并解析Scram_RxBytes对应的输入数据，更新模块状态。 */
 void Scram_RxBytes(const uint8_t *data, uint16_t size)
 {
     uint32_t primask;
@@ -44,7 +41,6 @@ void Scram_RxBytes(const uint8_t *data, uint16_t size)
     __set_PRIMASK(primask);
 }
 
-/* 功能：处理Scram_Read对应的输入并更新相关状态。 */
 uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
 {
     uint32_t primask, available;
@@ -64,7 +60,6 @@ uint16_t Scram_Read(uint8_t *data, uint16_t capacity)
     return count;
 }
 
-/* 功能：读取Scram_GetStats对应的数据或运行状态。 */
 void Scram_GetStats(scram_stats_t *stats)
 {
     uint32_t primask;
@@ -74,4 +69,21 @@ void Scram_GetStats(scram_stats_t *stats)
     *stats = rx_stats;
     stats->pending_bytes = (uint16_t)(rx_write - rx_read);
     __set_PRIMASK(primask);
+}
+
+void Scram_Task(void)
+{
+    remote_t state;
+    uint8_t frame[3];
+    uint32_t now = HAL_GetTick();
+
+    if ((uint32_t)(now - last_tx_tick) < SCRAM_LINK_PERIOD_MS) return;
+    last_tx_tick = now;
+    (void)Remote_GetState(&state);
+
+    frame[0] = SCRAM_LINK_FRAME_HEAD_0;
+    frame[1] = SCRAM_LINK_FRAME_HEAD_1;
+    frame[2] = (uint8_t)(state.switch_state &
+                         (SCRAM_PA1_BIT | SCRAM_PA0_BIT | SCRAM_PC3_BIT));
+    (void)HAL_UART_Transmit(&huart7, frame, (uint16_t)sizeof(frame), 10U);
 }

@@ -1,7 +1,3 @@
-/*
- * @file rs05.h
- * @brief rs05模块的用户接口与实现。
- */
 
 #ifndef RS05_H
 #define RS05_H
@@ -35,11 +31,11 @@
 
 typedef enum
 {
-    RS_MODE_STOP = 0U, /* 当前工作模式或状态。 */
-    RS_MODE_DAMPING, /* 当前工作模式或状态。 */
-    RS_MODE_SPEED, /* 当前工作模式或状态。 */
-    RS_MODE_POSITION, /* 当前工作模式或状态。 */
-    RS_MODE_MIT /* 当前工作模式或状态。 */
+    RS_MODE_STOP = 0U,
+    RS_MODE_DAMPING,
+    RS_MODE_SPEED,
+    RS_MODE_POSITION,
+    RS_MODE_MIT
 } rs_mode_t;
 #endif
 
@@ -57,10 +53,10 @@ typedef struct
     bool cascade_configured;
     float mit_kp, mit_kd;
 
-    FDCAN_HandleTypeDef *hcan; /* 对应外设句柄。 */
+    FDCAN_HandleTypeDef *hcan;
     uint8_t id;
     int direction;
-    rs_mode_t mode; /* 当前工作模式或状态。 */
+    rs_mode_t mode;
     float target;
     float hold_position;
     float reference_position;
@@ -101,7 +97,7 @@ typedef struct
     uint32_t speed_planner_tick;
     bool speed_planner_valid;
     float tau_ff_nm;
-    uint8_t run_mode; /* 当前工作模式或状态。 */
+    uint8_t run_mode;
 } rs05_t;
 
 extern volatile float rs05_trajectory_max_speed_rad_s;
@@ -114,7 +110,6 @@ extern volatile float rs05_speed_accel_rad_s2;
 extern volatile float rs_recovery_max_speed_rad_s;
 extern volatile float rs_recovery_max_acceleration_rad_s2;
 
-/* 功能：处理RS05_RecoveryVelocity对应的输入并更新相关状态。 */
 float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_rad_s, float dt_s);
 #define RS05_POSITION_MIN (-12.57f)
 #define RS05_POSITION_MAX (12.57f)
@@ -128,35 +123,26 @@ float RS05_RecoveryVelocity(float error_rad, float previous_rad_s, float actual_
 #define RS05_TRAJECTORY_PERIOD_MS (2U)
 #define RS05_TRAJECTORY_EPSILON_RAD (0.000001f)
 
-/* 功能：初始化RS05_Init对应的外设、参数和运行状态。 */
-HAL_StatusTypeDef RS05_Init(rs05_t *motor                     ,
-                            FDCAN_HandleTypeDef *hcan                    , uint8_t id                 ,
-                            int direction                       );
+HAL_StatusTypeDef RS05_Init(rs05_t *motor,
+                            FDCAN_HandleTypeDef *hcan, uint8_t id,
+                            int direction);
 
-/* 功能：构建RS05_BuildSpecial需要发送的通信帧或控制指令。 */
-bool RS05_BuildSpecial(rs05_t *motor                       , uint8_t command             );
+bool RS05_BuildSpecial(rs05_t *motor, uint8_t command);
 
-/* 功能：设置RS05_SetTargetBasic对应的目标值或工作模式。 */
-void RS05_SetTargetBasic(rs05_t *motor                      , rs_mode_t mode              , /* 当前工作模式或状态。 */
-                         float target                      );
+void RS05_SetTargetBasic(rs05_t *motor, rs_mode_t mode,
+                         float target);
 
-/* 功能：发送RS05_Send对应的数据或控制指令。 */
-bool RS05_Send(rs05_t *motor                      );
+bool RS05_Send(rs05_t *motor);
 
-/* 功能：接收并解析RS05_OnFrame对应的输入数据，更新模块状态。 */
-bool RS05_OnFrame(rs05_t *motor                      , const can_frame_t *frame                     );
+bool RS05_OnFrame(rs05_t *motor, const can_frame_t *frame);
 
-/* 功能：停止RS05_Stop对应的输出并清理运行状态。 */
-bool RS05_Stop(rs05_t *motor                    );
+bool RS05_Stop(rs05_t *motor);
 
-/* 功能：执行RS05_Service对应的周期任务并维护运行状态。 */
-void RS05_Service(rs05_t *motor                             );
+void RS05_Service(rs05_t *motor);
 
-/* 功能：读取RS05_GetPositionDegrees对应的数据或运行状态。 */
-void RS05_GetPositionDegrees(const rs05_t *motor                      ,
-                             volatile float *position_degrees                      );
+void RS05_GetPositionDegrees(const rs05_t *motor,
+                             volatile float *position_degrees);
 
-/* 功能：设置RS05_SetTargetMIT对应的 MIT 控制目标。 */
 void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS05_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS05_SetTarget(...) RS05_TARGET_SELECT(__VA_ARGS__, RS05_SetTargetMIT, RS05_SetTargetBasic)(__VA_ARGS__)
@@ -165,7 +151,7 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS05_POSITION_PID_KI 0.0f
 #define RS05_POSITION_PID_KD 0.0f
 #define RS05_POSITION_PID_I_LIMIT 0.0f
-#define RS05_POSITION_SPEED_LIMIT 0.5f
+#define RS05_POSITION_SPEED_LIMIT 50.2655f
 #define RS05_SPEED_PID_KP 1.0f
 #define RS05_SPEED_PID_KI 0.1f
 #define RS05_SPEED_PID_KD 0.0f

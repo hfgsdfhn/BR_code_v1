@@ -1,7 +1,3 @@
-/*
- * @file flash.h
- * @brief flash模块的用户接口与实现。
- */
 
 #ifndef USER_FLASH_H
 #define USER_FLASH_H
@@ -33,26 +29,20 @@ typedef struct
 #define FLASH_CMD_SECTOR_ERASE 0x20U
 #define FLASH_CMD_DEVICE_ID 0x90U
 
-/* 功能：处理Flash_ReadId对应的输入并更新相关状态。 */
 uint16_t Flash_ReadId(void);
 
-/* 功能：处理Flash_Read对应的输入并更新相关状态。 */
-bool Flash_Read(uint32_t address                      , uint8_t *data                    ,
-                uint16_t size                );
+bool Flash_Read(uint32_t address, uint8_t *data,
+                uint16_t size);
 
-/* 功能：处理Flash_WritePage对应的输入并更新相关状态。 */
-bool Flash_WritePage(uint32_t address                       ,
-                     const uint8_t *data                  , uint16_t size                 );
+bool Flash_WritePage(uint32_t address,
+                     const uint8_t *data, uint16_t size);
 
-/* 功能：处理Flash_EraseSector对应的输入并更新相关状态。 */
-bool Flash_EraseSector(uint32_t address                   );
+bool Flash_EraseSector(uint32_t address);
 
-/* 功能：处理Flash_LoadMotorAngle对应的输入并更新相关状态。 */
-bool Flash_LoadMotorAngle(uint8_t slot                       ,
-                          float *angle                          );
+bool Flash_LoadMotorAngle(uint8_t slot,
+                          float *angle);
 
-/* 功能：处理Flash_SaveMotorAngle对应的输入并更新相关状态。 */
-bool Flash_SaveMotorAngle(uint8_t slot                       ,
-                          float angle                      );
+bool Flash_SaveMotorAngle(uint8_t slot,
+                          float angle);
 
 #endif

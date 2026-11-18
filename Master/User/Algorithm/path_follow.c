@@ -1,7 +1,3 @@
-/*
- * @file path_follow.c
- * @brief path_follow模块的用户接口与实现。
- */
 
 #include "path_follow.h"
 #include <math.h>
@@ -16,13 +12,11 @@ typedef struct
     float velocity;
 } path_point_t;
 
-/* 功能：处理PathFollow_Abs对应的输入并更新相关状态。 */
 static float PathFollow_Abs(float value)
 {
     return (value < 0.0f) ? -value : value;
 }
 
-/* 功能：处理PathFollow_Clamp对应的输入并更新相关状态。 */
 static float PathFollow_Clamp(float value, float limit)
 {
     limit = PathFollow_Abs(limit);
@@ -37,7 +31,6 @@ static float PathFollow_Clamp(float value, float limit)
     return value;
 }
 
-/* 功能：处理PathFollow_WrapPi对应的输入并更新相关状态。 */
 static float PathFollow_WrapPi(float angle)
 {
     while (angle >= 3.1415926f)
@@ -51,7 +44,6 @@ static float PathFollow_WrapPi(float angle)
     return angle;
 }
 
-/* 功能：初始化PathFollow_Init对应的外设、参数和运行状态。 */
 bool PathFollow_Init(path_follow_t *follow,
                      const void *path,
                      uint16_t path_size,
@@ -82,7 +74,6 @@ bool PathFollow_Init(path_follow_t *follow,
     return true;
 }
 
-/* 功能：重置或释放PathFollow_Reset对应的内部状态和资源。 */
 void PathFollow_Reset(path_follow_t *follow)
 {
     if (follow != 0)
@@ -92,7 +83,6 @@ void PathFollow_Reset(path_follow_t *follow)
     }
 }
 
-/* 功能：计算PathFollow_Calc对应的控制量或规划结果。 */
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,
@@ -132,7 +122,6 @@ bool PathFollow_Calc(path_follow_t *follow,
         return true;
     }
 
-    /*------------------------ 搜索最近距离 ------------------------*/
     points = (const path_point_t *)follow->path;
     nearest = &points[follow->nearest_index];
     nearest_distance = 1.0e30f;
@@ -149,7 +138,7 @@ bool PathFollow_Calc(path_follow_t *follow,
         }
     }
 
-    target_s = nearest->s + follow->lookahead_mm;   //根据前视距离选择目标点
+    target_s = nearest->s + follow->lookahead_mm;
     target_index = follow->nearest_index;
     while ((target_index + 1U < follow->path_size) &&
            (points[target_index + 1U].s < target_s))
@@ -158,7 +147,6 @@ bool PathFollow_Calc(path_follow_t *follow,
     }
     target = &points[target_index];
 
-    /* 前视目标到达路径末点后停止该段路径追踪。 */
     if (target_index == follow->path_size - 1U)
     {
         follow->finished = true;

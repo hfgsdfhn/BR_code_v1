@@ -1,7 +1,3 @@
-/*
- * @file suction_cup.h
- * @brief suction_cup模块的用户接口与实现。
- */
 
 #ifndef SUCTION_CUP_H
 #define SUCTION_CUP_H
@@ -15,7 +11,7 @@
 typedef struct
 {
     uint8_t frame[STP23L_FRAME_SIZE];
-    uint16_t index; /* 元素索引。 */
+    uint16_t index;
 } suction_stp23l_parser_t;
 
 extern m2006_t m2006_ucup[2];
@@ -32,12 +28,8 @@ extern volatile float dstp23l_distance_cm;
 void UStp23lRx(const uint8_t *data, uint16_t size);
 void DStp23lRx(const uint8_t *data, uint16_t size);
 
-/* 功能：初始化SuctionCup_Init对应的外设、参数和运行状态。 */
 void SuctionCup_Init(void);
-/* 功能：接收并解析SuctionCup_OnFrame对应的输入数据，更新模块状态。 */
 void SuctionCup_OnFrame(const can_frame_t *frame);
-/* 功能：执行SuctionCup_Service对应的周期任务并维护运行状态。 */
 void SuctionCup_Service(void);
-/* 功能：执行SuctionCup_Task对应的周期任务并维护运行状态。 */
 void SuctionCup_Task(void *argument);
 #endif

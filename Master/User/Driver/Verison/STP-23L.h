@@ -1,7 +1,3 @@
-/*
- * @file STP-23L.h
- * @brief STP-23L模块的用户接口与实现。
- */
 
 #ifndef STP23L_H
 #define STP23L_H
@@ -56,25 +52,18 @@ extern "C"
         uint32_t last_frame_tick;
     } STP23L_Stats;
 
-/* 功能：初始化模块并准备外设资源。 */
     HAL_StatusTypeDef STP23L_Init(UART_HandleTypeDef *uart_handle);
 
-/* 功能：完成STP23L_HandleUartRxComplete对应的数据处理。 */
     void STP23L_HandleUartRxComplete(UART_HandleTypeDef *uart_handle);
 
-/* 功能：记录并处理错误状态。 */
     void STP23L_HandleUartError(UART_HandleTypeDef *uart_handle);
 
-/* 功能：读取STP23L_GetLatestFrame对应的数据或运行状态。 */
     uint8_t STP23L_GetLatestFrame(STP23L_Frame *frame);
 
-/* 功能：读取STP23L_GetAverageDistance对应的数据或运行状态。 */
     uint8_t STP23L_GetAverageDistance(uint8_t minimum_confidence, uint16_t *distance_mm);
 
-/* 功能：判断STP23L_IsOnline对应的运行条件是否满足。 */
     uint8_t STP23L_IsOnline(uint32_t timeout_ms);
 
-/* 功能：读取STP23L_GetStats对应的数据或运行状态。 */
     void STP23L_GetStats(STP23L_Stats *stats);
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-﻿#include "chassis.h"
+#include "chassis.h"
 #include <stddef.h>
 #include "board_can.h"
 #include "math.h"
@@ -22,7 +22,6 @@ static float T_Speed_Control(float current, float target, float step)
             current = target;
         }
     }
-    /* 减速 */
     else if (current > target)
     {
         current -= step;
@@ -53,13 +52,13 @@ void joy_to_mps(const remote_t *remote, chassis_speed_t *speed)
         speed->vw = 0.0f;
         return;
     }
-    
+
     target_vx = joystick_axis_to_unit(remote->joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     target_vy = joystick_axis_to_unit(remote->joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     if(remote->shoulder_left == 1) target_vw = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
     else if(remote->shoulder_left == 3) target_vw = -CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S;
     else target_vw = 0.0f;
-    
+
     speed->vx = T_Speed_Control(speed->vx, target_vx, CHASSIS_LINEAR_SPEED_STEP_MPS);
     speed->vy = T_Speed_Control(speed->vy, target_vy, CHASSIS_LINEAR_SPEED_STEP_MPS);
     speed->vw = T_Speed_Control(speed->vw, target_vw, CHASSIS_ANGULAR_SPEED_STEP_RAD_S);

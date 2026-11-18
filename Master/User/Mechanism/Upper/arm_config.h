@@ -1,7 +1,3 @@
-﻿/*
- * @file arm_config.h
- * @brief arm_config 模块的用户接口与实现。
- */
 
 #ifndef BR_ARM_CONFIG_H
 #define BR_ARM_CONFIG_H
@@ -10,12 +6,12 @@
 #include "../../Driver/Motor/RS_01/rs01.h"
 #include "../../Driver/Motor/RS_05/rs05.h"
 
-#define BR_ROOT_M2006_TRAJECTORY_TIME_S 0.0f
-#define BR_ROOT_RS01_TRAJECTORY_TIME_S 0.0f
-#define BR_BIG_ARM_RS00_TRAJECTORY_TIME_S 0.0f
-#define BR_SMALL_ARM_RS00_TRAJECTORY_TIME_S 0.0f
-#define BR_J4310_TRAJECTORY_TIME_S 0.0f
-#define BR_RS05_TRAJECTORY_TIME_S 0.0f
+extern volatile float br_root_m2006_trajectory_time_s;
+extern volatile float br_root_rs01_trajectory_time_s;
+extern volatile float br_big_arm_rs00_trajectory_time_s;
+extern volatile float br_small_arm_rs00_trajectory_time_s;
+extern volatile float br_j4310_trajectory_time_s;
+extern volatile float br_rs05_trajectory_time_s;
 extern volatile float br_shoulder_kp;
 extern volatile float br_shoulder_kd;
 extern volatile float br_elbow_kp;
@@ -43,7 +39,6 @@ extern rs05_t rs05_larm, rs05_rarm;
 extern j4310_t j4310_larm, j4310_rarm;
 extern rs01_t rs01_rarm;
 
-/* 功能：处理configure_motor_gains对应的输入并更新相关状态。 */
 static inline void configure_motor_gains(void)
 {
     rs00_larm[0].mit_kp = br_shoulder_kp;

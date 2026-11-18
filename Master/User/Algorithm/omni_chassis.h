@@ -1,7 +1,3 @@
-/*
- * @file omni_chassis.h
- * @brief omni_chassis模块的用户接口与实现。
- */
 
 #ifndef OMNI_CHASSIS_H
 #define OMNI_CHASSIS_H
@@ -19,45 +15,41 @@ typedef struct {
     float vx;
     float vy;
     float vw;
-} chassis_speed_t;   // 底盘三轴速度
+} chassis_speed_t;
 
 typedef struct {
     float lf;
     float rf;
     float lr;
     float rr;
-} wheel_speed_t;     // 四轮轮速
+} wheel_speed_t;
 
 typedef struct {
     float x;
     float y;
     float yaw;
-} chassis_position_t; // 底盘位置
+} chassis_position_t;
 
 typedef struct {
-    wheel_speed_t   wheel;   // 当前真实轮速（从编码器反馈换算）
-    chassis_speed_t speed;   // 当前真实底盘速度（由轮速逆解算得）
-    chassis_position_t position; // 当前真实位置
+    wheel_speed_t   wheel;
+    chassis_speed_t speed;
+    chassis_position_t position;
 } chassis_state_t;
 
 typedef struct {
-    chassis_state_t state;        // 当前真实状态
-    chassis_speed_t target_speed; // 目标速度（决策层下发）
-    wheel_speed_t   target_wheel; // 目标轮速（由目标速度解算得到）
-    chassis_speed_t command_speed; // 发送最终应用的速度的速度
-    chassis_speed_t last_speed;    // 上一时刻的速度（用于计算加速度）
-    chassis_position_t target_position; // 目标位置（由决策层下发）
+    chassis_state_t state;
+    chassis_speed_t target_speed;
+    wheel_speed_t   target_wheel;
+    chassis_speed_t command_speed;
+    chassis_speed_t last_speed;
+    chassis_position_t target_position;
 } omni_chassis_t;
 
 extern omni_chassis_t chassis;
 
-/* 功能：处理chassis_set_speed对应的输入并更新相关状态。 */
 void chassis_set_speed(void);
-/* 功能：读取chassis_get_speed对应的数据或运行状态。 */
 void chassis_get_speed(void);
-/* 功能：处理Chassis_BodyToWorld对应的输入并更新相关状态。 */
 void Chassis_BodyToWorld(void);
-/* 功能：处理Chassis_WheelSpeedToYawRate对应的输入并更新相关状态。 */
 float Chassis_WheelSpeedToYawRate(float wheel_speed);
 
 #endif

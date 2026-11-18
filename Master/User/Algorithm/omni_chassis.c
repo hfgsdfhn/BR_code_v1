@@ -1,25 +1,10 @@
-/*
- * @file omni_chassis.c
- * @brief omni_chassis模块的用户接口与实现。
- */
 
-/**
- * @file omni_chassis.c
- * @author wmy
- * @brief 全向轮底盘解算，逆解算
- * @version 0.1
- * @date 2026-09-05
- *
- * @copyright 版权所有 (c) 2026
- *
- */
 #include "omni_chassis.h"
 #include "Chassis_Task.h"
 #include "math.h"
 
-omni_chassis_t chassis = {0};  // 初始化为0
+omni_chassis_t chassis = {0};
 
-// 正运动学：目标速度 → 目标轮速
 void chassis_set_speed(void)
 {
     float vx = chassis.command_speed.vx;
@@ -32,7 +17,6 @@ void chassis_set_speed(void)
     chassis.target_wheel.rr = -(sin45 * (vx - vy) - CHASSIS_RADIUS * vw) * MPS_TO_ERPM;
 }
 
-// 逆运动学：当前轮速 → 当前底盘速度
 void chassis_get_speed(void)
 {
     float lf = chassis.state.wheel.lf;
@@ -45,13 +29,11 @@ void chassis_get_speed(void)
     chassis.state.speed.vw = (-lf + rf - lr + rr) / (4.0f * CHASSIS_RADIUS);
 }
 
-// 线速度转角速度
 float Chassis_WheelSpeedToYawRate(float wheel_speed)
 {
     return wheel_speed / CHASSIS_RADIUS;
 }
 
-// 车身坐标系 → 世界坐标系
 void Chassis_BodyToWorld(void)
 {
     float body_vx = chassis.target_speed.vx;

@@ -1,7 +1,3 @@
-﻿/*
- * @file my_main.c
- * @brief my_main?????????????????
- */
 
 #include "my_main.h"
 #include "upper.h"
@@ -52,7 +48,6 @@ static const osThreadAttr_t can_rx_task_attributes = {
     .priority = osPriorityNormal,
 };
 
-/* ?????????? */
 void Error_FaultCapture(Error_Code code, uint32_t *stack)
 {
     g_error_code = code;
@@ -70,14 +65,12 @@ void Error_FaultCapture(Error_Code code, uint32_t *stack)
     }
 }
 
-/* ?????????? */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     (void)huart;
 }
 
- 
-/* 功能：执行 My_Init 函数对应的模块操作。 */
+
 void My_Init(void)
 {
     hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -119,7 +112,6 @@ void My_Init(void)
     Remote_Init();
 }
 
-/* ?????????? */
 void My_RtosInit(void)
 {
 

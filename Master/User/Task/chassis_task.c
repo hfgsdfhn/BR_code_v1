@@ -1,4 +1,4 @@
-﻿#include "chassis_task.h"
+#include "chassis_task.h"
 #include "status_task.h"
 #include "chassis.h"
 #include "board_can.h"
@@ -30,4 +30,3 @@ void Chassis_Task_(void *argument)
         osDelayUntil(tick);
     }
 }
-

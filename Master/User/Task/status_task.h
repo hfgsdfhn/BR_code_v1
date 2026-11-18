@@ -1,4 +1,4 @@
-﻿#ifndef STATUS_TASK_H
+#ifndef STATUS_TASK_H
 #define STATUS_TASK_H
 
 #include "mins_imu.h"
@@ -63,5 +63,3 @@ void Send_to_Cup(void);
 void Status_Task(void *argument);
 
 #endif
-
-

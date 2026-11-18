@@ -6,7 +6,7 @@
 #include "usart.h"
 #include <string.h>
 
-static remote_port_t ports[REMOTE_PORT_COUNT];
+remote_port_t ports[REMOTE_PORT_COUNT];
 static uint8_t lora_frame_state;
 
 static void RemoteLink_ApplyLoraStatus(uint8_t status)
@@ -14,9 +14,9 @@ static void RemoteLink_ApplyLoraStatus(uint8_t status)
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3 | GPIO_PIN_5,
                       (status & (1U << 3)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15,
-                      (status & (1U << 2)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                      (status & (1U << 4)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,
-                      (status & (1U << 1)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                      (status & (1U << 5)) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 static void RemoteLink_ProcessLoraByte(uint8_t byte)
@@ -31,7 +31,7 @@ static void RemoteLink_ProcessLoraByte(uint8_t byte)
         else lora_frame_state = (byte == 0xA5U) ? 1U : 0U;
         break;
     default:
-        RemoteLink_ApplyLoraStatus((uint8_t)(byte & 0x0FU));
+        RemoteLink_ApplyLoraStatus(byte);
         lora_frame_state = 0U;
         break;
     }
@@ -152,7 +152,7 @@ static void RemoteLink_Forward(remote_port_t *source, remote_port_t *target)
         source->rx_consumed = produced;
         return;
     }
-    if (source == &ports[REMOTE_LORA_PORT]) {
+    if (source == &ports[REMOTE_LORA_PORT] || source == &ports[REMOTE_HOST_PORT]) {
         uint32_t parse_start = source->lora_parsed;
         if (produced - parse_start > REMOTE_RX_SIZE)
             parse_start = produced - REMOTE_RX_SIZE;

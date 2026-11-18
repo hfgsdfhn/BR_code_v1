@@ -1,7 +1,3 @@
-/*
- * @file mins_imu.c
- * @brief mins_imu模块的用户接口与实现。
- */
 
 #include "mins_imu.h"
 
@@ -98,6 +94,6 @@ HAL_StatusTypeDef Mins_Imu_SetActiveReport(UART_HandleTypeDef *uart)
     {
         return HAL_ERROR;
     }
-    
+
     return HAL_UART_Transmit(uart, command, sizeof(command), 100U);
 }
