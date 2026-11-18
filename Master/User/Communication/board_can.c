@@ -2,8 +2,8 @@
 #include "string.h"
 static float leg_pid_config[3][3] = 
 {
-    {0.1f, 0.0f,  0.0f},
-    {10.0f, 0.0f, 10.0f},
+    {0.058f, 0.0f,  0.0f},
+    {10.0f, 4.0f, 10.0f},
     {15.0f, 0.5f,  10.0f},
 };
 DJI_Board DJI_Board_Target;

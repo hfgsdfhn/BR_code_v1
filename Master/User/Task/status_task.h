@@ -14,6 +14,8 @@ struct send_to_chassis_t
     chassis_speed_t target_speed;
     float target_yaw;
     float current_yaw;
+    uint8_t L2_up_flag;
+    uint8_t j4_up_flag;
 };
 
 typedef struct

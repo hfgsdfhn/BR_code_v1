@@ -29,7 +29,7 @@ void My_Init(void)
     for (int i = 0; i < 4; i++)
     {
         PID_Init(&leg_position_pid[i], PID_K[0][0], PID_K[0][1], PID_K[0][2], 5.0f, 2900.0f, 0.0f);
-        PID_Init(&leg_speed_pid[i],    PID_K[1][0], PID_K[1][1], PID_K[1][2], 5.0f, 16000.0f, 3000.0f);
+        PID_Init(&leg_speed_pid[i],    PID_K[1][0], PID_K[1][1], PID_K[1][2], 5.0f, 16000.0f, 2000.0f);
         PID_Init(&wheel_speed_pid[i],  PID_K[2][0], PID_K[2][1], PID_K[2][2], 5.0f, 10000.0f, 1000.0f);
 
         // 初始化电机 (CAN2)
@@ -56,6 +56,7 @@ void My_Loop(void)
 
         if (m3508_zeroed == 0U)
         {
+					
             DjiMotor_SetZero(M3508, 4U);
             for (int i = 0; i < 4; i++)
             {
@@ -75,10 +76,10 @@ void My_Loop(void)
         /* 重力补偿参数 */
         static const float grav_comp_target[4] = { 5500.0f, 3200.0f, 1300.0f, 7000.0f }; 
         static const float grav_deadband_mm    = 10.0f;    
-        static const float grav_full_mm        = 40.0f;  
+        static const float grav_full_mm        = 30.0f;  
 
         /* ================= 新增：调用封装函数计算同步补偿 ================= */
-        static const float K_sync = 0.05f;  
+        static const float K_sync = 0.0f;  
 
         // 构建结构体指针数组，指向 M3508 的 4 个电机
         dji_motor_t *leg_motors[4] = { &M3508[0], &M3508[1], &M3508[2], &M3508[3] };
@@ -102,7 +103,7 @@ void My_Loop(void)
 
             /* --- 使用同步补偿 --- */
             // 如果 sync_comp[i] > 0 (腿偏短跑慢了)，减去它相当于给正的加速指令
-            v_ref -= sync_comp[i]; 
+            v_ref += sync_comp[i]; 
 
             /* 腿部速度环 */
             v_cur = M3508[i].speed_rpm; // 结构体里的速度反馈
@@ -212,7 +213,7 @@ static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float target_height[4]
     // 1. 计算每条腿的 当前位置 - 目标位置 的差值，并累加
     for (int i = 0; i < 4; i++)
     {
-        err[i] = motors[i]->total_encoder - target_height[i];
+        err[i] = target_height[i] - motors[i]->total_encoder;
         err_sum += err[i];
     }
     
@@ -223,15 +224,7 @@ static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float target_height[4]
     for (int i = 0; i < 4; i++)
     {
         float sync_err = err[i] - err_avg; 
-        
-        // --- 死区检测 ---
-        if (sync_err < 3000.0f && sync_err > -3000.0f) 
-        {
-            comp_out[i] = 0.0f;
-        }
-        else
-        {
+    
             comp_out[i] = k_sync * sync_err; 
-        }
     }
 }

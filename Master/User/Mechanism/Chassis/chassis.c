@@ -124,6 +124,7 @@ void joy_to_mps(send_to_chassis_t *send)
 
 void key_to_chassis(send_to_chassis_t *send)
 {
+    static uint8_t l2_up_flag;
     uint8_t pe0_pressed;
     uint8_t pe1_pressed;
 
@@ -143,36 +144,29 @@ void key_to_chassis(send_to_chassis_t *send)
     {
         persent += 0.001f;
         if(persent >1.0f) persent = 1.0f;
-        M2006_wheel_ctrl(pe1_pressed ? CHASSIS_WHEEL_JOG_SPEED_MPS * persent
-                                    : -CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
+        M2006_wheel_ctrl(pe1_pressed ? -CHASSIS_WHEEL_JOG_SPEED_MPS * persent
+                                    : CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
     }
 
-    if ((send->remote.online == 0U) || (g_imu.update_count == 0U))
+    if (key_is_pressed(REMOTE_KEY_PE6))
     {
-        return;
+        l2_up_flag = (uint8_t)((l2_up_flag + 1U) % 7U);
     }
+    send->L2_up_flag = l2_up_flag;
 
-    // if (key_is_pressed(REMOTE_KEY_PE6))
-    // {
-    //     leg_target_pos_a +=  leg_pos;     //一块升
-
-    // }
-    // if (key_is_pressed(REMOTE_KEY_PE3))
-    // {
-    //     leg_target_pos_f -=  leg_pos;     //前腿收
-    // }
-    // if (key_is_pressed(REMOTE_KEY_PE5))
-    // {
-    //     leg_target_pos_b -=  leg_pos;    //后退收 
-    // }
-    // if (key_is_pressed(REMOTE_KEY_PE4))
-    // {
-    //     gpio_pd3 != gpio_pd3;
-    // }
-    // if (key_is_pressed(REMOTE_KEY_PE2))
-    // {
-    //     leg_target_pos_a -=  leg_pos;
-    // }
+    if (key_is_pressed(REMOTE_KEY_PE3))
+    {
+    }
+    if (key_is_pressed(REMOTE_KEY_PE5))
+    {
+    }
+    if (key_is_pressed(REMOTE_KEY_PE4))
+    {
+        gpio_pd3 = !gpio_pd3;
+    }
+    if (key_is_pressed(REMOTE_KEY_PE2))
+    {
+    }
 
     if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_1))
     {
@@ -199,9 +193,34 @@ void M2006_wheel_ctrl(float speed)
 
 void set_target_position(float posa,float front, float behind)
 {
-            DJI_Board_Target.leg_height_mm[0] = posa +behind; 
-            DJI_Board_Target.leg_height_mm[1] = posa +front; 
-            DJI_Board_Target.leg_height_mm[2] = posa +front; 
-            DJI_Board_Target.leg_height_mm[3] = posa +behind; 
+            DJI_Board_Target.leg_height_mm[0] = posa +front; 
+            DJI_Board_Target.leg_height_mm[1] = posa +behind; 
+            DJI_Board_Target.leg_height_mm[2] = posa +behind; 
+            DJI_Board_Target.leg_height_mm[3] = posa +front; 
     Send_Target_Pos(&hfdcan1, DJI_Board_Target.leg_height_mm);
+}
+void l2_leg_up(L2_Leg_up_e leg_up)
+{
+    switch (leg_up)
+    {
+    case l2_up_all_go:
+        set_target_position(320.0f, 0.0f, 9.6f);
+        break;
+    case l2_up_front_back:
+        set_target_position(320.0f, -320.0f, 9.6f);
+        break;
+    case l2_up_behind_back:
+        set_target_position(0.0f,0.0f,0.0f);
+        break;
+    case l2_down_behind_go:
+        set_target_position(0.0f, 0.0f, 329.6f);
+        break;
+    case l2_down_front_go:
+        set_target_position(320.0f, 0.0f, 9.6f);
+        break;
+    case l2_down_all_back:
+        set_target_position(0.0f, 0.0f, 0.0f);
+    default:
+        break;
+    }
 }

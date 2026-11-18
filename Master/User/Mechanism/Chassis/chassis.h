@@ -29,6 +29,16 @@ typedef enum
     hou,
 }DJI_leg_pos_e;
 
+typedef enum
+{
+    l2_up_all_go = 1,
+    l2_up_front_back,
+    l2_up_behind_back,
+    l2_down_behind_go,
+    l2_down_front_go,
+    l2_down_all_back,
+}L2_Leg_up_e;
+
 typedef struct DJI_Board DJI_Board;
 
 typedef struct
@@ -45,7 +55,7 @@ void M2006_wheel_ctrl(float speed);
 void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
 void set_target_position(float posa,float front, float behind);
-
+void l2_leg_up(L2_Leg_up_e leg_up);
 extern pid_t yaw_pid;
 
 #endif
