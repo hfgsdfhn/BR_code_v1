@@ -119,12 +119,11 @@ void DjiMotor_ParseFeedback(dji_motor_t *motor, const uint8_t *data)
         motor->encoder_turns = 0;
         // 第一次收到数据
         raw_total = (int32_t)encoder;
-        
         // 如果是第一次，offset 可能还没设置，如果没设默认为 0
         if (motor->dir > 0) {
             motor->total_encoder = raw_total - motor->offset;
         } else {
-            motor->total_encoder = -raw_total - motor->offset;
+            motor->total_encoder = -raw_total - motor->offset; 
         }
     }
     

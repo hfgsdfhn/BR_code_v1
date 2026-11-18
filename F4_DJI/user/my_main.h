@@ -8,7 +8,7 @@
 // 减速比 19.2，周长 60mm
 #define encoder_to_mm 0.001197815f
 #define RPM_TO_MPS_DIV 0.00016357f
-#define RPM_TO_SPEED 0.0000582f
+#define RPM_TO_SPEED 0.00005818
 // 统一变量名
 extern pid_t leg_position_pid[4];
 extern pid_t leg_speed_pid[4];

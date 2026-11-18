@@ -3,7 +3,7 @@
 volatile float PID_K[3][3] = {
     {1.0f, 0.0f, 0.0f},  // 第 0 套：腿部位置环
     {4.0f, 0.0f,0.0f},  // 第 1 套：腿部速度环
-    {8.1f, 1.3f, 0.0f}   // 第 2 套：轮子速度环
+    {15.0f, 0.5f, 10.0f}   // 第 2 套：轮子速度环
 };
 volatile float leg_height_mm[4] = {0};
 volatile float wheel_speed_mps[4] = {0};
@@ -44,6 +44,8 @@ void CAN_Parse_SmallBoard(CAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data)
         case 0x110: 
             for (int i = 0; i < 4; i++) {
                 leg_height_mm[i] = (float)MERGE_INT16(rx_data[i*2], rx_data[i*2+1]);
+                if(leg_height_mm[i] < 0.0f) leg_height_mm[i] = 0.0f;
+                if(leg_height_mm[i] > 800.0f) leg_height_mm[i] = 800.0f;
             }
             break;
 

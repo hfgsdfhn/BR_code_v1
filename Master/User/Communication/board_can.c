@@ -4,7 +4,7 @@ static float leg_pid_config[3][3] =
 {
     {0.1f, 0.0f,  0.0f},
     {10.0f, 0.0f, 10.0f},
-    {1.0f, 0.0f,  0.0f},
+    {15.0f, 0.5f,  10.0f},
 };
 DJI_Board DJI_Board_Target;
 DJI_Board DJI_Board_FeedBack;

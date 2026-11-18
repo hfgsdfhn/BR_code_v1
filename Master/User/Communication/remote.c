@@ -11,6 +11,7 @@ remote_t remote = {0};
 
 /* 内部接收缓冲区，用于处理半包/粘包 */
 #define REMOTE_FRAME_LEN 15U
+#define REMOTE_TIMEOUT_MS 100U
 static uint8_t rx_buffer[64] = {0};
 static uint16_t rx_index = 0;
 
@@ -170,14 +171,21 @@ void Remote_UartError(void)
 uint8_t Remote_GetState(remote_t *state)
 {
     uint32_t primask;
+    uint32_t current_tick;
 
     if (state == NULL)
     {
         return 0U;
     }
 
+    current_tick = HAL_GetTick();
     primask = __get_PRIMASK();
     __disable_irq();
+    if ((remote.online != 0U) &&
+        ((uint32_t)(current_tick - remote.last_update_tick) >= REMOTE_TIMEOUT_MS))
+    {
+        remote.online = 0U;
+    }
     *state = remote;
     __set_PRIMASK(primask);
     return state->online;

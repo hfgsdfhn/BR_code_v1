@@ -1,6 +1,7 @@
 #include "my_main.h"
 #include "board_can.h" // 引入小板解析出来的目标值
 #include "can.h"
+#include "math.h"
 #include <stddef.h>
 
 volatile uint8_t flag_motor_comm = 0; 
@@ -10,10 +11,10 @@ pid_t leg_speed_pid[4];
 pid_t wheel_speed_pid[4];
 dji_motor_t M2006[4];
 dji_motor_t M3508[4];
-static const int8_t m2006_dir[4] = { 1,  1,  1,  1 };
+static const int8_t m2006_dir[4] = { -1,  -1,  1,  1 };
 static const int8_t m3508_dir[4] = { 1, -1,  1, -1 };
 float debug_target;
-static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float comp_out[4], float k_sync);
+static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float target_height[4], float comp_out[4], float k_sync);
 float pid_use(pid_t *pid, float kp, float ki, float kd, float target, float feedback);
 
 float limit_abs(float value, float max)
@@ -29,7 +30,7 @@ void My_Init(void)
     {
         PID_Init(&leg_position_pid[i], PID_K[0][0], PID_K[0][1], PID_K[0][2], 5.0f, 2900.0f, 0.0f);
         PID_Init(&leg_speed_pid[i],    PID_K[1][0], PID_K[1][1], PID_K[1][2], 5.0f, 16000.0f, 3000.0f);
-        PID_Init(&wheel_speed_pid[i],  PID_K[2][0], PID_K[2][1], PID_K[2][2], 5.0f, 10000.0f, 3000.0f);
+        PID_Init(&wheel_speed_pid[i],  PID_K[2][0], PID_K[2][1], PID_K[2][2], 5.0f, 10000.0f, 1000.0f);
 
         // 初始化电机 (CAN2)
         DjiMotor_Init(&M2006[i], &hcan2, i + 1U, DJI_MOTOR_TYPE_M2006, m2006_dir[i]);
@@ -39,9 +40,30 @@ void My_Init(void)
 
 void My_Loop(void)
 {
+    static uint8_t m3508_zeroed = 0U;
+    
     if (flag_motor_comm)
     {
         flag_motor_comm = 0;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (M3508[i].encoder_ready == 0U)
+            {
+                return;
+            }
+        }
+
+        if (m3508_zeroed == 0U)
+        {
+            DjiMotor_SetZero(M3508, 4U);
+            for (int i = 0; i < 4; i++)
+            {
+                PID_Reset(&leg_position_pid[i]);
+                PID_Reset(&leg_speed_pid[i]);
+            }
+            m3508_zeroed = 1U;
+        }
 
         float h_ref, h_cur, v_ref, v_cur;
         float leg_out[4];
@@ -60,9 +82,13 @@ void My_Loop(void)
 
         // 构建结构体指针数组，指向 M3508 的 4 个电机
         dji_motor_t *leg_motors[4] = { &M3508[0], &M3508[1], &M3508[2], &M3508[3] };
-        
+        float target_height_enc[4];
+        for(int i = 0; i < 4; i++) {
+            // 把目标高度(mm)转成脉冲数
+            target_height_enc[i] = leg_height_mm[i] / encoder_to_mm; 
+        }
         // 调用函数计算补偿
-        Calc_Height_Sync_Comp(leg_motors, sync_comp, K_sync);
+        Calc_Height_Sync_Comp(leg_motors, target_height_enc, sync_comp, K_sync);
 
 
         /* ================= PID 计算（for 循环） ================= */
@@ -98,8 +124,9 @@ void My_Loop(void)
             w_ref = wheel_speed_mps[i] / RPM_TO_SPEED;
             w_cur = M2006[i].speed_rpm;
             whl_out[i] = pid_use(&wheel_speed_pid[i], PID_K[2][0], PID_K[2][1],
-                                PID_K[2][2], w_ref, w_cur);
-            whl_out[i] = limit_abs(whl_out[i], 10000.0f);
+                PID_K[2][2], w_ref, w_cur);
+                whl_out[i] = limit_abs(whl_out[i], 10000.0f);
+            if(fabsf(w_ref) < 0.05f) whl_out[i] = 0.0f;
         }
 
         /* ================= 电流输出 ================= */
@@ -176,28 +203,35 @@ float pid_use(pid_t *pid, float kp, float ki, float kd, float target, float feed
     return PID_Calc(pid, target, feedback);
 }
 
-/**
- * @brief  计算基于高度平均值的交叉同步补偿速度（适配 dji_motor_t 结构体）
- * @param  motors    指向 4 个 dji_motor_t 结构体指针的数组
- * @param  comp_out  长度为4的数组，输出计算出的速度补偿量
- * @param  k_sync    同步补偿系数 (单位: RPM / 编码器单位)
- */
-static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float comp_out[4], float k_sync)
+static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float target_height[4], float comp_out[4], float k_sync)
 {
-    float h_sum = 0.0f;
-    float h_avg = 0.0f;
+    float err_sum = 0.0f;
+    float err_avg = 0.0f;
+    float err[4] = {0}; // 保存每条腿的误差
 
-    // 1. 遍历结构体指针，累加四条腿的当前高度 (total_encoder)
+    // 1. 计算每条腿的 当前位置 - 目标位置 的差值，并累加
     for (int i = 0; i < 4; i++)
     {
-        h_sum += motors[i]->total_encoder;
+        err[i] = motors[i]->total_encoder - target_height[i];
+        err_sum += err[i];
     }
-    h_avg = h_sum / 4.0f;
+    
+    // 2. 求这 4 个差值的平均值
+    err_avg = err_sum / 4.0f;
 
-    // 2. 计算每条腿的补偿速度
+    // 3. 计算每条腿的补偿速度（加入死区过滤）
     for (int i = 0; i < 4; i++)
     {
-        float sync_err = motors[i]->total_encoder - h_avg;
-        comp_out[i] = k_sync * sync_err; 
+        float sync_err = err[i] - err_avg; 
+        
+        // --- 死区检测 ---
+        if (sync_err < 3000.0f && sync_err > -3000.0f) 
+        {
+            comp_out[i] = 0.0f;
+        }
+        else
+        {
+            comp_out[i] = k_sync * sync_err; 
+        }
     }
 }

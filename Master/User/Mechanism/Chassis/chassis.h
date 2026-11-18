@@ -48,9 +48,8 @@ typedef struct
     float current_yaw;
 }send_to_chassis_t;
 
-
 void chassis_init();
-void leg_M3508_ctrl(DJI_Board *dji_board,DJI_PID_type_e pid_type,uint8_t motor_id,float ki,float kd,float target);
+void M2006_wheel_ctrl(float speed);
 void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
 void set_target_position(float posa,float front, float behind);
