@@ -16,9 +16,9 @@ pid_t yaw_pid;
 pid_t turn_pid;
 float persent = 0.0f;
 
-float chassis_pid[2][3] = {
-    {6.1f, 0.0f, 5.0f},
-    {3.0f, 0.0f, 1.0f}
+float chassis_pid[2][4] = {
+    {6.0f, 0.0f, 0.0f,6.0f},
+    {4.0f, 0.0f, 0.0f, 5.0f}
 	};
 static float joystick_axis_to_unit(int16_t value)
 {
@@ -54,8 +54,8 @@ static float T_Speed_Control(float current, float target, float step)
 void chassis_init()
 {
     init_board();
-    PID_Init(&yaw_pid, chassis_pid[0][0], chassis_pid[0][1], chassis_pid[0][2],10.0f, 0.0f);
-    PID_Init(&turn_pid, chassis_pid[1][0], chassis_pid[1][1],chassis_pid[1][2],5.0f, 0.0f);
+    PID_Init(&yaw_pid, chassis_pid[0][0], chassis_pid[0][1], chassis_pid[0][2],chassis_pid[0][3], 1.0f);
+    PID_Init(&turn_pid, chassis_pid[1][0], chassis_pid[1][1],chassis_pid[1][2],chassis_pid[1][3], 1.0f);
 }
 
 
@@ -82,9 +82,7 @@ void joy_to_mps(send_to_chassis_t *send)
     target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     if (use_imu)
     {
-        float target_yaw_step = CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S
-                              * CHASSIS_CONTROL_PERIOD_S
-                              * CHASSIS_RAD_TO_DEG;
+        float target_yaw_step = 0.001;
 
         if (send->remote.shoulder_left == 1U)
         {
@@ -95,9 +93,11 @@ void joy_to_mps(send_to_chassis_t *send)
             send->target_yaw += target_yaw_step;
         }
         float yaw_error = fabsf(send->target_yaw - send->current_yaw);
-        if(yaw_error < 0.5f && yaw_error >0.02f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,CHASSIS_CONTROL_PERIOD_S);
-        else if(yaw_error >=0.5f)                target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,CHASSIS_CONTROL_PERIOD_S);
+        if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
+        else if(yaw_error >=1.57f)                target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
         else target_vw = 0.0f;
+        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
+                                             0.08f);
     }
     else
     {
@@ -112,14 +112,14 @@ void joy_to_mps(send_to_chassis_t *send)
         else
         {
             target_vw = 0.0f;
-        }
+        } 
+           send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
+                                             CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
     }
     send->target_speed.vx = T_Speed_Control(send->target_speed.vx, target_vx,
                                              CHASSIS_LINEAR_SPEED_STEP_MPS);
     send->target_speed.vy = T_Speed_Control(send->target_speed.vy, target_vy,
                                              CHASSIS_LINEAR_SPEED_STEP_MPS);
-    send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
-                                             CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
 }
 
 void key_to_chassis(send_to_chassis_t *send)

@@ -38,15 +38,7 @@ typedef struct
     float vw;
 }chassis_speed_t;
 
-typedef struct
-{
-    float dt35_right;
-    float dt35_behind;
-    remote_t remote;
-    chassis_speed_t target_speed;
-    float target_yaw;
-    float current_yaw;
-}send_to_chassis_t;
+typedef struct send_to_chassis_t send_to_chassis_t;
 
 void chassis_init();
 void M2006_wheel_ctrl(float speed);

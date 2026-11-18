@@ -432,7 +432,8 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
 
     m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX);
 
-    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio;
+    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) *
+                  RS01_ROOT_OUTPUT_RATIO;
 
     m->torque = dec(rdbe(&f->data[4]), -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
