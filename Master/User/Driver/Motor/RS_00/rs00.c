@@ -222,6 +222,7 @@ HAL_StatusTypeDef RS00_Init(rs00_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     memset(m, 0, sizeof(*m));
     m->mit_kp = RS00_MIT_POSITION_KP;
     m->mit_kd = RS00_MIT_VELOCITY_KD;
+    m->damping_kd = RS00_DAMPING_KD;
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
@@ -383,7 +384,7 @@ bool RS00_Send(rs00_t *m)
     }
     else if (m->mode == RS_MODE_DAMPING)
     {
-        kd = RS00_MIT_VELOCITY_KD;
+        kd = m->damping_kd;
     }
     else if (m->mode == RS_MODE_MIT)
     {

@@ -44,7 +44,6 @@ typedef enum
 #define RS01_ANGLE_PERIOD 6.28318530718f
 #define RS01_DEG_TO_RAD 0.017453292519943295f
 #define RS01_ROOT_OUTPUT_RATIO (14.0f / 45.0f)
-#define RS01_REDUCTION_RATIO 9.0f
 
 typedef struct
 {
@@ -57,6 +56,8 @@ typedef struct
     FDCAN_HandleTypeDef *hcan;
     uint8_t id;
     int direction;
+    /* Ratio from motor-side rotation to the mechanism output. */
+    float output_ratio;
     rs_mode_t mode;
     float target;
     float hold_position;
@@ -153,5 +154,6 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS01_CASCADE_PERIOD_S 0.002f
 #define RS01_MIT_POSITION_KP 20.0f
 #define RS01_MIT_VELOCITY_KD 1.0f
+#define RS01_DAMPING_KD 2.0f
 
 #endif

@@ -695,7 +695,7 @@ bool J4310_BuildControlFrame(j4310_t *motor,
         J4310_BuildMit(motor, motor->feedback.position_rad, 0, 0, 0, tq, frame);
     }
     else if (motor->mode == J4310_MODE_DAMPING)
-        J4310_BuildMit(motor, motor->feedback.position_rad, 0, 0, J4310_MIT_VELOCITY_KD, additional_torque_nm, frame);
+        J4310_BuildMit(motor, motor->feedback.position_rad, 0, 0, J4310_DAMPING_KD, additional_torque_nm, frame);
     else if (motor->mode == J4310_MODE_MIT)
     {
         if (motor->trajectory_pending)

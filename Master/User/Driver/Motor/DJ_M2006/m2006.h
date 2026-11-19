@@ -13,7 +13,7 @@
 #define M2006_DISABLE 0U
 #define M2006_MIN_TRAJECTORY_S 0.01f
 #define M2006_TRAJECTORY_EPSILON 0.000001f
-#define M2006_DAMPING_GAIN_A_PER_RAD_S 0.5f
+#define M2006_DAMPING_GAIN_A_PER_RAD_S 1.0f
 #define M2006_DAMPING_CURRENT_LIMIT_A 2.0f
 #define M2006_FEEDBACK_TIMEOUT_CYCLES 250U
 #define M2006_MOTOR_COUNT 8U
@@ -51,7 +51,6 @@ typedef struct
     uint16_t last_encoder;
     int32_t total_encoder;
     float output_ratio;
-    bool rotor_pid_units;
     int16_t speed_rpm;
     int16_t current_raw;
     float position_rad;

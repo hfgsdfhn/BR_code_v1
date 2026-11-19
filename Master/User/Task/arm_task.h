@@ -15,11 +15,34 @@ extern volatile uint8_t gpio_pd3;
 extern volatile uint8_t gpio_pd4;
 extern volatile uint8_t gpio_pd5;
 
-extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];
-extern volatile float arm_pose_pd14[2][ARM_JOINT_COUNT];
-extern volatile float arm_pose_pd14_2[2][ARM_JOINT_COUNT];
-extern volatile float arm_pose_pd15[2][ARM_JOINT_COUNT];
 extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd14[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd14[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd14[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd11[2][ARM_JOINT_COUNT];
 extern volatile uint8_t arm_joint_zero_calibration[2][5];
 
 void Arm_TaskInit(void);
@@ -30,3 +53,6 @@ void Arm_OnFrame(const can_frame_t *frame);
 bool Arm_TxQueueInit(void);
 
 #endif
+
+
+

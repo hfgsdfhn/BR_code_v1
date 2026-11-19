@@ -159,5 +159,6 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS05_CASCADE_PERIOD_S 0.002f
 #define RS05_MIT_POSITION_KP 20.0f
 #define RS05_MIT_VELOCITY_KD 1.0f
+#define RS05_DAMPING_KD 2.0f
 
 #endif

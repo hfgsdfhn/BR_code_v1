@@ -14,6 +14,8 @@
 
 #define ARM_OVERTEMP_PROTECTION_ENABLED 0U
 #define ARM_JOINT_COUNT 5U
+#define ARM_OVERTEMP_TRIP_TEMPERATURE_C 70.0f
+#define ARM_OVERTEMP_CLEAR_TEMPERATURE_C 65.0f
 #define ARM_LARM_INDEX 0U
 #define ARM_RARM_INDEX 1U
 #define larm ARM_LARM_INDEX
@@ -46,7 +48,6 @@ extern volatile float arm_end_position_world[2][3];
 extern volatile float arm_end_target_world[2][3];
 extern volatile uint8_t arm_ik_enable[2];
 extern volatile uint8_t arm_ik_second_rs00_prefer_small[2];
-extern volatile float br_arm_disable_delay_s;
 extern upper_t upper_state;
 extern Arm_Pos Arm_larm, Arm_rarm;
 extern m2006_t m2006_larm;

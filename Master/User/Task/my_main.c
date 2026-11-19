@@ -1,4 +1,4 @@
-
+﻿
 #include "my_main.h"
 #include "upper.h"
 #include "arm_task.h"
@@ -96,7 +96,7 @@ void My_Init(void)
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);
     RS00_Init(&rs00_larm[1], &hfdcan2, 3U, 1);
     J4310_Init(&j4310_larm, &hfdcan2, 4U, -1);
-    RS05_Init(&rs05_larm, &hfdcan2, 5U, 1);
+    RS05_Init(&rs05_larm, &hfdcan2, 5U, -1);
 
     RS01_Init(&rs01_rarm, &hfdcan3, 1U, -1);
     RS00_Init(&rs00_rarm[0], &hfdcan3, 2U, -1);

@@ -1,4 +1,4 @@
-﻿
+
 #include "upper.h"
 #include "cup_config.h"
 #include "cup_task.h"
@@ -8,6 +8,7 @@
 #include <string.h>
 
 extern volatile float arm_target[2][ARM_JOINT_COUNT];
+extern volatile float xarm_pose_pd11[2][ARM_JOINT_COUNT];
 extern volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 extern float br_joint_velocity[2][ARM_JOINT_COUNT];
 extern bool br_grip[2];
@@ -17,13 +18,13 @@ static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
 volatile float arm_end_position_world[2][3];
 volatile float arm_end_target_world[2][3];
-volatile uint8_t arm_ik_enable[2];
+volatile uint8_t arm_ik_enable[2] = {0U, 0U};
 volatile uint8_t arm_ik_second_rs00_prefer_small[2];
 upper_t upper_state;
 Arm_Pos Arm_larm, Arm_rarm;
 
 volatile float br_root_m2006_trajectory_time_s = 0.5f;
-volatile float br_root_rs01_trajectory_time_s = 1.0f;
+volatile float br_root_rs01_trajectory_time_s = 0.5f;
 volatile float br_big_arm_rs00_trajectory_time_s = 1.6f;
 volatile float br_small_arm_rs00_trajectory_time_s = 1.0f;
 volatile float br_j4310_trajectory_time_s = 0.5f;
@@ -37,7 +38,7 @@ volatile float br_wrist_kp = 20.0f;
 volatile float br_wrist_kd = 1.0f;
 volatile float br_rotation_kp = 20.0f;
 volatile float br_rotation_kd = 1.0f;
-volatile float br_root_rs01_kp = 10.0f;
+volatile float br_root_rs01_kp = 20.0f;
 volatile float br_root_rs01_kd = 1.0f;
 volatile float br_root_m2006_position_kp = 94.247779608f;
 volatile float br_root_m2006_position_ki = 52.359877560f;
@@ -47,14 +48,12 @@ volatile float br_root_m2006_speed_ki = 2.387324146f;
 volatile float br_root_m2006_speed_kd = 0.0f;
 volatile uint8_t g_rs_recovery_motion_release = 0U;
 
-volatile float br_arm_disable_delay_s = 3.0f;
-
-volatile uint8_t larm_manual_tau_enable = 1U;
+volatile uint8_t larm_manual_tau_enable = 0U;
 volatile float larm_shoulder_tau_nm = 0.0f;
 volatile float larm_elbow_tau_nm = 0.0f;
 volatile float larm_wrist_tau_nm = 0.0f;
 volatile float larm_rotation_tau_nm = 0.0f;
-volatile uint8_t rarm_manual_tau_enable = 1U;
+volatile uint8_t rarm_manual_tau_enable = 0U;
 volatile float rarm_shoulder_tau_nm = 0.0f;
 volatile float rarm_elbow_tau_nm = 0.0f;
 volatile float rarm_wrist_tau_nm = 0.0f;
@@ -121,9 +120,6 @@ void Upper_RefreshArmIK(uint8_t arm)
 }
 static uint32_t last_service_tick;
 static volatile bool arm_overtemp_latched[2];
-static bool arm_disable_pending;
-static uint32_t arm_disable_start_tick;
-static bool arm_enable_previous;
 
 
 bool apply_arm(uint8_t arm, uint8_t joint_index, float target_degrees)
@@ -195,6 +191,7 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
     if (arm_joint_zero_calibration[arm][joint] != 0U && !pending && at_zero)
     {
         arm_feedback_angle[arm][joint] = 0.0f;
+        arm_target[arm][joint] = xarm_pose_pd11[arm][joint];
         arm_joint_zero_calibration[arm][joint] = 0U;
         zero_calibration_previous[arm][joint] = 0U;
     }
@@ -242,12 +239,11 @@ void Upper_BindMotors(upper_t *upper)
     if (upper == NULL)
         return;
 
-    m2006_larm.output_ratio = 14.0f / 45.0f;
-    m2006_larm.rotor_pid_units = true;
-    rs01_rarm.output_ratio = RS01_ROOT_OUTPUT_RATIO;
-
-
     Upper_ApplyTrajectoryTimes();
+    rs00_larm[0].damping_kd = 2.0f;
+    rs00_larm[1].damping_kd = 4.0f;
+    rs00_rarm[0].damping_kd = 2.0f;
+    rs00_rarm[1].damping_kd = 4.0f;
     m3508_dcup[0].trajectory_time_s = BR_AUX_M3508_TRAJECTORY_TIME_S;
     m2006_dcup[0].trajectory_time_s = BR_M2006_CUP0_TRAJECTORY_TIME_S;
     m2006_ucup[0].trajectory_time_s = BR_M2006_CUP0_TRAJECTORY_TIME_S;
@@ -328,11 +324,13 @@ static bool Upper_ArmTemperatureSafe(unsigned arm)
     j4310_t *j4310 = arm == ARM_LARM_INDEX ? &j4310_larm : &j4310_rarm;
     rs01_t *rs01 = &rs01_rarm;
     if (!j4310->feedback.received) return true;
-    if (rs00[0].temperature_c >= 80.0f || rs00[1].temperature_c >= 80.0f ||
-        rs05->temperature_c >= 80.0f ||
-        j4310->feedback.mos_temperature >= 80U || j4310->feedback.rotor_temperature >= 80U)
+    if (rs00[0].temperature_c >= ARM_OVERTEMP_CLEAR_TEMPERATURE_C ||
+        rs00[1].temperature_c >= ARM_OVERTEMP_CLEAR_TEMPERATURE_C ||
+        rs05->temperature_c >= ARM_OVERTEMP_CLEAR_TEMPERATURE_C ||
+        j4310->feedback.mos_temperature >= ARM_OVERTEMP_CLEAR_TEMPERATURE_C ||
+        j4310->feedback.rotor_temperature >= ARM_OVERTEMP_CLEAR_TEMPERATURE_C)
         return false;
-    return arm == ARM_LARM_INDEX || rs01->temperature_c < 80.0f;
+    return arm == ARM_LARM_INDEX || rs01->temperature_c < ARM_OVERTEMP_CLEAR_TEMPERATURE_C;
 }
 
 static bool Upper_ArmTemperatureOverLimit(unsigned arm)
@@ -342,12 +340,13 @@ static bool Upper_ArmTemperatureOverLimit(unsigned arm)
     j4310_t *j4310 = arm == ARM_LARM_INDEX ? &j4310_larm : &j4310_rarm;
     rs01_t *rs01 = &rs01_rarm;
     if (!j4310->feedback.received) return false;
-    return rs00[0].temperature_c > 80.0f || rs00[1].temperature_c > 80.0f ||
-           rs05->temperature_c > 80.0f ||
-           j4310->feedback.mos_temperature > 80U || j4310->feedback.rotor_temperature > 80U ||
-           (arm == ARM_RARM_INDEX && rs01->temperature_c > 80.0f);
-}
-static void Upper_ApplyRecoveryState(unsigned arm, bool active)
+    return rs00[0].temperature_c > ARM_OVERTEMP_TRIP_TEMPERATURE_C ||
+           rs00[1].temperature_c > ARM_OVERTEMP_TRIP_TEMPERATURE_C ||
+           rs05->temperature_c > ARM_OVERTEMP_TRIP_TEMPERATURE_C ||
+           j4310->feedback.mos_temperature > ARM_OVERTEMP_TRIP_TEMPERATURE_C ||
+           j4310->feedback.rotor_temperature > ARM_OVERTEMP_TRIP_TEMPERATURE_C ||
+           (arm == ARM_RARM_INDEX && rs01->temperature_c > ARM_OVERTEMP_TRIP_TEMPERATURE_C);
+}static void Upper_ApplyRecoveryState(unsigned arm, bool active)
 {
     rs00_t *rs00 = arm == ARM_LARM_INDEX ? rs00_larm : rs00_rarm;
     rs05_t *rs05 = arm == ARM_LARM_INDEX ? &rs05_larm : &rs05_rarm;
@@ -363,7 +362,7 @@ static void Upper_ApplyRecoveryState(unsigned arm, bool active)
         for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; joint++)
         {
             arm_mode[arm][joint] = ARM_MODE_MIT;
-            arm_target[arm][joint] = 0.0f;
+            arm_target[arm][joint] = xarm_pose_pd11[arm][joint];
         }
     }
 }
@@ -372,62 +371,6 @@ bool Upper_IsArmOvertemperature(uint8_t arm)
 {
     return arm < 2U && arm_overtemp_latched[arm];
 }
-static void Upper_ApplyDisablePose(unsigned arm)
-{
-    rs00_t *rs00 = arm == ARM_LARM_INDEX ? rs00_larm : rs00_rarm;
-    rs05_t *rs05 = arm == ARM_LARM_INDEX ? &rs05_larm : &rs05_rarm;
-    j4310_t *j4310 = arm == ARM_LARM_INDEX ? &j4310_larm : &j4310_rarm;
-
-    if (arm == ARM_LARM_INDEX)
-    {
-        M2006_SetTargetDeferred(
-            &m2006_larm, M2006_MODE_POSITION,
-            (0.0f * ARM_DEG_TO_RAD - BR_LEFT_ROOT_START_RAD) /
-                BR_LEFT_ROOT_JOINT_PER_OUTPUT * ARM_RAD_TO_DEG);
-    }
-    else
-    {
-        RS01_SetTargetBasic(&rs01_rarm, RS_MODE_POSITION, 0.0f);
-    }
-    RS00_SetTargetBasic(&rs00[0], RS_MODE_POSITION, 20.0f);
-    RS00_SetTargetBasic(&rs00[1], RS_MODE_POSITION, 20.0f);
-    J4310_SetTargetBasic(j4310, J4310_MODE_POSITION, 20.0f);
-    RS05_SetTargetBasic(rs05, RS_MODE_POSITION, 0.0f);
-}
-
-static bool Upper_ShouldHoldDisablePose(uint32_t now, bool requested_enabled)
-{
-    float delay_s = br_arm_disable_delay_s;
-    uint32_t delay_ms;
-
-    if (requested_enabled)
-    {
-        arm_disable_pending = false;
-        return false;
-    }
-    if (arm_enable_previous)
-    {
-        arm_disable_pending = true;
-        arm_disable_start_tick = now;
-    }
-    if (!arm_disable_pending)
-        return false;
-
-    if (!isfinite(delay_s) || delay_s <= 0.0f)
-        delay_ms = 0U;
-    else if (delay_s >= 4294967.0f)
-        delay_ms = UINT32_MAX;
-    else
-        delay_ms = (uint32_t)(delay_s * 1000.0f + 0.5f);
-
-    if ((uint32_t)(now - arm_disable_start_tick) >= delay_ms)
-    {
-        arm_disable_pending = false;
-        return false;
-    }
-    return true;
-}
-
 static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float tau)
 {
     arm_mode_t mode = arm_mode[arm][joint];
@@ -509,10 +452,8 @@ void Upper_Service(uint32_t now) {
       Upper_ZeroCalibrationRequest(a, zero_joint);
   {
     bool requested_enabled = upper_state.enable != 0U;
-    bool hold_disable_pose = Upper_ShouldHoldDisablePose(now, requested_enabled);
-    arm_enable_previous = requested_enabled;
     for (a = 0U; a < 2U; a++) {
-    bool enabled = requested_enabled || hold_disable_pose;
+    bool enabled = requested_enabled;
     float q[BR_ARM_DOF] = {0}, q_deg[BR_ARM_DOF] = {0}, tau[BR_ARM_DOF] = {0};
     rs00_t *rs00 = a == 0U ? rs00_larm : rs00_rarm;
     rs05_t *rs05 = a == 0U ? &rs05_larm : &rs05_rarm;
@@ -541,6 +482,8 @@ void Upper_Service(uint32_t now) {
           arm_target[a][joint] = ik_target_deg[joint];
       }
     }
+    if (arm_overtemp_latched[a])
+      Upper_ApplyRecoveryState(a, true);
     upper_state.board[a].online = online;
     br_gravity_models[a].payload_mass_kg = 0.174f;
     if (a == ARM_LARM_INDEX)
@@ -559,7 +502,8 @@ void Upper_Service(uint32_t now) {
     }
     {
       const bool payload_attached =
-          (a == ARM_LARM_INDEX) ? (gpio_pd5 != 0U) : (gpio_pd6 != 0U);
+          (upper_state.enable == 0U) &&
+          ((a == ARM_LARM_INDEX) ? (gpio_pd5 != 0U) : (gpio_pd6 != 0U));
       upper_state.board[a].gravity_ready =
           online && BR_GravityEvaluate(&br_gravity_models[a], q,
                                        payload_attached, tau, NULL);
@@ -610,17 +554,16 @@ void Upper_Service(uint32_t now) {
         tau[ARM_JOINT_ROTATION] = rarm_rotation_tau_nm;
       }
     }
-    if (hold_disable_pose) {
-      Upper_ApplyDisablePose(a);
-    } else if (!enabled) {
-      RS00_SetTargetBasic(&rs00[0], RS_MODE_STOP, 0);
-      RS00_SetTargetBasic(&rs00[1], RS_MODE_STOP, 0);
-      RS05_SetTargetBasic(rs05, RS_MODE_STOP, 0);
-      J4310_SetTargetBasic(j4310, J4310_MODE_STOP, 0);
+    if (!enabled) {
+      memset(tau, 0, sizeof(tau));
+      RS00_SetTargetBasic(&rs00[0], RS_MODE_DAMPING, 0);
+      RS00_SetTargetBasic(&rs00[1], RS_MODE_DAMPING, 0);
+      RS05_SetTargetBasic(rs05, RS_MODE_DAMPING, 0);
+      J4310_SetTargetBasic(j4310, J4310_MODE_DAMPING, 0);
       if (a == 1U)
-        RS01_SetTargetBasic(&rs01_rarm, RS_MODE_STOP, 0);
+        RS01_SetTargetBasic(&rs01_rarm, RS_MODE_DAMPING, 0);
       else
-        M2006_SetTargetDeferred(&m2006_larm, M2006_MODE_STOP, 0);
+        M2006_SetTargetDeferred(&m2006_larm, M2006_MODE_DAMPING, 0);
     } else {
       apply_arm_motor(a == ARM_LARM_INDEX ? (void *)&m2006_larm
                                           : (void *)&rs01_rarm,
@@ -642,3 +585,5 @@ void Upper_Service(uint32_t now) {
     }
   }
 }
+
+

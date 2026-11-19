@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-volatile uint8_t suction_enable = 0U;
+volatile uint8_t suction_enable = 1U;
 volatile float suction_target[2][3];
 
 volatile uint32_t cup_motor_offline_count = 0U;
@@ -283,6 +283,8 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
 {
     static uint16_t previous_keys;
     static bool previous_keys_valid;
+    static bool pd14_second_press;
+    static bool pd15_second_press;
     uint16_t current_keys;
     uint16_t pressed_keys;
     if (status == NULL)
@@ -291,6 +293,8 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     {
         previous_keys = 0U;
         previous_keys_valid = false;
+        pd14_second_press = false;
+        pd15_second_press = false;
         return;
     }
     current_keys = (uint16_t)(status->remote.key[0] & ((1U << 0) | (1U << 1) | (1U << 2) | (1U << 3) | (1U << 4) | (1U << 5) | (1U << 6)));
@@ -316,16 +320,40 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     if ((pressed_keys & (1U << 3)) != 0U)
         gpio_pd1 ^= 1U;
     if ((pressed_keys & (1U << 6)) != 0U)
-        suction_target[dcup][2U] = (suction_target[dcup][2U] == 300.0f) ? 0.0f : 300.0f;
+        suction_target[dcup][2U] = (suction_target[dcup][2U] == 220.0f) ? 0.0f : 220.0f;
     if ((pressed_keys & (1U << 4)) != 0U)
     {
-        suction_target[ucup][0U] = (suction_target[ucup][0U] == 700.0f) ? 100.0f : 700.0f;
-        suction_target[dcup][0U] = (suction_target[dcup][0U] == 600.0f) ? 100.0f : 600.0f;
+        if (!pd14_second_press)
+        {
+            suction_target[ucup][0U] = 800.0f;
+            suction_target[dcup][0U] = 700.0f;
+        }
+        else
+        {
+            suction_target[ucup][0U] = 100.0f;
+            suction_target[dcup][0U] = 0.0f;
+        }
+        suction_target[ucup][1U] = 90.0f;
+        suction_target[dcup][1U] = 90.0f;
+        pd14_second_press = !pd14_second_press;
+        pd15_second_press = false;
     }
     if ((pressed_keys & (1U << 5)) != 0U)
     {
-        suction_target[ucup][1U] = (suction_target[ucup][1U] == 90.0f) ? 0.0f : 90.0f;
-        suction_target[dcup][1U] = (suction_target[dcup][1U] == 90.0f) ? 0.0f : 90.0f;
+        if (!pd15_second_press)
+        {
+            suction_target[ucup][0U] = 890.0f;
+            suction_target[dcup][0U] = 790.0f;
+        }
+        else
+        {
+            suction_target[ucup][0U] = 600.0f;
+            suction_target[dcup][0U] = 500.0f;
+        }
+        suction_target[ucup][1U] = 0.0f;
+        suction_target[dcup][1U] = 0.0f;
+        pd15_second_press = !pd15_second_press;
+        pd14_second_press = false;
     }
     previous_keys = current_keys;
 }

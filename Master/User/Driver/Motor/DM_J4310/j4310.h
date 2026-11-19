@@ -191,5 +191,6 @@ void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float o
 #define J4310_CASCADE_PERIOD_S 0.002f
 #define J4310_MIT_POSITION_KP 20.0f
 #define J4310_MIT_VELOCITY_KD 1.0f
+#define J4310_DAMPING_KD 2.0f
 
 #endif

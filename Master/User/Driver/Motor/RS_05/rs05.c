@@ -413,7 +413,7 @@ bool RS05_Send(rs05_t *m)
     }
     else if (m->mode == RS_MODE_DAMPING)
     {
-        kd = RS05_MIT_VELOCITY_KD;
+        kd = RS05_DAMPING_KD;
     }
     else if (m->mode == RS_MODE_MIT)
     {

@@ -4,7 +4,7 @@
 #include <math.h>
 #include "quintic_planner.h"
 
-volatile float m2006_trajectory_max_speed_rad_s = 25.35987756f;
+volatile float m2006_trajectory_max_speed_rad_s = 15.35987756f;
 volatile float m2006_trajectory_max_acceleration_rad_s2 = 62.832f;
 
 volatile float m2006_trajectory_time_s = 0.0f;
@@ -178,6 +178,7 @@ HAL_StatusTypeDef M2006_Init(m2006_t *motor,
     motor->hcan = hcan;
     motor->id = id;
     motor->direction = (direction < 0) ? -1 : 1;
+    motor->output_ratio = 1.0f;
     motor->trajectory_enabled = true;
     PID_Init(&motor->position_pid, M2006_POSITION_KP, M2006_POSITION_KI, M2006_POSITION_KD, m2006_trajectory_max_speed_rad_s, M2006_POSITION_INTEGRAL_LIMIT);
     PID_Init(&motor->speed_pid, M2006_SPEED_KP, M2006_SPEED_KI, M2006_SPEED_KD, M2006_SPEED_OUTPUT_LIMIT, M2006_SPEED_INTEGRAL_LIMIT);
@@ -278,10 +279,6 @@ void M2006_SetTargetDeferred(m2006_t *motor,
     bool mode_changed = mode != motor->mode;
     bool target_changed;
     float target_position_rad = target * M2006_DEG_TO_RAD * motor->output_ratio;
-    if (motor->rotor_pid_units)
-    {
-        target_position_rad = target * M2006_DEG_TO_RAD;
-    }
 
     if (mode != M2006_MODE_POSITION)
     {
@@ -426,10 +423,6 @@ int16_t M2006_Calc(m2006_t *motor,
 {
 
     motor->position_pid.output_limit = m2006_trajectory_max_speed_rad_s;
-    if (motor->rotor_pid_units)
-    {
-        motor->position_pid.output_limit *= M2006_REDUCTION_RATIO / motor->output_ratio;
-    }
     float target_speed;
     float current;
     float current_raw;
@@ -456,13 +449,6 @@ int16_t M2006_Calc(m2006_t *motor,
     else if (motor->mode == M2006_MODE_POSITION)
     {
         float speed_limit = m2006_trajectory_max_speed_rad_s;
-        float rotor_position;
-        float rotor_reference_position;
-        float rotor_reference_speed;
-        if (motor->rotor_pid_units)
-        {
-            speed_limit *= M2006_REDUCTION_RATIO / motor->output_ratio;
-        }
         if (motor->trajectory_enabled)
         {
             if (motor->trajectory_pending)
@@ -477,29 +463,10 @@ int16_t M2006_Calc(m2006_t *motor,
             motor->reference_speed_rad_s = 0.0f;
             motor->reference_acceleration_rad_s2 = 0.0f;
         }
-        /* The trajectory is kept in external-output units.  The cascaded PID
-         * itself runs in rotor units, so convert both sides at its boundary. */
-        rotor_position = motor->position_rad;
-        rotor_reference_position = motor->reference_position_rad;
-        rotor_reference_speed = motor->reference_speed_rad_s;
-        if (motor->rotor_pid_units)
-        {
-            rotor_position *= M2006_REDUCTION_RATIO / motor->output_ratio;
-            rotor_reference_position *= M2006_REDUCTION_RATIO / motor->output_ratio;
-            rotor_reference_speed *= M2006_REDUCTION_RATIO / motor->output_ratio;
-        }
-        target_speed = rotor_reference_speed +
-                       PID_Calc(&motor->position_pid, rotor_reference_position, rotor_position, dt_s);
+        target_speed = motor->reference_speed_rad_s +
+                       PID_Calc(&motor->position_pid, motor->reference_position_rad, motor->position_rad, dt_s);
         target_speed = M2006_Clamp(target_speed, -speed_limit, speed_limit);
-        if (motor->rotor_pid_units)
-        {
-            current = PID_Calc(&motor->speed_pid, target_speed,
-                               motor->speed_rad_s * M2006_REDUCTION_RATIO / motor->output_ratio, dt_s);
-        }
-        else
-        {
-            current = PID_Calc(&motor->speed_pid, target_speed, motor->speed_rad_s, dt_s);
-        }
+        current = PID_Calc(&motor->speed_pid, target_speed, motor->speed_rad_s, dt_s);
     }
     else
     {

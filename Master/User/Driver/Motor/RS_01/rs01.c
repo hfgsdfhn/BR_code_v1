@@ -217,6 +217,7 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
+    m->output_ratio = 1.0f;
     m->mode = RS_MODE_STOP;
     m->continuous_valid = false;
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
@@ -363,7 +364,10 @@ bool RS01_Send(rs01_t *m)
                  RS01_SPEED_PID_I_LIMIT);
         m->cascade_configured = true;
     }
-    pos = m->position;
+    /* The controller uses software-relative angles, while the RS01 MIT
+     * position field is expressed in the motor's absolute angle frame. */
+    pos = (float)m->direction * (m->position + m->software_zero_offset) /
+          m->output_ratio;
     if (m->mode == RS_MODE_POSITION)
     {
         float speed_ref;
@@ -376,15 +380,16 @@ bool RS01_Send(rs01_t *m)
     }
     else if (m->mode == RS_MODE_DAMPING)
     {
-        kd = RS01_MIT_VELOCITY_KD;
+        kd = RS01_DAMPING_KD;
     }
     else if (m->mode == RS_MODE_MIT)
     {
         if (m->trajectory_pending)
             RS01_BeginPositionTrajectory(m, now);
         RS01_UpdatePositionTrajectory(m, now);
-        pos = (float)m->direction * m->reference_position * RS01_REDUCTION_RATIO / m->output_ratio;
-        vel = (float)m->direction * m->reference_velocity * RS01_REDUCTION_RATIO / m->output_ratio;
+        pos = (float)m->direction * (m->reference_position + m->software_zero_offset) /
+              m->output_ratio;
+        vel = (float)m->direction * m->reference_velocity / m->output_ratio;
         kp = m->mit_kp;
         kd = m->mit_kd;
         tq = (float)m->direction * m->tau_ff_nm;
@@ -430,9 +435,9 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     m->feedback_state = (uint8_t)((f->id >> 22) & 0x03U);
     m->enabled = (m->feedback_state == 2U) && (m->fault == 0U);
 
-    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX) * m->output_ratio / RS01_REDUCTION_RATIO;
+    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX) * m->output_ratio;
 
-    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio / RS01_REDUCTION_RATIO;
+    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio;
 
     m->torque = dec(rdbe(&f->data[4]), -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
@@ -442,7 +447,9 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
 
     if (first_feedback)
     {
-        m->continuous_position = 0.0f;
+        /* Use the angle observed at power-on as the software zero. */
+        m->continuous_position = m->single_position;
+        m->software_zero_offset = m->continuous_position;
         m->continuous_valid = true;
     }
     else if (m->continuous_valid)
@@ -559,7 +566,7 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
     }
     if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX || fabsf(tau_nm) > RS01_TORQUE_MAX)
         return;
-    float position_target = output_degrees * RS01_DEG_TO_RAD;
+    float position_target = output_degrees * RS01_DEG_TO_RAD * motor->output_ratio;
     if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||
         fabsf(position_target - motor->target) > RS01_TRAJECTORY_EPSILON_RAD)
     {

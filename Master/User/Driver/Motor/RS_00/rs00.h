@@ -51,7 +51,7 @@ typedef struct
     pid_t cascade_position_pid, cascade_speed_pid;
     uint32_t cascade_tick;
     bool cascade_configured;
-    float mit_kp, mit_kd;
+    float mit_kp, mit_kd, damping_kd;
 
     FDCAN_HandleTypeDef *hcan;
     uint8_t id;
@@ -150,5 +150,6 @@ void RS00_SetTargetMIT(rs00_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS00_CASCADE_PERIOD_S 0.002f
 #define RS00_MIT_POSITION_KP 20.0f
 #define RS00_MIT_VELOCITY_KD 1.0f
+#define RS00_DAMPING_KD 2.0f
 
 #endif
