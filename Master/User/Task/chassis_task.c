@@ -6,6 +6,9 @@
 send_to_chassis_t chassis_data_;
 uint8_t dji_flag = 1;   //调试用
 DJI_leg_pos_e dji_leg_pos_type = 0;
+static float all_leg_pos;
+static float front_leg_pos;
+static float behind_leg_pos;
 
 float leg_target_pos_a = 0;
 float leg_target_pos_f = 0;
@@ -28,9 +31,8 @@ void Chassis_Task_(void *argument)
                 Chassis_SendSpeed(&hfdcan1, &stop);
             }
 
-            
             if(status.L2_up_flag != 0)  l2_leg_up(status.L2_up_flag);
-            if(status.leg_all_back)     set_target_position(0.0f,0.0f,0.0f);
+            if(status.j4_up_flag != 0)  j4_up(status.j4_up_flag);
             if(dji_flag)
             {
                 dji_flag = 0U;
