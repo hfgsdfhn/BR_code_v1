@@ -2,8 +2,8 @@
 #include "string.h"
 static float leg_pid_config[3][3] = 
 {
-    {0.1f, 0.0f,  0.0f},
-    {10.0f, 0.0f, 10.0f},
+    {0.058f, 0.0f,  0.0f},
+    {10.0f, 4.0f, 10.0f},
     {15.0f, 0.5f,  10.0f},
 };
 DJI_Board DJI_Board_Target;
@@ -59,8 +59,8 @@ HAL_StatusTypeDef Chassis_SendSpeed(FDCAN_HandleTypeDef *hfdcan,
     int16_t raw_vx, raw_vy, raw_vw;
     uint8_t tx_data[8] = {0};
     if ((hfdcan == NULL) || (speed == NULL)) return HAL_ERROR;
-    raw_vx = (int16_t)(speed->vx * 1000.0f);
-    raw_vy = (int16_t)(speed->vy * 1000.0f);
+    raw_vx = -(int16_t)(speed->vx * 1000.0f);
+    raw_vy = -(int16_t)(speed->vy * 1000.0f);
     raw_vw = (int16_t)(speed->vw * 1000.0f);
     tx_data[0] = (uint8_t)raw_vx;
     tx_data[1] = (uint8_t)((uint16_t)raw_vx >> 8);
