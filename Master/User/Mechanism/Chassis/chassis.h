@@ -46,9 +46,16 @@ typedef enum
   j4_go_again,
   j4_front_back_qigang_go, 
   j4_behind_back,
-  j4_all_go_again,
-  j4_qigang_back,
 }J4_up_e;
+
+typedef enum
+{
+    j4_behind_go = 1,
+    j4_qigang_go,
+    j4_front_go,
+    j4_behind_go_go,
+    qigang_back,
+}J4_down_e;
 
 typedef struct DJI_Board DJI_Board;
 
@@ -67,6 +74,7 @@ void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
 void set_target_position(float posa,float front, float behind);
 void l2_leg_up(L2_Leg_up_e leg_up);
+void j4_up(J4_up_e leg_up);
 extern pid_t yaw_pid;
 
 #endif
