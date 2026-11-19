@@ -21,12 +21,16 @@ void Chassis_Task_(void *argument)
         send_to_chassis_t status;
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
-           // set_target_position(leg_target_pos_a,leg_target_pos_f,leg_target_pos_b);
+            if(status.chassis_emmergency_stop ==0)
             Chassis_SendSpeed(&hfdcan1, &status.target_speed);
-            if(status.L2_up_flag != 0)
-            {
-             l2_leg_up(status.L2_up_flag);
+            else {
+                chassis_speed_t stop = { .vx = 0.0f, .vy = 0.0f, .vw = 0.0f };
+                Chassis_SendSpeed(&hfdcan1, &stop);
             }
+
+            
+            if(status.L2_up_flag != 0)  l2_leg_up(status.L2_up_flag);
+            if(status.leg_all_back)     set_target_position(0.0f,0.0f,0.0f);
             if(dji_flag)
             {
                 dji_flag = 0U;

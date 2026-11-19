@@ -94,11 +94,11 @@ void joy_to_mps(send_to_chassis_t *send)
         }
         float yaw_error = fabsf(send->target_yaw - send->current_yaw);
         if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
-        else if(yaw_error >=1.57f)                target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
+        else if(yaw_error >=1.57f)                 target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
         else target_vw = 0.0f;
-        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,
-                                             0.08f);
+        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw, 0.08f);
     }
+
     else
     {
         if (send->remote.shoulder_left == 1U)
@@ -125,6 +125,7 @@ void joy_to_mps(send_to_chassis_t *send)
 void key_to_chassis(send_to_chassis_t *send)
 {
     static uint8_t l2_up_flag;
+    static uint8_t chassis_emmergency_stop;
     uint8_t pe0_pressed;
     uint8_t pe1_pressed;
 
@@ -132,6 +133,7 @@ void key_to_chassis(send_to_chassis_t *send)
     {
         return;
     }
+
 
     pe0_pressed = (uint8_t)((send->remote.key[1] & (1U << 7)) != 0U);
     pe1_pressed = (uint8_t)((send->remote.key[1] & (1U << 6)) != 0U);
@@ -162,10 +164,11 @@ void key_to_chassis(send_to_chassis_t *send)
     }
     if (key_is_pressed(REMOTE_KEY_PE4))
     {
-        gpio_pd3 = !gpio_pd3;
+        send->chassis_emmergency_stop = !chassis_emmergency_stop;
     }
     if (key_is_pressed(REMOTE_KEY_PE2))
     {
+        send->leg_all_back = 1;
     }
 
     if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_1))

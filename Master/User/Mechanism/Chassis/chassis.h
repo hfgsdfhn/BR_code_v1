@@ -39,6 +39,17 @@ typedef enum
     l2_down_all_back,
 }L2_Leg_up_e;
 
+typedef enum
+{
+  j4_all_go = 1,
+  j4_front_back,
+  j4_go_again,
+  j4_front_back_qigang_go, 
+  j4_behind_back,
+  j4_all_go_again,
+  j4_qigang_back,
+}J4_up_e;
+
 typedef struct DJI_Board DJI_Board;
 
 typedef struct

@@ -16,6 +16,8 @@ struct send_to_chassis_t
     float current_yaw;
     uint8_t L2_up_flag;
     uint8_t j4_up_flag;
+    uint8_t chassis_emmergency_stop;
+    uint8_t leg_all_back;
 };
 
 typedef struct
