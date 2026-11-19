@@ -1,4 +1,4 @@
-
+﻿
 #include "my_main.h"
 #include "upper.h"
 #include "arm_task.h"
@@ -129,7 +129,7 @@ void My_RtosInit(void)
         };
         (void)osThreadNew(Arm_TxTask, NULL, &attributes);
     }
-'    {
+    {
         const osThreadAttr_t attributes = {
             .name = "Cup_Can_Tx_Task",
             .stack_size = 2048U,
@@ -137,5 +137,5 @@ void My_RtosInit(void)
         };
         (void)osThreadNew(SuctionCup_Task, NULL, &attributes);
     }
-'    uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
+    uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
 }

@@ -102,7 +102,7 @@ void Arm_TaskStop(void)
 }
 
 bool Arm_TxQueueInit(void)
-{
+{        
     if (br_mutex == NULL)
         br_mutex = osMutexNew(NULL);
     return br_mutex != NULL;

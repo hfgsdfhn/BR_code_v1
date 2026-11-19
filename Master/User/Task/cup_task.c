@@ -325,7 +325,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     {
         if (!pd14_second_press)
         {
-            suction_target[ucup][0U] = 800.0f;
+            suction_target[ucup][0U] = 890.0f;
             suction_target[dcup][0U] = 700.0f;
         }
         else
