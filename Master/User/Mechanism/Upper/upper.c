@@ -13,6 +13,7 @@ extern volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 extern float br_joint_velocity[2][ARM_JOINT_COUNT];
 extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
+extern volatile bool startup_hold_latched[2];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
@@ -30,10 +31,10 @@ volatile float br_small_arm_rs00_trajectory_time_s = 1.0f;
 volatile float br_j4310_trajectory_time_s = 0.5f;
 volatile float br_rs05_trajectory_time_s = 0.0f;
 
-volatile float br_shoulder_kp = 20.0f;
-volatile float br_shoulder_kd = 1.0f;
-volatile float br_elbow_kp = 40.0f;
-volatile float br_elbow_kd = 2.0f;
+volatile float br_shoulder_kp = 100.0f;
+volatile float br_shoulder_kd = 10.0f;
+volatile float br_elbow_kp = 20.0f;
+volatile float br_elbow_kd = 1.0f;
 volatile float br_wrist_kp = 20.0f;
 volatile float br_wrist_kd = 1.0f;
 volatile float br_rotation_kp = 20.0f;
@@ -46,6 +47,21 @@ volatile float br_root_m2006_position_kd = 0.523598776f;
 volatile float br_root_m2006_speed_kp = 3.342253805f;
 volatile float br_root_m2006_speed_ki = 2.387324146f;
 volatile float br_root_m2006_speed_kd = 0.0f;
+
+volatile float br_m2006_cup0_position_kp = BR_M2006_CUP0_POSITION_KP;
+volatile float br_m2006_cup0_position_ki = BR_M2006_CUP0_POSITION_KI;
+volatile float br_m2006_cup0_position_kd = BR_M2006_CUP0_POSITION_KD;
+volatile float br_m2006_cup0_speed_kp = BR_M2006_CUP0_SPEED_KP;
+volatile float br_m2006_cup0_speed_ki = BR_M2006_CUP0_SPEED_KI;
+volatile float br_m2006_cup0_speed_kd = BR_M2006_CUP0_SPEED_KD;
+
+volatile float br_m2006_cup1_position_kp = BR_M2006_CUP1_POSITION_KP;
+volatile float br_m2006_cup1_position_ki = BR_M2006_CUP1_POSITION_KI;
+volatile float br_m2006_cup1_position_kd = BR_M2006_CUP1_POSITION_KD;
+volatile float br_m2006_cup1_speed_kp = BR_M2006_CUP1_SPEED_KP;
+volatile float br_m2006_cup1_speed_ki = BR_M2006_CUP1_SPEED_KI;
+volatile float br_m2006_cup1_speed_kd = BR_M2006_CUP1_SPEED_KD;
+
 volatile uint8_t g_rs_recovery_motion_release = 0U;
 
 volatile uint8_t larm_manual_tau_enable = 0U;
@@ -153,7 +169,7 @@ static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
         if (joint == ARM_JOINT_ROOT && arm == ARM_RARM_INDEX)
         {
             if (!zero_calibration_previous[arm][joint])
-                RS01_ResetSoftwareZero(&rs01_rarm);
+                rs01_rarm.set_zero_position_request = 1U;
         }
         else if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
             (arm == ARM_LARM_INDEX ? rs00_larm : rs00_rarm)[joint == ARM_JOINT_SHOULDER ? 0 : 1].set_zero_position_request = 1U;
@@ -171,7 +187,7 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
     bool pending = false;
     if (joint == ARM_JOINT_ROOT)
     {
-        if (arm == ARM_RARM_INDEX){pending = false;at_zero = rs01_rarm.feedback_valid && fabsf(rs01_rarm.position) <= RS01_ZERO_POSITION_TOLERANCE_RAD;}
+        if (arm == ARM_RARM_INDEX){pending = rs01_rarm.set_zero_position_request != 0U; at_zero = rs01_rarm.feedback_valid && fabsf(rs01_rarm.position) <= RS01_ZERO_POSITION_TOLERANCE_RAD;}
     }
     else if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
     {
@@ -222,14 +238,14 @@ static void Upper_ConfigurePidGains(pid_t *pid, float kp, float ki, float kd)
 
 static void Upper_ConfigureM2006Gains(void)
 {
-    Upper_ConfigurePidGains(&m2006_dcup[0].position_pid, BR_M2006_CUP0_POSITION_KP, BR_M2006_CUP0_POSITION_KI, BR_M2006_CUP0_POSITION_KD);
-    Upper_ConfigurePidGains(&m2006_dcup[0].speed_pid, BR_M2006_CUP0_SPEED_KP, BR_M2006_CUP0_SPEED_KI, BR_M2006_CUP0_SPEED_KD);
-    Upper_ConfigurePidGains(&m2006_ucup[0].position_pid, BR_M2006_CUP0_POSITION_KP, BR_M2006_CUP0_POSITION_KI, BR_M2006_CUP0_POSITION_KD);
-    Upper_ConfigurePidGains(&m2006_ucup[0].speed_pid, BR_M2006_CUP0_SPEED_KP, BR_M2006_CUP0_SPEED_KI, BR_M2006_CUP0_SPEED_KD);
-    Upper_ConfigurePidGains(&m2006_dcup[1].position_pid, BR_M2006_CUP1_POSITION_KP, BR_M2006_CUP1_POSITION_KI, BR_M2006_CUP1_POSITION_KD);
-    Upper_ConfigurePidGains(&m2006_dcup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
-    Upper_ConfigurePidGains(&m2006_ucup[1].position_pid, BR_M2006_CUP1_POSITION_KP, BR_M2006_CUP1_POSITION_KI, BR_M2006_CUP1_POSITION_KD);
-    Upper_ConfigurePidGains(&m2006_ucup[1].speed_pid, BR_M2006_CUP1_SPEED_KP, BR_M2006_CUP1_SPEED_KI, BR_M2006_CUP1_SPEED_KD);
+    Upper_ConfigurePidGains(&m2006_dcup[0].position_pid, br_m2006_cup0_position_kp, br_m2006_cup0_position_ki, br_m2006_cup0_position_kd);
+    Upper_ConfigurePidGains(&m2006_dcup[0].speed_pid, br_m2006_cup0_speed_kp, br_m2006_cup0_speed_ki, br_m2006_cup0_speed_kd);
+    Upper_ConfigurePidGains(&m2006_ucup[0].position_pid, br_m2006_cup0_position_kp, br_m2006_cup0_position_ki, br_m2006_cup0_position_kd);
+    Upper_ConfigurePidGains(&m2006_ucup[0].speed_pid, br_m2006_cup0_speed_kp, br_m2006_cup0_speed_ki, br_m2006_cup0_speed_kd);
+    Upper_ConfigurePidGains(&m2006_dcup[1].position_pid, br_m2006_cup1_position_kp, br_m2006_cup1_position_ki, br_m2006_cup1_position_kd);
+    Upper_ConfigurePidGains(&m2006_dcup[1].speed_pid, br_m2006_cup1_speed_kp, br_m2006_cup1_speed_ki, br_m2006_cup1_speed_kd);
+    Upper_ConfigurePidGains(&m2006_ucup[1].position_pid, br_m2006_cup1_position_kp, br_m2006_cup1_position_ki, br_m2006_cup1_position_kd);
+    Upper_ConfigurePidGains(&m2006_ucup[1].speed_pid, br_m2006_cup1_speed_kp, br_m2006_cup1_speed_ki, br_m2006_cup1_speed_kd);
     Upper_ConfigurePidGains(&m2006_larm.position_pid, br_root_m2006_position_kp, br_root_m2006_position_ki, br_root_m2006_position_kd);
     Upper_ConfigurePidGains(&m2006_larm.speed_pid, br_root_m2006_speed_kp, br_root_m2006_speed_ki, br_root_m2006_speed_kd);
 }
@@ -460,6 +476,16 @@ void Upper_Service(uint32_t now) {
     j4310_t *j4310 = a == 0U ? &j4310_larm : &j4310_rarm;
     bool online = rs00[0].feedback_valid && rs00[1].feedback_valid &&
                   rs05->feedback_valid && j4310->feedback.received;
+    if (!startup_hold_latched[a] && online)
+    {
+      for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
+      {
+        arm_target[a][joint] = arm_feedback_angle[a][joint];
+        arm_mode[a][joint] = ARM_MODE_MIT;
+      }
+      startup_hold_latched[a] = true;
+    }
+
     q_deg[0] = arm_feedback_angle[a][ARM_JOINT_ROOT];
     q_deg[1] = arm_feedback_angle[a][ARM_JOINT_SHOULDER];
     q_deg[2] = arm_feedback_angle[a][ARM_JOINT_ELBOW];
@@ -500,14 +526,9 @@ void Upper_Service(uint32_t now) {
       br_gravity_models[a].link_mass_kg[2] = rarm_mass_005_kg;
       br_gravity_models[a].link_mass_kg[3] = rarm_mass_006_kg;
     }
-    {
-      const bool payload_attached =
-          (upper_state.enable == 0U) &&
-          ((a == ARM_LARM_INDEX) ? (gpio_pd5 != 0U) : (gpio_pd6 != 0U));
-      upper_state.board[a].gravity_ready =
-          online && BR_GravityEvaluate(&br_gravity_models[a], q,
-                                       payload_attached, tau, NULL);
-    }
+    /* Payload compensation stays off regardless of the PD5 and PD6 outputs. */
+    upper_state.board[a].gravity_ready =
+        online && BR_GravityEvaluate(&br_gravity_models[a], q, false, tau, NULL);
     float end_position_m[3];
     if (!BR_ForwardKinematics(&br_gravity_models[a], q, end_position_m)) {
       arm_end_position_world[a][0] = 0.0f;
@@ -585,5 +606,4 @@ void Upper_Service(uint32_t now) {
     }
   }
 }
-
 

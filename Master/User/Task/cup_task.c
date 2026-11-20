@@ -14,12 +14,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-volatile uint8_t suction_enable = 1U;
+volatile uint8_t suction_enable = 0U;
 volatile float suction_target[2][3];
 
 volatile uint32_t cup_motor_offline_count = 0U;
 volatile uint32_t cup_motor_recover_count = 0U;
 static bool cup_motor_online_prev[5];
+static bool cup_startup_hold_latched;
 
 __ALIGNED(32) volatile float suction_feedback_angle[2][3];
 volatile float ustp23l_distance_cm;
@@ -261,6 +262,19 @@ void SuctionCup_Service(void)
 
 
     enabled = suction_enable != 0U;
+
+    if (!cup_startup_hold_latched &&
+        m2006_ucup[0].received && m2006_ucup[1].received &&
+        m2006_dcup[0].received && m2006_dcup[1].received &&
+        m3508_dcup[0].received)
+    {
+        suction_target[ucup][0] = m2006_ucup[0].position_rad * ARM_RAD_TO_DEG;
+        suction_target[ucup][1] = m2006_ucup[1].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][0] = m2006_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][1] = m2006_dcup[1].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][2] = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        cup_startup_hold_latched = true;
+    }
 
     for (i = 0U; i < 2U; i++)
     {

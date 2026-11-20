@@ -1,4 +1,4 @@
-﻿#include "upper.h"
+#include "upper.h"
 #include "arm_task.h"
 #include "cmsis_os2.h"
 #include "my_main.h"
@@ -14,6 +14,7 @@ volatile float arm_target[2][ARM_JOINT_COUNT];
 volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
 volatile uint8_t arm_remote_select;
+volatile bool startup_hold_latched[2];
 static int8_t arm_ik_target_direction[2][3] = {
     {-1, -1, -1},
     {-1, -1, -1}
@@ -74,13 +75,14 @@ void Arm_OnFrame(const can_frame_t *frame)
 void Arm_TaskInit(void)
 {
     memset(&upper_state, 0, sizeof(upper_state));
-    upper_state.enable = 1U;
+    upper_state.enable = 0U;
     memset((void *)arm_target, 0, sizeof(arm_target));
     memset((void *)br_mit_tau, 0, sizeof(br_mit_tau));
     memset(br_joint_velocity, 0, sizeof(br_joint_velocity));
     memset(br_grip, 0, sizeof(br_grip));
     arm_remote_select = 0U;
     memset((void *)arm_joint_zero_calibration, 0, sizeof(arm_joint_zero_calibration));
+    memset((void *)startup_hold_latched, 0, sizeof(startup_hold_latched));
     memset((void *)arm_end_target_world, 0, sizeof(arm_end_target_world));
     memset((void *)arm_ik_enable, 0, sizeof(arm_ik_enable));
     memset((void *)arm_ik_second_rs00_prefer_small, 0, sizeof(arm_ik_second_rs00_prefer_small));
@@ -188,7 +190,6 @@ static void Arm_ResetAllMotorSoftwareZeros(void)
         M2006_ResetSoftwareZero(&m2006_dcup[i]);
     }
     M3508_ResetSoftwareZero(&m3508_dcup[0]);
-    RS01_ResetSoftwareZero(&rs01_rarm);
 }
 
 static void Arm_RequestAllJointMechanicalZeros(void)
@@ -198,12 +199,6 @@ static void Arm_RequestAllJointMechanicalZeros(void)
     for (arm = 0U; arm < 2U; ++arm)
         for (joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
         {
-            /* RS01 uses only a software zero. */
-            if (arm == ARM_RARM_INDEX && joint == ARM_JOINT_ROOT)
-            {
-                arm_joint_zero_calibration[arm][joint] = 0U;
-                continue;
-            }
             arm_joint_zero_calibration[arm][joint] = 1U;
         }
 }
@@ -254,9 +249,19 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         if ((pressed_keys & (1U << 5)) != 0U) { if (last_pose_key != 5U) pd15_pose_index = 0U; const volatile float (*pose)[ARM_JOINT_COUNT] = pd15_pose_index == 0U ? xarm_pose_pd15 : xarm_pose_pd15_2; Arm_ApplyDualPose(pose[ARM_LARM_INDEX], pose[ARM_RARM_INDEX]); pd15_pose_index = (uint8_t)((pd15_pose_index + 1U) % 2U); last_pose_key = 5U; }
         if ((pressed_keys & (1U << 1)) != 0U) Arm_ApplyRemotePose(xarm_pose_pd11, false);
     }
-    if ((pressed_keys & (1U << 6)) != 0U) gpio_pd5 ^= 1U;
-    if ((pressed_keys & (1U << 8)) != 0U) gpio_pd6 ^= 1U;
-    if ((pressed_keys & (1U << 7)) != 0U) { uint8_t arm = Arm_SelectedRemoteArm(); arm_target[arm][ARM_JOINT_ROTATION] = pa11_rotation_index == 0U ? 90.0f : (pa11_rotation_index == 1U ? 180.0f : 0.0f); pa11_rotation_index = (uint8_t)((pa11_rotation_index + 1U) % 3U); }
+    if (!pa6_low_mode)
+    {
+        if ((pressed_keys & (1U << 6)) != 0U)
+            gpio_pd5 ^= 1U;
+        if ((pressed_keys & (1U << 7)) != 0U)
+        {
+            uint8_t arm = Arm_SelectedRemoteArm();
+            arm_target[arm][ARM_JOINT_ROTATION] = pa11_rotation_index == 0U ? 90.0f : (pa11_rotation_index == 1U ? 180.0f : 0.0f);
+            pa11_rotation_index = (uint8_t)((pa11_rotation_index + 1U) % 3U);
+        }
+        if ((pressed_keys & (1U << 8)) != 0U)
+            gpio_pd6 ^= 1U;
+    }
     previous_keys = current_keys;
 }
 void Arm_Task(void *argument)
@@ -272,9 +277,4 @@ void Arm_Task(void *argument)
             next = osKernelGetTickCount();
     }
 }
-
-
-
-
-
 

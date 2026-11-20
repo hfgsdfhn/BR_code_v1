@@ -196,6 +196,12 @@ static bool RS01_PollFeedback(rs01_t *m)
     return tx(m->hcan, RS01_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
+static bool RS01_SendSetZero(rs01_t *m)
+{
+    uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+    return (m != NULL) && (tx(m->hcan, RS01_SET_ZERO, RS01_HOST_ID, m->id, data) == HAL_OK);
+}
+
 bool RS01_BuildSpecial(rs01_t *m, uint8_t command)
 {
     if (m != NULL && command == RS01_FALSE)
@@ -218,7 +224,10 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
     m->output_ratio = 1.0f;
-    m->mode = RS_MODE_STOP;
+    m->mode = RS_MODE_MIT;
+    m->target = 0.0f;
+    m->startup_hold_active = true;
+    m->run_mode = 0xFFU;
     m->continuous_valid = false;
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
     return HAL_OK;
@@ -364,10 +373,7 @@ bool RS01_Send(rs01_t *m)
                  RS01_SPEED_PID_I_LIMIT);
         m->cascade_configured = true;
     }
-    /* The controller uses software-relative angles, while the RS01 MIT
-     * position field is expressed in the motor's absolute angle frame. */
-    pos = (float)m->direction * (m->position + m->software_zero_offset) /
-          m->output_ratio;
+    pos = m->position / m->output_ratio;
     if (m->mode == RS_MODE_POSITION)
     {
         float speed_ref;
@@ -387,8 +393,7 @@ bool RS01_Send(rs01_t *m)
         if (m->trajectory_pending)
             RS01_BeginPositionTrajectory(m, now);
         RS01_UpdatePositionTrajectory(m, now);
-        pos = (float)m->direction * (m->reference_position + m->software_zero_offset) /
-              m->output_ratio;
+        pos = (float)m->direction * m->reference_position / m->output_ratio;
         vel = (float)m->direction * m->reference_velocity / m->output_ratio;
         kp = m->mit_kp;
         kd = m->mit_kd;
@@ -417,7 +422,7 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
 {
     uint8_t cmd;
     bool recovering;
-    bool first_feedback;
+    bool had_feedback;
 
     if (!m || !f || f->hfdcan != m->hcan || f->id_type != FDCAN_EXTENDED_ID || f->length != 8U)
     {
@@ -443,31 +448,15 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
 
     recovering = !m->feedback_valid;
-    first_feedback = !m->ever_feedback_received;
+    had_feedback = m->ever_feedback_received;
+    m->continuous_position = m->single_position;
+    m->continuous_valid = true;
+    m->position = m->single_position;
+    m->ever_feedback_received = true;
+    m->feedback_valid = true;
+    m->feedback_recovery_pending = false;
 
-    if (first_feedback)
-    {
-        /* Use the angle observed at power-on as the software zero. */
-        m->continuous_position = m->single_position;
-        m->software_zero_offset = m->continuous_position;
-        m->continuous_valid = true;
-    }
-    else if (m->continuous_valid)
-    {
-        m->continuous_position +=
-            remainderf(m->single_position - remainderf(m->continuous_position, RS01_ANGLE_PERIOD), RS01_ANGLE_PERIOD);
-    }
-
-    if (recovering)
-    {
-        m->feedback_valid = true;
-        m->feedback_recovery_pending = false;
-        m->ever_feedback_received = true;
-    }
-
-    m->position = m->continuous_position - m->software_zero_offset;
-
-    if (recovering)
+    if (recovering && had_feedback)
     {
         m->hold_position = m->position;
         m->reference_position = m->position;
@@ -486,24 +475,6 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     return true;
 }
 
-void RS01_ResetSoftwareZero(rs01_t *motor)
-{
-    if (motor == NULL || !motor->continuous_valid)
-        return;
-
-    motor->software_zero_offset = motor->continuous_position;
-    motor->position = 0.0f;
-    motor->hold_position = 0.0f;
-    motor->reference_position = 0.0f;
-    motor->target = 0.0f;
-    motor->trajectory_start_position = 0.0f;
-    motor->trajectory_delta_position = 0.0f;
-    motor->trajectory_duration_ms = 0U;
-    motor->trajectory_pending = false;
-    motor->trajectory_active = false;
-    PID_Reset(&motor->cascade_position_pid);
-    PID_Reset(&motor->cascade_speed_pid);
-}
 void RS01_GetPositionDegrees(const rs01_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -530,12 +501,34 @@ void RS01_Service(rs01_t *m)
         m->feedback_recovery_pending = true;
     }
 
-    if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 20U)
+    if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 5U)
     {
         m->reconnect_retry_tick = now;
         (void)RS01_BuildSpecial(m, RS01_ENABLE);
     }
-    if (m->mode == RS_MODE_STOP || !m->enabled)
+    if (m->set_zero_position_request != 0U)
+    {
+        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        {
+            m->last_control_tick = now;
+            (void)RS01_SendSetZero(m);
+            (void)RS01_PollFeedback(m);
+        }
+        if (m->feedback_valid && fabsf(m->position) <= RS01_ZERO_POSITION_TOLERANCE_RAD)
+        {
+            m->position = 0.0f;
+            m->continuous_position = 0.0f;
+            m->hold_position = 0.0f;
+            m->reference_position = 0.0f;
+            m->target = 0.0f;
+            m->trajectory_pending = false;
+            m->trajectory_active = false;
+            m->set_zero_position_request = 0U;
+        }
+        return;
+    }
+
+    if (m->mode == RS_MODE_STOP)
     {
         if ((uint32_t)(now - m->last_control_tick) >= 5U)
         {
@@ -580,3 +573,11 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }
+
+
+
+
+
+
+
+
