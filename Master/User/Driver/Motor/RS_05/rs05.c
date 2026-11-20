@@ -16,7 +16,7 @@ volatile float rs05_trajectory_time_s = 0.0f;
 
 volatile float rs05_speed_max_acceleration_rad_s2 = 30.0f;
 
-volatile float rs05_speed_limit_current_a = 8.0f;
+volatile float rs05_speed_limit_current_a = 11.0f;
 volatile float rs05_speed_accel_rad_s2 = 30.0f;
 
 volatile float rs_recovery_max_speed_rad_s = 2.5f;

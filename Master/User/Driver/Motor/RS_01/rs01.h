@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RS01_SET_ZERO 6U
 #define RS01_ZERO_POSITION_TOLERANCE_RAD 0.01f
 
 #define RS01_ENABLE 3U
@@ -82,6 +81,7 @@ typedef struct
     volatile bool enabled;
     volatile uint8_t feedback_state;
     float continuous_position;
+    float software_zero_offset;
     bool continuous_valid;
     bool angle_store_pending;
     volatile bool offline_latched;
@@ -93,7 +93,8 @@ typedef struct
     bool trajectory_active;
     volatile bool startup_hold_active;
     volatile bool startup_hold_initialized;
-    volatile uint8_t set_zero_position_request;
+
+
     volatile bool recovery_trajectory;
     volatile bool recovery_sync_candidate;
     trapezoid_t speed_planner;
@@ -136,6 +137,8 @@ void RS01_Service(rs01_t *motor);
 
 void RS01_GetPositionDegrees(const rs01_t *motor,
                              volatile float *position_degrees);
+
+void RS01_ResetSoftwareZero(rs01_t *motor);
 void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS01_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS01_SetTarget(...) RS01_TARGET_SELECT(__VA_ARGS__, RS01_SetTargetMIT, RS01_SetTargetBasic)(__VA_ARGS__)
@@ -155,4 +158,6 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS01_DAMPING_KD 2.0f
 
 #endif
+
+
 

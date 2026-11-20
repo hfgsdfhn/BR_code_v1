@@ -17,7 +17,7 @@ volatile float rs00_trajectory_time_s = 0.0f;
 
 volatile float rs00_speed_max_acceleration_rad_s2 = 30.0f;
 
-volatile float rs00_speed_limit_current_a = 8.0f;
+volatile float rs00_speed_limit_current_a = 15.5f;
 volatile float rs00_speed_accel_rad_s2 = 30.0f;
 
 static float clampf(float v, float lo, float hi)

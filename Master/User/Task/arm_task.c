@@ -45,7 +45,6 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis)
         arm_end_target_world[arm][axis] = 10.1f;
 }
 
-/* PA5-high coordinate presets are retained separately. */
 volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
 volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 80.0f, 0.0f, 0.0f}, {0.0f, 80.0f, 80.0f, 0.0f, 0.0f}};
 volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] ={{0.0f, 130.0f, 110.0f, -25.0f, 0.0f}, {0.0f, 130.0f, 110.0f, -25.0f, 0.0f}};
@@ -190,6 +189,7 @@ static void Arm_ResetAllMotorSoftwareZeros(void)
         M2006_ResetSoftwareZero(&m2006_dcup[i]);
     }
     M3508_ResetSoftwareZero(&m3508_dcup[0]);
+    RS01_ResetSoftwareZero(&rs01_rarm);
 }
 
 static void Arm_RequestAllJointMechanicalZeros(void)
@@ -199,6 +199,12 @@ static void Arm_RequestAllJointMechanicalZeros(void)
     for (arm = 0U; arm < 2U; ++arm)
         for (joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
         {
+
+            if (arm == ARM_RARM_INDEX && joint == ARM_JOINT_ROOT)
+            {
+                arm_joint_zero_calibration[arm][joint] = 0U;
+                continue;
+            }
             arm_joint_zero_calibration[arm][joint] = 1U;
         }
 }

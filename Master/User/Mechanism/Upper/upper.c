@@ -31,16 +31,16 @@ volatile float br_small_arm_rs00_trajectory_time_s = 1.0f;
 volatile float br_j4310_trajectory_time_s = 0.5f;
 volatile float br_rs05_trajectory_time_s = 0.0f;
 
-volatile float br_shoulder_kp = 100.0f;
-volatile float br_shoulder_kd = 10.0f;
-volatile float br_elbow_kp = 20.0f;
-volatile float br_elbow_kd = 1.0f;
-volatile float br_wrist_kp = 20.0f;
-volatile float br_wrist_kd = 1.0f;
-volatile float br_rotation_kp = 20.0f;
-volatile float br_rotation_kd = 1.0f;
-volatile float br_root_rs01_kp = 20.0f;
-volatile float br_root_rs01_kd = 1.0f;
+volatile float br_root_rs01_kp = 50.0f;
+volatile float br_root_rs01_kd = 5.0f;
+volatile float br_shoulder_kp = 50.0f;
+volatile float br_shoulder_kd = 5.0f;
+volatile float br_elbow_kp = 50.0f;
+volatile float br_elbow_kd = 5.0f;
+volatile float br_wrist_kp = 30.0f;
+volatile float br_wrist_kd = 3.0f;
+volatile float br_rotation_kp = 30.0f;
+volatile float br_rotation_kd = 5.0f;
 volatile float br_root_m2006_position_kp = 94.247779608f;
 volatile float br_root_m2006_position_ki = 52.359877560f;
 volatile float br_root_m2006_position_kd = 0.523598776f;
@@ -169,7 +169,7 @@ static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
         if (joint == ARM_JOINT_ROOT && arm == ARM_RARM_INDEX)
         {
             if (!zero_calibration_previous[arm][joint])
-                rs01_rarm.set_zero_position_request = 1U;
+                RS01_ResetSoftwareZero(&rs01_rarm);
         }
         else if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
             (arm == ARM_LARM_INDEX ? rs00_larm : rs00_rarm)[joint == ARM_JOINT_SHOULDER ? 0 : 1].set_zero_position_request = 1U;
@@ -187,7 +187,7 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
     bool pending = false;
     if (joint == ARM_JOINT_ROOT)
     {
-        if (arm == ARM_RARM_INDEX){pending = rs01_rarm.set_zero_position_request != 0U; at_zero = rs01_rarm.feedback_valid && fabsf(rs01_rarm.position) <= RS01_ZERO_POSITION_TOLERANCE_RAD;}
+        if (arm == ARM_RARM_INDEX){pending = false; at_zero = rs01_rarm.feedback_valid && fabsf(rs01_rarm.position) <= RS01_ZERO_POSITION_TOLERANCE_RAD;}
     }
     else if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
     {

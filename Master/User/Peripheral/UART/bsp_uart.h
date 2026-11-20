@@ -1,4 +1,4 @@
-
+﻿
 #ifndef BSP_UART_H
 #define BSP_UART_H
 #include <stdbool.h>
@@ -36,7 +36,6 @@ typedef enum
     BSP_UART_DT35,
     BSP_UART_UP_STP23L,
     BSP_UART_DOWN_STP23L,
-    BSP_UART_SCRAM,
     BSP_UART_REMOTE,
     BSP_UART_COUNT
 } bsp_uart_channel_t;
@@ -51,3 +50,5 @@ bool BspUart_Send(bsp_uart_channel_t channel ,
                   const uint8_t *data ,
                   uint16_t size );
 #endif
+
+
