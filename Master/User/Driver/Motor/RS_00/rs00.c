@@ -528,8 +528,14 @@ void RS00_Service(rs00_t *m)
     }
     if (m->set_zero_position_request != 0U)
     {
-
-        (void)RS00_SendSetZero(m);
+        /* Refresh feedback while calibrating so completion is based on a
+         * response after the zero command, rather than stale position data. */
+        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        {
+            m->last_control_tick = now;
+            (void)RS00_SendSetZero(m);
+            (void)RS00_PollFeedback(m);
+        }
 
         if (m->feedback_valid && fabsf(m->single_position) <= RS00_ZERO_POSITION_TOLERANCE_RAD)
         {

@@ -555,8 +555,15 @@ void RS05_Service(rs05_t *m)
     }
     if (m->set_zero_position_request != 0U)
     {
-
-        (void)RS05_SendSetZero(m);
+        /* Keep the zero command and feedback exchange at the control period.
+         * Without the poll, single_position can remain the pre-calibration
+         * value until an unrelated feedback frame happens to arrive. */
+        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        {
+            m->last_control_tick = now;
+            (void)RS05_SendSetZero(m);
+            (void)RS05_PollFeedback(m);
+        }
 
         if (m->feedback_valid && fabsf(m->single_position) <= RS05_ZERO_POSITION_TOLERANCE_RAD)
         {
