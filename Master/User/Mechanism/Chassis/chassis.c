@@ -125,7 +125,9 @@ void joy_to_mps(send_to_chassis_t *send)
 void key_to_chassis(send_to_chassis_t *send)
 {
     static uint8_t l2_up_flag;
-    static uint8_t j4_flag;
+    //static uint8_t j4_flag;
+    //static uint8_t j4_down_flag;
+    static
     static uint8_t chassis_emmergency_stop;
     uint8_t pe0_pressed;
     uint8_t pe1_pressed;
@@ -159,12 +161,15 @@ void key_to_chassis(send_to_chassis_t *send)
 
     if (key_is_pressed(REMOTE_KEY_PE3))
     {
-        j4_flag++;
-        if(j4_flag > 5) j4_flag = 3;
-        send->j4_up_flag = j4_flag;
+    //    j4_flag++;
+        // if(j4_flag > 5) j4_flag = 3;
+        // send->j4_up_flag = j4_flag;
     }
     if (key_is_pressed(REMOTE_KEY_PE5))
     {
+    //     j4_down_flag++;
+
+    //     send->j4_down_flag = j4_down_flag;
     }
     if (key_is_pressed(REMOTE_KEY_PE4))
     {
@@ -172,7 +177,7 @@ void key_to_chassis(send_to_chassis_t *send)
     }
     if (key_is_pressed(REMOTE_KEY_PE2))
     {
-        j4_flag = 0;
+    //    j4_flag = 0;
         l2_up_flag = 0;
     }
     if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_1))
@@ -233,29 +238,31 @@ void l2_leg_up(L2_Leg_up_e leg_up)
     }
 }
 
-void j4_up(J4_up_e leg_up)
-{
-    switch (leg_up)
-    {
-    case j4_all_go:
-        set_target_position(170.0f,0.0f,9.6f);
-        break;
-    case j4_front_back:
-        set_target_position(0.0f,0.0f,179.6f);
-        break;
-    case j4_go_again:
-        gpio_pd3 = 0;
-        set_target_position(170.0f,0.0f,179.6f);
-        break;
-    case j4_front_back_qigang_go:
-        gpio_pd3 = 1;
-        set_target_position(0.0f,0.0f,349.6f);
-        break;
-    case j4_behind_back:
-        set_target_position(0.0f,0.0f,140.0f);
-        break;
-    default:
-        set_target_position(0.0f,0.0f,0.0f);
-        break;
-    }
-}
+// void j4_up(J4_up_e leg_up)
+// {
+//     switch (leg_up)
+//     {
+//     case j4_all_go:
+//         set_target_position(170.0f,0.0f,9.6f);
+//         break;
+//     case j4_front_back:
+//         set_target_position(0.0f,0.0f,179.6f);
+//         break;
+//     case j4_go_again:
+//         gpio_pd3 = 0;
+//         set_target_position(170.0f,0.0f,179.6f);
+//         break;
+//     case j4_front_back_qigang_go:
+//         gpio_pd3 = 1;
+//         set_target_position(0.0f,0.0f,349.6f);
+//         break;
+//     case j4_behind_back:
+//         set_target_position(0.0f,0.0f,140.0f);
+//         break;
+//     default:
+//         set_target_position(0.0f,0.0f,0.0f);
+//         break;
+//     }
+// }
+
+

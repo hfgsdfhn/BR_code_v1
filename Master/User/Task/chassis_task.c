@@ -32,7 +32,7 @@ void Chassis_Task_(void *argument)
             }
 
             if(status.L2_up_flag != 0)  l2_leg_up(status.L2_up_flag);
-            if(status.j4_up_flag != 0)  j4_up(status.j4_up_flag);
+//            if(status.j4_up_flag != 0)  j4_up(status.j4_up_flag);
             if(dji_flag)
             {
                 dji_flag = 0U;

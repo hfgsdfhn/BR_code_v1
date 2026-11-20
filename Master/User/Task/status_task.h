@@ -9,13 +9,13 @@
 struct send_to_chassis_t
 {
     float dt35_right;
-    float dt35_behind;
+    float dt35_front;
     remote_t remote;
     chassis_speed_t target_speed;
     float target_yaw;
     float current_yaw;
     uint8_t L2_up_flag;
-    uint8_t j4_up_flag;
+    uint8_t leg_back_flag;
     uint8_t chassis_emmergency_stop;
 };
 
@@ -46,6 +46,7 @@ extern osMessageQueueId_t Cup_QueueHandle;
 
 extern volatile uint8_t gpio_pb6, gpio_pb7, gpio_pd7, gpio_pd6;
 extern volatile uint8_t gpio_pd1, gpio_pd3, gpio_pd4, gpio_pd5;
+extern volatile uint8_t gpio_pd0, gpio_pc11, gpio_pc10, gpio_pa9;
 
 void Status_InitGpio(void);
 void Status_ApplyGpio(void);

@@ -60,7 +60,6 @@ typedef struct
     float output_ratio;
     rs_mode_t mode;
     float target;
-    float output_ratio;
     float hold_position;
     float reference_position;
     float reference_velocity;

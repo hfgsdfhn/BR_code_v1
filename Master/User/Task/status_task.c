@@ -20,6 +20,12 @@ volatile uint8_t gpio_pd3 = 0U;
 volatile uint8_t gpio_pd4 = 0U;
 volatile uint8_t gpio_pd5 = 0U;
 
+//Input
+volatile uint8_t gpio_pd0 = 0U;
+volatile uint8_t gpio_pc11 = 0U;
+volatile uint8_t gpio_pc10 = 0U;
+volatile uint8_t gpio_pa9 = 0U;
+
 static uint32_t status_sequence;
 static chassis_speed_t planned_speed;
 static float planned_yaw;
@@ -56,6 +62,11 @@ void Status_ApplyGpio(void)
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, gpio_pd3 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+    gpio_pd0 = (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_SET) ? 1U : 0U;
+    gpio_pc11 = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_11) == GPIO_PIN_SET) ? 1U : 0U;
+    gpio_pc10 = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == GPIO_PIN_SET) ? 1U : 0U;
+    gpio_pa9 = (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_SET) ? 1U : 0U;
 }
 
 void Queue_Init(void)
