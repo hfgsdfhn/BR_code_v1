@@ -17,8 +17,8 @@
 
 #define FRONT_LEG_SENSOR    gpio_pa8
 #define BEHIND_LEG_SENSOR   gpio_pc9
-#define FRONT_WHEEL_SENSOR    gpio_pc8
-#define BEHIND_WHEEL_SENSOR BEHIND_LEG_SENSOR
+#define BEHIND_WHEEL_SENSOR    gpio_pc8
+#define FRONT_WHEEL_SENSOR FRONT_LEG_SENSOR
 
 typedef enum
 {

@@ -31,6 +31,7 @@
 /* BR: no TR down mechanism. */
 #include "my_main.h"
 #include "bsp_can.h"
+#include "ethernet.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+  uint8_t ver;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +95,9 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+  /* Configure GPIO safety states before clock and peripheral initialization. */
+  MX_GPIO_Init();
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -108,7 +113,6 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
   MX_DMA_Init();
   MX_FDCAN1_Init();
   MX_FDCAN2_Init();
@@ -119,6 +123,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_UART5_Init();
+  MX_UART7_Init();
   MX_UART8_Init();
   MX_UART9_Init();
   MX_USART3_UART_Init();
@@ -128,12 +133,18 @@ int main(void)
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   (void)HAL_SPI_Init(&hspi1);
+
+/* 初始化 W5500 */
+W5500_Port_Init();
+
   My_Init();
 
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
+  /* RTOS 内核初始化后再创建 W5500 UDP 任务 */
+  W5500_UdpInit();
   MX_FREERTOS_Init();
 
   /* Start scheduler */
@@ -292,15 +303,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
-    static uint8_t can_poll_divider;
     HAL_IncTick();
-    can_poll_divider++;
-    if (can_poll_divider >= 2U)
-    {
-      can_poll_divider = 0U;
-      BspCan_Poll(&hfdcan2);
-      BspCan_Poll(&hfdcan3);
-    }
   }
   /* USER CODE BEGIN Callback 1 */
 
@@ -336,4 +339,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-

@@ -4,8 +4,8 @@
 #include <math.h>
 #include "quintic_planner.h"
 
-volatile float m2006_trajectory_max_speed_rad_s = 15.35987756f;
-volatile float m2006_trajectory_max_acceleration_rad_s2 = 62.832f;
+volatile float m2006_trajectory_max_speed_rad_s = 20.35987756f;
+volatile float m2006_trajectory_max_acceleration_rad_s2 = 20.0f;
 
 volatile float m2006_trajectory_time_s = 0.0f;
 

@@ -13,6 +13,7 @@
 #include "remote.h"
 #include "status_task.h"
 #include "cup_task.h"
+#include "ethernet.h"
 #include "../Mechanism/Upper/arm_config.h"
 #include "../Mechanism/Upper/cup_config.h"
 
@@ -84,11 +85,11 @@ void My_Init(void)
         g_error_code = ERROR_CODE_CAN_INIT;
     }
 
-    M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, 1);
+    M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, -1);
     M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, -1);
     M3508_Init(&m3508_dcup[0], &hfdcan2, 5U, 1);
 
-    M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, 1);
+    M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, -1);
     M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, -1);
 
     M2006_Init(&m2006_larm, &hfdcan2, 1U, -1);

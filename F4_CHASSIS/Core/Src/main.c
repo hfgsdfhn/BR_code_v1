@@ -103,8 +103,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-		t=__get_PRIMASK();
+  {;
     My_Loop();
     /* USER CODE END WHILE */
 

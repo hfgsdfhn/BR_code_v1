@@ -42,7 +42,7 @@ extern volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT];
 extern volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT];
 extern volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT];
 extern volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT];
-extern volatile float xarm_pose_pd11[2][ARM_JOINT_COUNT];
+
 extern volatile uint8_t arm_joint_zero_calibration[2][5];
 
 void Arm_TaskInit(void);

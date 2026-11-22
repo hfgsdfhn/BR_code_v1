@@ -246,23 +246,23 @@ static void leg_up_down()
         leg_up_flag = 0;
         l2_up_flag = 0;
         l2_down_flag = 0;
-        set_target_position(320.0f,0.0f,9.6f);
+        set_target_position(305.0f,0.0f,9.6f);
     }
 }
 
 static void l2_leg_auto_up()
 {
-    if(l2_up_flag == 1)
+    if(l2_up_flag == 1 && FRONT_LEG_SENSOR == 0 && BEHIND_WHEEL_SENSOR == 0)
     {
-        set_target_position(320.0f, 0.0f, 9.6f);  //全抬起来
-        l2_up_flag++;
+        set_target_position(305.0f, 0.0f, 9.6f);  //全抬起来
+        l2_up_flag = 2;
     }
-    else if(l2_up_flag == 2 && FRONT_LEG_SENSOR == 0)
+    else if(l2_up_flag == 2 && FRONT_LEG_SENSOR == 0 && BEHIND_WHEEL_SENSOR == 1)
     {
-        set_target_position(0.0f, 0.0f, 329.6f);
-        l2_up_flag++;
+        set_target_position(0.0f, 0.0f, 314.6f);
+        l2_up_flag = 3;
     }
-    else if(l2_up_flag == 3 && BEHIND_LEG_SENSOR == 0)
+    else if(l2_up_flag == 3 && BEHIND_WHEEL_SENSOR == 0 && FRONT_LEG_SENSOR == 0)
     {
         set_target_position(0.0f,0.0f,0.0f);
         l2_up_flag = 0;
@@ -273,12 +273,12 @@ static void l2_leg_auto_down()
 {
     if(l2_down_flag == 1 && BEHIND_WHEEL_SENSOR == 1)
     {
-        set_target_position(0.0f, 0.0f, 329.6f);
-        l2_down_flag++;
+        set_target_position(0.0f, 0.0f, 314.6f);
+        l2_down_flag = 2;
     }
     if(l2_down_flag == 2 && FRONT_WHEEL_SENSOR == 1)
     {
-        set_target_position(320.0f, 0.0f, 9.6f);
+        set_target_position(305.0f, 0.0f, 9.6f);
         l2_down_flag = 0;
     }
 }
