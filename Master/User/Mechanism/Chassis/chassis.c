@@ -15,6 +15,11 @@ float leg_pos = 100.0f;
 pid_t yaw_pid;
 pid_t turn_pid;
 float persent = 0.0f;
+static uint8_t l2_up_flag;
+static uint8_t l2_down_flag;
+static uint8_t leg_up_flag;
+static uint8_t leg_down_flag;
+static uint8_t chassis_emmergency_stop;
 
 float chassis_pid[2][4] = {
     {6.0f, 0.0f, 0.0f,6.0f},
@@ -124,11 +129,6 @@ void joy_to_mps(send_to_chassis_t *send)
 
 void key_to_chassis(send_to_chassis_t *send)
 {
-    static uint8_t l2_up_flag;
-    //static uint8_t j4_flag;
-    //static uint8_t j4_down_flag;
-    static
-    static uint8_t chassis_emmergency_stop;
     uint8_t pe0_pressed;
     uint8_t pe1_pressed;
 
@@ -136,7 +136,6 @@ void key_to_chassis(send_to_chassis_t *send)
     {
         return;
     }
-
 
     pe0_pressed = (uint8_t)((send->remote.key[1] & (1U << 7)) != 0U);
     pe1_pressed = (uint8_t)((send->remote.key[1] & (1U << 6)) != 0U);
@@ -155,21 +154,16 @@ void key_to_chassis(send_to_chassis_t *send)
 
     if (key_is_pressed(REMOTE_KEY_PE6))
     {
-        l2_up_flag = (uint8_t)((l2_up_flag + 1U) % 7U);
+        l2_up_flag = 1;
     }
-    send->L2_up_flag = l2_up_flag;
 
     if (key_is_pressed(REMOTE_KEY_PE3))
     {
-    //    j4_flag++;
-        // if(j4_flag > 5) j4_flag = 3;
-        // send->j4_up_flag = j4_flag;
+        leg_up_flag = 1;
     }
     if (key_is_pressed(REMOTE_KEY_PE5))
     {
-    //     j4_down_flag++;
-
-    //     send->j4_down_flag = j4_down_flag;
+        leg_down_flag = 1;       
     }
     if (key_is_pressed(REMOTE_KEY_PE4))
     {
@@ -177,8 +171,7 @@ void key_to_chassis(send_to_chassis_t *send)
     }
     if (key_is_pressed(REMOTE_KEY_PE2))
     {
-    //    j4_flag = 0;
-        l2_up_flag = 0;
+        l2_down_flag = 1;
     }
     if (key_is_pressed(REMOTE_KEY_SHOULDER_RIGHT_1))
     {
@@ -211,6 +204,7 @@ void set_target_position(float posa,float front, float behind)
             DJI_Board_Target.leg_height_mm[3] = posa +front; 
     Send_Target_Pos(&hfdcan1, DJI_Board_Target.leg_height_mm);
 }
+
 void l2_leg_up(L2_Leg_up_e leg_up)
 {
     switch (leg_up)
@@ -238,31 +232,60 @@ void l2_leg_up(L2_Leg_up_e leg_up)
     }
 }
 
-// void j4_up(J4_up_e leg_up)
-// {
-//     switch (leg_up)
-//     {
-//     case j4_all_go:
-//         set_target_position(170.0f,0.0f,9.6f);
-//         break;
-//     case j4_front_back:
-//         set_target_position(0.0f,0.0f,179.6f);
-//         break;
-//     case j4_go_again:
-//         gpio_pd3 = 0;
-//         set_target_position(170.0f,0.0f,179.6f);
-//         break;
-//     case j4_front_back_qigang_go:
-//         gpio_pd3 = 1;
-//         set_target_position(0.0f,0.0f,349.6f);
-//         break;
-//     case j4_behind_back:
-//         set_target_position(0.0f,0.0f,140.0f);
-//         break;
-//     default:
-//         set_target_position(0.0f,0.0f,0.0f);
-//         break;
-//     }
-// }
+static void leg_up_down()
+{
+    if(leg_down_flag)
+    {
+        leg_down_flag = 0;
+        l2_up_flag = 0;
+        l2_down_flag = 0;
+        set_target_position(0.0f,0.0f,0.0f);
+    }
+    if(leg_up_flag)
+    {
+        leg_up_flag = 0;
+        l2_up_flag = 0;
+        l2_down_flag = 0;
+        set_target_position(320.0f,0.0f,9.6f);
+    }
+}
 
+static void l2_leg_auto_up()
+{
+    if(l2_up_flag == 1)
+    {
+        set_target_position(320.0f, 0.0f, 9.6f);  //全抬起来
+        l2_up_flag++;
+    }
+    else if(l2_up_flag == 2 && FRONT_LEG_SENSOR == 0)
+    {
+        set_target_position(0.0f, 0.0f, 329.6f);
+        l2_up_flag++;
+    }
+    else if(l2_up_flag == 3 && BEHIND_LEG_SENSOR == 0)
+    {
+        set_target_position(0.0f,0.0f,0.0f);
+        l2_up_flag = 0;
+    }
+}
 
+static void l2_leg_auto_down()
+{
+    if(l2_down_flag == 1 && BEHIND_WHEEL_SENSOR == 1)
+    {
+        set_target_position(0.0f, 0.0f, 329.6f);
+        l2_down_flag++;
+    }
+    if(l2_down_flag == 2 && FRONT_WHEEL_SENSOR == 1)
+    {
+        set_target_position(320.0f, 0.0f, 9.6f);
+        l2_down_flag = 0;
+    }
+}
+
+void leg_task()
+{
+    leg_up_down();
+    l2_leg_auto_up();
+    l2_leg_auto_down();
+}

@@ -21,10 +21,9 @@ volatile uint8_t gpio_pd4 = 0U;
 volatile uint8_t gpio_pd5 = 0U;
 
 //Input
-volatile uint8_t gpio_pd0 = 0U;
-volatile uint8_t gpio_pc11 = 0U;
-volatile uint8_t gpio_pc10 = 0U;
-volatile uint8_t gpio_pa9 = 0U;
+volatile uint8_t gpio_pa8 = 0U;
+volatile uint8_t gpio_pc9 = 0U;
+volatile uint8_t gpio_pc8 = 0U;
 
 static uint32_t status_sequence;
 static chassis_speed_t planned_speed;
@@ -34,7 +33,7 @@ static bool planned_yaw_initialized;
 typedef struct
 {
     float dt35_right;
-    float dt35_behind;
+    float dt35_front;
     remote_t remote;
     chassis_speed_t target_speed;
     float target_yaw;
@@ -63,10 +62,9 @@ void Status_ApplyGpio(void)
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-    gpio_pd0 = (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_SET) ? 1U : 0U;
-    gpio_pc11 = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_11) == GPIO_PIN_SET) ? 1U : 0U;
-    gpio_pc10 = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == GPIO_PIN_SET) ? 1U : 0U;
-    gpio_pa9 = (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_SET) ? 1U : 0U;
+    gpio_pa8 = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8);
+    gpio_pc9 = HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9);
+    gpio_pc8 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8);
 }
 
 void Queue_Init(void)
@@ -121,7 +119,7 @@ void Send_to_Arm(void)
 {
     send_to_arm_t arm;
     arm.dt35_right = common.dt35_right;
-    arm.dt35_behind = common.dt35_behind;
+    arm.dt35_front = common.dt35_front;
     arm.remote = common.remote;
     arm.sequence = common.sequence;
     Queue_PublishLatest(Arm_QueueHandle, &arm);
@@ -131,7 +129,7 @@ void Send_to_Climb(void)
 {
     send_to_climb_t climb;
     climb.dt35_right = common.dt35_right;
-    climb.dt35_behind = common.dt35_behind;
+    climb.dt35_front = common.dt35_front;
     climb.remote = common.remote;
     climb.sequence = common.sequence;
     Queue_PublishLatest(Climb_QueueHandle, &climb);
@@ -141,7 +139,7 @@ void Send_to_Cup(void)
 {
     send_to_cup_t cup;
     cup.dt35_right = common.dt35_right;
-    cup.dt35_behind = common.dt35_behind;
+    cup.dt35_front = common.dt35_front;
     cup.remote = common.remote;
     cup.stp23l_up_distance_cm = common.stp23l_up_distance_cm;
     cup.stp23l_down_distance_cm = common.stp23l_down_distance_cm;

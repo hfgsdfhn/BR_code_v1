@@ -37,8 +37,7 @@ typedef struct
     bool valid;
 } ak_motor_feedback_t;
 
-typedef struct
-{
+typedef struct                                                                            
     float step_speed;
     uint32_t step_interval_ms;
     uint32_t last_step_tick;

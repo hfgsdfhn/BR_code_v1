@@ -872,6 +872,16 @@
               <FilePath>..\User\Communication\mins_imu.h</FilePath>
             </File>
             <File>
+              <FileName>dt35.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Communication\dt35.c</FilePath>
+            </File>
+            <File>
+              <FileName>dt35.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\Communication\dt35.h</FilePath>
+            </File>
+            <File>
               <FileName>vofa.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Communication\vofa.c</FilePath>

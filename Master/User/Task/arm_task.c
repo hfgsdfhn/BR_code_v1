@@ -74,7 +74,7 @@ void Arm_OnFrame(const can_frame_t *frame)
 void Arm_TaskInit(void)
 {
     memset(&upper_state, 0, sizeof(upper_state));
-    upper_state.enable = 1U;
+    upper_state.enable = 0U;
     memset((void *)arm_target, 0, sizeof(arm_target));
     memset((void *)br_mit_tau, 0, sizeof(br_mit_tau));
     memset(br_joint_velocity, 0, sizeof(br_joint_velocity));

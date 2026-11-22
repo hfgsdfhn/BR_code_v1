@@ -14,6 +14,7 @@ struct DJI_Board
     float PID_K[3][3];
     float leg_height_mm[4];
     float wheel_speed_mps[4];
+    chassis_speed_t chassis_speed;
 };
 
 extern DJI_Board DJI_Board_Target;

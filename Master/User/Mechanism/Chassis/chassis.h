@@ -15,6 +15,11 @@
 #define M3508_LEG_MOTOR_ID_MIN 5U
 #define M3508_LEG_MOTOR_ID_MAX 8U
 
+#define FRONT_LEG_SENSOR    gpio_pa8
+#define BEHIND_LEG_SENSOR   gpio_pc9
+#define FRONT_WHEEL_SENSOR    gpio_pc8
+#define BEHIND_WHEEL_SENSOR BEHIND_LEG_SENSOR
+
 typedef enum
 {
     M3508_POS_PID = 0,
@@ -34,28 +39,11 @@ typedef enum
     l2_up_all_go = 1,
     l2_up_front_back,
     l2_up_behind_back,
-    l2_down_behind_go,
+
+    l2_down_behind_go = 4,
     l2_down_front_go,
     l2_down_all_back,
 }L2_Leg_up_e;
-
-// typedef enum
-// {
-//   j4_all_go = 1,
-//   j4_front_back,
-//   j4_go_again,
-//   j4_front_back_qigang_go, 
-//   j4_behind_back,
-// }J4_up_e;
-
-// typedef enum
-// {
-//     j4_behind_go = 1,
-//     j4_qigang_go,
-//     j4_front_go,
-//     j4_behind_go_go,
-//     qigang_back,
-// }J4_down_e;
 
 typedef struct DJI_Board DJI_Board;
 
@@ -74,8 +62,7 @@ void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
 void set_target_position(float posa,float front, float behind);
 void l2_leg_up(L2_Leg_up_e leg_up);
-//void j4_up(J4_up_e leg_up);
-//void j4_down(J4_down_e leg_down);
+void leg_task();
 extern pid_t yaw_pid;
 
 #endif

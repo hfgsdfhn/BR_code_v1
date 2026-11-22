@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-volatile uint8_t suction_enable = 1U;
+volatile uint8_t suction_enable = 0U;
 volatile float suction_target[2][3];
 
 volatile uint32_t cup_motor_offline_count = 0U;

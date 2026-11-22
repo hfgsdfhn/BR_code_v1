@@ -6,6 +6,7 @@
 #include "chassis.h"
 #include <stdint.h>
 
+
 struct send_to_chassis_t
 {
     float dt35_right;
@@ -14,7 +15,7 @@ struct send_to_chassis_t
     chassis_speed_t target_speed;
     float target_yaw;
     float current_yaw;
-    uint8_t L2_up_flag;
+    uint8_t leg_up_flag;
     uint8_t leg_back_flag;
     uint8_t chassis_emmergency_stop;
 };
@@ -22,7 +23,7 @@ struct send_to_chassis_t
 typedef struct
 {
     float dt35_right;
-    float dt35_behind;
+    float dt35_front;
     remote_t remote;
     uint32_t sequence;
 } send_to_arm_t;
@@ -30,7 +31,7 @@ typedef struct
 typedef struct
 {
     float dt35_right;
-    float dt35_behind;
+    float dt35_front;
     remote_t remote;
     float stp23l_up_distance_cm;
     float stp23l_down_distance_cm;
@@ -46,7 +47,7 @@ extern osMessageQueueId_t Cup_QueueHandle;
 
 extern volatile uint8_t gpio_pb6, gpio_pb7, gpio_pd7, gpio_pd6;
 extern volatile uint8_t gpio_pd1, gpio_pd3, gpio_pd4, gpio_pd5;
-extern volatile uint8_t gpio_pd0, gpio_pc11, gpio_pc10, gpio_pa9;
+extern volatile uint8_t gpio_pa8, gpio_pc9, gpio_pc8;
 
 void Status_InitGpio(void);
 void Status_ApplyGpio(void);

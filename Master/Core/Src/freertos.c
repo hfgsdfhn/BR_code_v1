@@ -112,7 +112,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  Queue_Init();
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */

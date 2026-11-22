@@ -31,8 +31,8 @@ void Chassis_Task_(void *argument)
                 Chassis_SendSpeed(&hfdcan1, &stop);
             }
 
-            if(status.L2_up_flag != 0)  l2_leg_up(status.L2_up_flag);
-//            if(status.j4_up_flag != 0)  j4_up(status.j4_up_flag);
+            leg_task();
+
             if(dji_flag)
             {
                 dji_flag = 0U;

@@ -38,12 +38,14 @@ void My_Loop(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance != TIM6) { return; }
-
     for (uint8_t i = 0U; i < 4U; ++i)
     {
         feedback_motor_speed[i] = g_chassis_motors[i].feedback.speed;
     }
-    Chassis_ForwardKinematics(feedback_motor_speed, &chassis_actual_speed);
+
+    Chassis_ForwardKinematics(feedback_motor_speed, &chassis_actual_speed); //解算出速度
+
+    Chassis_tx(&hcan1,chassis_actual_speed.vx,chassis_actual_speed.vy,chassis_actual_speed.vw); //发送速度
 
     if (target_mode == 0U)
     {

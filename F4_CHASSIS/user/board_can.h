@@ -44,6 +44,12 @@ extern float dji_target_speed;
 void Chassis_rx(CAN_RxHeaderTypeDef *header, uint8_t data[8]);
 
 /* 底盘CAN发送 */
+HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,
+                             float vx,
+                             float vy,
+                             float w);
+
+/* 底盘CAN发送 */
 HAL_StatusTypeDef Board_CAN1_Send(
     uint16_t can_id,
     const int16_t data[BOARD_MOTOR_NUM]);
