@@ -30,6 +30,16 @@ typedef struct
 
 extern br_gravity_model_t br_gravity_models[2];
 
+extern volatile float br_link_37_m;
+extern volatile float br_link_6_m;
+extern volatile float br_link_21_5_m;
+extern volatile float br_link_8_m;
+
+extern volatile float br_mass_003_kg;
+extern volatile float br_mass_004_kg;
+extern volatile float br_mass_005_kg;
+extern volatile float br_mass_006_kg;
+
 
 bool BR_GravityEvaluate(const br_gravity_model_t *model,
                         const float q[BR_ARM_DOF],

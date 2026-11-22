@@ -522,6 +522,20 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     return true;
 }
 
+void RS05_ResetSoftwareZero(rs05_t *motor)
+{
+    if (motor == NULL || !motor->continuous_valid) return;
+    motor->software_zero_offset = motor->continuous_position;
+    motor->position = 0.0f;
+    motor->hold_position = 0.0f;
+    motor->reference_position = 0.0f;
+    motor->target = 0.0f;
+    motor->trajectory_pending = false;
+    motor->trajectory_active = false;
+    PID_Reset(&motor->cascade_position_pid);
+    PID_Reset(&motor->cascade_speed_pid);
+}
+
 void RS05_GetPositionDegrees(const rs05_t *m, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -555,19 +569,16 @@ void RS05_Service(rs05_t *m)
     }
     if (m->set_zero_position_request != 0U)
     {
-        /* Keep the zero command and feedback exchange at the control period.
-         * Without the poll, single_position can remain the pre-calibration
-         * value until an unrelated feedback frame happens to arrive. */
         if ((uint32_t)(now - m->last_control_tick) >= 5U)
         {
             m->last_control_tick = now;
             (void)RS05_SendSetZero(m);
             (void)RS05_PollFeedback(m);
         }
-
         if (m->feedback_valid && fabsf(m->single_position) <= RS05_ZERO_POSITION_TOLERANCE_RAD)
         {
             m->continuous_position = 0.0f;
+            m->software_zero_offset = 0.0f;
             m->position = 0.0f;
             m->hold_position = 0.0f;
             m->reference_position = 0.0f;
@@ -576,13 +587,12 @@ void RS05_Service(rs05_t *m)
             m->trajectory_active = false;
             m->set_zero_position_request = 0U;
         }
-
         return;
     }
 
     if (m->mode == RS_MODE_STOP || !m->enabled)
     {
-        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        if ((uint32_t)(now - m->last_control_tick) >= 2U)
         {
             m->last_control_tick = now;
             if (RS05_EnsureMitMode(m))
@@ -592,7 +602,7 @@ void RS05_Service(rs05_t *m)
     }
     if (m->mode == RS_MODE_POSITION || m->mode == RS_MODE_SPEED || m->mode == RS_MODE_DAMPING || m->mode == RS_MODE_MIT)
     {
-        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        if ((uint32_t)(now - m->last_control_tick) >= 2U)
         {
             m->last_control_tick = now;
             (void)RS05_Send(m);
@@ -604,12 +614,16 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))
         return;
+    if (tau_nm > RS05_TORQUE_MAX)
+        tau_nm = RS05_TORQUE_MAX;
+    else if (tau_nm < -RS05_TORQUE_MAX)
+        tau_nm = -RS05_TORQUE_MAX;
     if (motor->target_sink)
     {
         motor->target_sink(motor, (int)mode, tau_nm, output_degrees);
         return;
     }
-    if (fabsf(output_degrees * RS05_DEG_TO_RAD) > RS05_POSITION_MAX || fabsf(tau_nm) > RS05_TORQUE_MAX)
+    if (fabsf(output_degrees * RS05_DEG_TO_RAD) > RS05_POSITION_MAX)
         return;
     float position_target = output_degrees * RS05_DEG_TO_RAD;
     if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||
@@ -625,3 +639,9 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }
+
+
+
+
+
+

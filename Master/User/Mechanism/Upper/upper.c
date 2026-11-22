@@ -24,28 +24,28 @@ volatile uint8_t arm_ik_second_rs00_prefer_small[2];
 upper_t upper_state;
 Arm_Pos Arm_larm, Arm_rarm;
 
-volatile float br_root_m2006_trajectory_time_s = 0.5f;
+volatile float br_root_m2006_trajectory_time_s = 2.0f;
 volatile float br_root_rs01_trajectory_time_s = 0.5f;
-volatile float br_big_arm_rs00_trajectory_time_s = 1.6f;
+volatile float br_big_arm_rs00_trajectory_time_s = 1.4f;
 volatile float br_small_arm_rs00_trajectory_time_s = 1.0f;
 volatile float br_j4310_trajectory_time_s = 0.5f;
 volatile float br_rs05_trajectory_time_s = 0.0f;
 
-volatile float br_root_rs01_kp = 50.0f;
-volatile float br_root_rs01_kd = 5.0f;
+volatile float br_root_rs01_kp = 100.0f;
+volatile float br_root_rs01_kd = 20.0f;
 volatile float br_shoulder_kp = 50.0f;
 volatile float br_shoulder_kd = 5.0f;
 volatile float br_elbow_kp = 50.0f;
-volatile float br_elbow_kd = 5.0f;
+volatile float br_elbow_kd = 3.0f;
 volatile float br_wrist_kp = 30.0f;
-volatile float br_wrist_kd = 3.0f;
+volatile float br_wrist_kd = 2.0f;
 volatile float br_rotation_kp = 30.0f;
 volatile float br_rotation_kd = 5.0f;
-volatile float br_root_m2006_position_kp = 94.247779608f;
-volatile float br_root_m2006_position_ki = 52.359877560f;
-volatile float br_root_m2006_position_kd = 0.523598776f;
-volatile float br_root_m2006_speed_kp = 3.342253805f;
-volatile float br_root_m2006_speed_ki = 2.387324146f;
+volatile float br_root_m2006_position_kp = 80.247779608f;
+volatile float br_root_m2006_position_ki = 60.359877560f;
+volatile float br_root_m2006_position_kd = 0.0f;
+volatile float br_root_m2006_speed_kp = 2.0f;
+volatile float br_root_m2006_speed_ki = 3.0f;
 volatile float br_root_m2006_speed_kd = 0.0f;
 
 volatile float br_m2006_cup0_position_kp = BR_M2006_CUP0_POSITION_KP;
@@ -54,7 +54,6 @@ volatile float br_m2006_cup0_position_kd = BR_M2006_CUP0_POSITION_KD;
 volatile float br_m2006_cup0_speed_kp = BR_M2006_CUP0_SPEED_KP;
 volatile float br_m2006_cup0_speed_ki = BR_M2006_CUP0_SPEED_KI;
 volatile float br_m2006_cup0_speed_kd = BR_M2006_CUP0_SPEED_KD;
-
 volatile float br_m2006_cup1_position_kp = BR_M2006_CUP1_POSITION_KP;
 volatile float br_m2006_cup1_position_ki = BR_M2006_CUP1_POSITION_KI;
 volatile float br_m2006_cup1_position_kd = BR_M2006_CUP1_POSITION_KD;
@@ -74,14 +73,14 @@ volatile float rarm_shoulder_tau_nm = 0.0f;
 volatile float rarm_elbow_tau_nm = 0.0f;
 volatile float rarm_wrist_tau_nm = 0.0f;
 volatile float rarm_rotation_tau_nm = 0.0f;
-volatile float larm_mass_003_kg = 0.670f;
-volatile float larm_mass_004_kg = 0.072f;
-volatile float larm_mass_005_kg = 0.430f;
-volatile float larm_mass_006_kg = 1.008f;
-volatile float rarm_mass_003_kg = 0.670f;
-volatile float rarm_mass_004_kg = 0.072f;
-volatile float rarm_mass_005_kg = 0.430f;
-volatile float rarm_mass_006_kg = 1.008f;
+volatile float larm_mass_003_kg = 0.600f;
+volatile float larm_mass_004_kg = 0.001f;
+volatile float larm_mass_005_kg = 0.06f;
+volatile float larm_mass_006_kg = 1.22f;
+volatile float rarm_mass_003_kg = 0.35f;
+volatile float rarm_mass_004_kg = 0.1f;
+volatile float rarm_mass_005_kg = 0.3f;
+volatile float rarm_mass_006_kg = 1.2f;
 
 
 static void Upper_ApplyTrajectoryTimes(void)
@@ -420,7 +419,10 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
     {
         rs00_t *m = (rs00_t *)motor;
         if (joint == ARM_JOINT_SHOULDER)
+        {
             target *= 36.0f / 20.0f;
+            tau *= 20.0f / 36.0f;
+        }
         m->tau_ff_nm = tau;
         if (mode == ARM_MODE_MIT) RS00_SetTargetMIT(m, RS_MODE_MIT, tau, target);
 
@@ -606,4 +608,3 @@ void Upper_Service(uint32_t now) {
     }
   }
 }
-

@@ -79,6 +79,7 @@ typedef struct
     volatile bool enabled;
     volatile uint8_t feedback_state;
     float continuous_position;
+    float software_zero_offset;
     bool continuous_valid;
     bool angle_store_pending;
     volatile bool offline_latched;
@@ -143,6 +144,8 @@ void RS05_Service(rs05_t *motor);
 void RS05_GetPositionDegrees(const rs05_t *motor,
                              volatile float *position_degrees);
 
+void RS05_ResetSoftwareZero(rs05_t *motor);
+
 void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS05_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
 #define RS05_SetTarget(...) RS05_TARGET_SELECT(__VA_ARGS__, RS05_SetTargetMIT, RS05_SetTargetBasic)(__VA_ARGS__)
@@ -162,3 +165,10 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS05_DAMPING_KD 2.0f
 
 #endif
+
+
+
+
+
+
+

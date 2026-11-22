@@ -522,7 +522,7 @@ void RS01_Service(rs01_t *m)
         m->feedback_recovery_pending = true;
     }
 
-    if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 5U)
+    if (!m->enabled && (uint32_t)(now - m->reconnect_retry_tick) >= 2U)
     {
         m->reconnect_retry_tick = now;
         (void)RS01_BuildSpecial(m, RS01_ENABLE);
@@ -530,7 +530,7 @@ void RS01_Service(rs01_t *m)
 
     if (m->mode == RS_MODE_STOP)
     {
-        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        if ((uint32_t)(now - m->last_control_tick) >= 2U)
         {
             m->last_control_tick = now;
             if (RS01_EnsureMitMode(m))
@@ -540,7 +540,7 @@ void RS01_Service(rs01_t *m)
     }
     if (m->mode == RS_MODE_POSITION || m->mode == RS_MODE_SPEED || m->mode == RS_MODE_DAMPING || m->mode == RS_MODE_MIT)
     {
-        if ((uint32_t)(now - m->last_control_tick) >= 5U)
+        if ((uint32_t)(now - m->last_control_tick) >= 2U)
         {
             m->last_control_tick = now;
             (void)RS01_Send(m);

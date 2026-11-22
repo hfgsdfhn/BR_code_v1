@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -29,6 +29,7 @@
 /* USER CODE BEGIN Includes */
 /* BR: no TR down mechanism. */
 #include "my_main.h"
+#include "bsp_can.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -291,7 +292,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
+    static uint8_t can_poll_divider;
     HAL_IncTick();
+    can_poll_divider++;
+    if (can_poll_divider >= 2U)
+    {
+      can_poll_divider = 0U;
+      BspCan_Poll(&hfdcan2);
+      BspCan_Poll(&hfdcan3);
+    }
   }
   /* USER CODE BEGIN Callback 1 */
 
