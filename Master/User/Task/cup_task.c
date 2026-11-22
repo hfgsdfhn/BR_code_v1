@@ -1,7 +1,6 @@
 
 #include "cup_task.h"
 
-
 #include "cmsis_os2.h"
 #include "upper.h"
 #include "bsp_uart.h"
@@ -16,10 +15,19 @@
 
 volatile uint8_t suction_enable = 0U;
 volatile float suction_target[2][3];
+static volatile uint8_t pa8_sequence_state;
+static volatile uint8_t pd13_stp_state;
+static bool pd13_stp_started[2];
+static bool pd13_stp_done[2];
+
+#define PD13_UPPER_ID2_MAX_DEG  890.0f
+#define PD13_LOWER_ID2_MAX_DEG  790.0f
+#define PD13_ID2_LIMIT_DECEL_DEG 10.0f
 
 volatile uint32_t cup_motor_offline_count = 0U;
 volatile uint32_t cup_motor_recover_count = 0U;
 static bool cup_motor_online_prev[5];
+static bool cup_startup_hold_latched;
 
 __ALIGNED(32) volatile float suction_feedback_angle[2][3];
 volatile float ustp23l_distance_cm;
@@ -252,6 +260,47 @@ static bool SuctionCup_StartupZeroCalibrationComplete(void)
     }
     return m3508_dcup[0].received;
 }
+static void SuctionCup_ServicePd13StpLink(void)
+{
+    m2006_t *motors[2] = {&m2006_ucup[0], &m2006_dcup[0]};
+    const volatile float *distances[2] = {&ustp23l_distance_cm, &dstp23l_distance_cm};
+    unsigned side;
+    if (pd13_stp_state == 1U)
+    {
+        float up_id3 = suction_feedback_angle[ucup][1U];
+        float down_id3 = suction_feedback_angle[dcup][1U];
+        if (up_id3 >= 80.0f && up_id3 <= 90.0f && down_id3 >= 80.0f && down_id3 <= 90.0f)
+            pd13_stp_state = 2U;
+        return;
+    }
+    if (pd13_stp_state != 2U)
+        return;
+    for (side = 0U; side < 2U; ++side)
+    {
+        float position = suction_feedback_angle[side == 0U ? ucup : dcup][0U];
+        float distance = *distances[side];
+        if (!pd13_stp_started[side] && distance >= 0.0f && distance <= 92.0f)
+            pd13_stp_started[side] = true;
+        if (!pd13_stp_started[side] || pd13_stp_done[side])
+            continue;
+        if (distance <= 1.5f ||
+            position >= (side == 0U ? 890.0f : 790.0f))
+        {
+            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, 0.0f);
+            suction_target[side == 0U ? ucup : dcup][0U] = position;
+            pd13_stp_done[side] = true;
+        }
+        else
+        {
+            float position_limit = side == 0U ? 890.0f : 790.0f;
+            float speed = (distance <= 10.0f ||
+                           position >= position_limit - PD13_ID2_LIMIT_DECEL_DEG) ? 0.25f : 1.0f;
+            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, speed);
+        }
+    }
+    if (pd13_stp_done[0] && pd13_stp_done[1])
+        pd13_stp_state = 3U;
+}
 void SuctionCup_Service(void)
 {
     unsigned i;
@@ -259,24 +308,58 @@ void SuctionCup_Service(void)
 
     SuctionCup_MotorWatchdog();
 
-
     enabled = suction_enable != 0U;
+
+    if (pa8_sequence_state == 1U && m3508_dcup[0].feedback_online)
+    {
+        float m3508_angle = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        if (m3508_angle > 395.0f && m3508_angle < 405.0f)
+        {
+            suction_target[dcup][0U] = 800.0f;
+            suction_target[dcup][1U] = 85.0f;
+            pa8_sequence_state = 2U;
+        }
+    }
+    else if (pa8_sequence_state == 3U && m2006_dcup[0].feedback_online)
+    {
+        float m2006_angle = m2006_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        if (m2006_angle > 130.0f && m2006_angle < 140.0f)
+        {
+            suction_target[dcup][2U] = 0.0f;
+            pa8_sequence_state = 4U;
+        }
+    }
+    if (!cup_startup_hold_latched &&
+        m2006_ucup[0].received && m2006_ucup[1].received &&
+        m2006_dcup[0].received && m2006_dcup[1].received &&
+        m3508_dcup[0].received)
+    {
+        suction_target[ucup][0] = m2006_ucup[0].position_rad * ARM_RAD_TO_DEG;
+        suction_target[ucup][1] = m2006_ucup[1].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][0] = m2006_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][1] = m2006_dcup[1].position_rad * ARM_RAD_TO_DEG;
+        suction_target[dcup][2] = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
+        cup_startup_hold_latched = true;
+    }
 
     for (i = 0U; i < 2U; i++)
     {
         bool up_ready = m2006_ucup[i].feedback_online;
         bool down_ready = m2006_dcup[i].feedback_online;
 
-        M2006_SetTargetDeferred(&m2006_ucup[i],
-                                (enabled && up_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                (enabled && up_ready) ? suction_target[ucup][i] : 0.0f);
-        M2006_SetTargetDeferred(&m2006_dcup[i],
-                                (enabled && down_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                (enabled && down_ready) ? suction_target[dcup][i] : 0.0f);
+        if (!(i == 0U && (pd13_stp_state == 1U || pd13_stp_state == 2U) && pd13_stp_started[0] && !pd13_stp_done[0]))
+            M2006_SetTargetDeferred(&m2006_ucup[i],
+                                    (enabled && up_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                    (enabled && up_ready) ? suction_target[ucup][i] : 0.0f);
+        if (!(i == 0U && (pd13_stp_state == 1U || pd13_stp_state == 2U) && pd13_stp_started[1] && !pd13_stp_done[1]))
+            M2006_SetTargetDeferred(&m2006_dcup[i],
+                                    (enabled && down_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                    (enabled && down_ready) ? suction_target[dcup][i] : 0.0f);
     }
     M3508_SetTargetDeferred(&m3508_dcup[0],
                             (enabled && m3508_dcup[0].feedback_online) ? M3508_MODE_POSITION : M3508_MODE_STOP,
                             (enabled && m3508_dcup[0].feedback_online) ? suction_target[dcup][2U] : 0.0f);
+    SuctionCup_ServicePd13StpLink();
     SuctionCup_SendGroupFrames();
 }
 static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
@@ -285,8 +368,12 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     static bool previous_keys_valid;
     static bool pd14_second_press;
     static bool pd15_second_press;
+    static bool pa11_second_press;
+    static bool previous_pa5_low_mode;
+    static bool previous_pa5_mode_valid;
     uint16_t current_keys;
     uint16_t pressed_keys;
+    bool pa5_low_mode;
     if (status == NULL)
         return;
     if ((status->remote.switch_state & (1U << 0)) == 0U)
@@ -295,9 +382,17 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         previous_keys_valid = false;
         pd14_second_press = false;
         pd15_second_press = false;
+        pa11_second_press = false;
+        pa8_sequence_state = 0U;
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
         return;
     }
-    current_keys = (uint16_t)(status->remote.key[0] & ((1U << 0) | (1U << 1) | (1U << 2) | (1U << 3) | (1U << 4) | (1U << 5) | (1U << 6)));
+    current_keys = (uint16_t)(status->remote.key[0] & 0xFFU);
+    current_keys |= (uint16_t)((status->remote.key[1] & 1U) << 8);
     if (!previous_keys_valid)
     {
         previous_keys = current_keys;
@@ -305,59 +400,167 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         return;
     }
     pressed_keys = (uint16_t)(current_keys & (uint16_t)~previous_keys);
-    if ((pressed_keys & (1U << 0)) != 0U)
+    pa5_low_mode = ((status->remote.switch_state & (1U << 1U)) != 0U);
+    if (previous_pa5_mode_valid && pa5_low_mode != previous_pa5_low_mode)
+    {
+        pd14_second_press = false;
+        pd15_second_press = false;
+        pa11_second_press = false;
+        pa8_sequence_state = 0U;
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
+    }
+    previous_pa5_low_mode = pa5_low_mode;
+    previous_pa5_mode_valid = true;
+
+    /* PA6 low mapping: K0=PD12, K1=PD10, K2=PD11, K3=PD15,
+       K4=PD13, K5=PD14, K6=PA12, K7=PA11, K8=PA8. */
+    if ((pressed_keys & (1U << 2)) != 0U)
         suction_enable ^= 1U;
-    if ((pressed_keys & (1U << 1)) != 0U)
+    if ((pressed_keys & (1U << 0)) != 0U)
     {
         gpio_pd7 ^= 1U;
         gpio_pb6 ^= 1U;
     }
-    if ((pressed_keys & (1U << 2)) != 0U)
+    if ((pressed_keys & (1U << 1)) != 0U)
     {
         gpio_pb7 ^= 1U;
         gpio_pd4 ^= 1U;
     }
-    if ((pressed_keys & (1U << 3)) != 0U)
+    if ((pressed_keys & (1U << 5)) != 0U)
         gpio_pd1 ^= 1U;
-    if ((pressed_keys & (1U << 6)) != 0U)
+    if ((pressed_keys & (1U << 8)) != 0U)
         suction_target[dcup][2U] = (suction_target[dcup][2U] == 220.0f) ? 0.0f : 220.0f;
-    if ((pressed_keys & (1U << 4)) != 0U)
+    if ((pressed_keys & (1U << 6)) != 0U)
     {
-        if (!pd14_second_press)
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
+        if (pa8_sequence_state == 0U || pa8_sequence_state == 4U)
         {
-            suction_target[ucup][0U] = 890.0f;
-            suction_target[dcup][0U] = 700.0f;
+            suction_target[dcup][2U] = 400.0f;
+            pa8_sequence_state = 1U;
+        }
+        else if (pa8_sequence_state == 2U)
+        {
+            suction_target[dcup][0U] = 35.0f;
+            suction_target[dcup][1U] = 85.0f;
+            pa8_sequence_state = 3U;
+        }
+        pd14_second_press = false;
+        pd15_second_press = false;
+        pa11_second_press = false;
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
+    }
+    if ((pressed_keys & (1U << 3)) != 0U)
+    {
+        if (pa5_low_mode)
+        {
+            if (pd13_stp_state == 0U)
+            {
+                pd13_stp_state = 1U;
+                pd13_stp_started[0] = false;
+                pd13_stp_started[1] = false;
+                pd13_stp_done[0] = false;
+                pd13_stp_done[1] = false;
+
+                suction_target[ucup][0U] = 35.0f;
+                suction_target[dcup][0U] = 35.0f;
+                suction_target[ucup][1U] = 85.0f;
+                suction_target[dcup][1U] = 85.0f;
+            }
+            else
+            {
+                pd13_stp_state = 0U;
+                pd13_stp_started[0] = false;
+                pd13_stp_started[1] = false;
+                pd13_stp_done[0] = false;
+                pd13_stp_done[1] = false;
+                suction_target[ucup][0U] = 35.0f;
+                suction_target[dcup][0U] = 35.0f;
+            }
+            suction_target[ucup][1U] = 85.0f;
+            suction_target[dcup][1U] = 85.0f;
+        }
+        else if (!pd14_second_press)
+        {
+            suction_target[ucup][0U] = 840.0f;
+            suction_target[dcup][0U] = 790.0f;
+            suction_target[ucup][1U] = 85.0f;
+            suction_target[dcup][1U] = 85.0f;
+            pd14_second_press = true;
         }
         else
         {
-            suction_target[ucup][0U] = 100.0f;
-            suction_target[dcup][0U] = 0.0f;
+            suction_target[ucup][0U] = 35.0f;
+            suction_target[dcup][0U] = 35.0f;
+            suction_target[ucup][1U] = 85.0f;
+            suction_target[dcup][1U] = 85.0f;
+            pd14_second_press = false;
         }
-        suction_target[ucup][1U] = 90.0f;
-        suction_target[dcup][1U] = 90.0f;
-        pd14_second_press = !pd14_second_press;
         pd15_second_press = false;
+        pa11_second_press = false;
+        pa8_sequence_state = 0U;
     }
-    if ((pressed_keys & (1U << 5)) != 0U)
+    if ((pressed_keys & (1U << 4)) != 0U)
     {
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
         if (!pd15_second_press)
         {
-            suction_target[ucup][0U] = 890.0f;
+            suction_target[ucup][0U] = 840.0f;
             suction_target[dcup][0U] = 790.0f;
         }
         else
         {
-            suction_target[ucup][0U] = 600.0f;
+            suction_target[ucup][0U] = 500.0f;
             suction_target[dcup][0U] = 500.0f;
         }
         suction_target[ucup][1U] = 0.0f;
         suction_target[dcup][1U] = 0.0f;
         pd15_second_press = !pd15_second_press;
         pd14_second_press = false;
+        pa11_second_press = false;
+        pa8_sequence_state = 0U;
+    }
+    if ((pressed_keys & (1U << 7)) != 0U)
+    {
+        pd13_stp_state = 0U;
+        pd13_stp_started[0] = false;
+        pd13_stp_started[1] = false;
+        pd13_stp_done[0] = false;
+        pd13_stp_done[1] = false;
+        if (!pa11_second_press)
+        {
+            suction_target[ucup][0U] = 840.0f;
+            suction_target[dcup][0U] = 790.0f;
+        }
+        else
+        {
+            suction_target[ucup][0U] = 500.0f;
+            suction_target[dcup][0U] = 500.0f;
+        }
+        suction_target[ucup][1U] = 160.0f;
+        suction_target[dcup][1U] = 160.0f;
+        pa11_second_press = !pa11_second_press;
+        pd14_second_press = false;
+        pd15_second_press = false;
+        pa8_sequence_state = 0U;
     }
     previous_keys = current_keys;
 }
-
 void SuctionCup_Task(void *argument)
 {
     (void)argument;

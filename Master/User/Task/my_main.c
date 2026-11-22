@@ -5,7 +5,6 @@
 #include "bsp_can.h"
 #include "bsp_uart.h"
 #include "cmsis_os2.h"
-#include "scram.h"
 #include "flash.h"
 #include "usart.h"
 #include "spi.h"
@@ -109,7 +108,6 @@ void My_Init(void)
     Status_ApplyGpio();
     Upper_BindMotors(&upper_state);
     SuctionCup_Init();
-    Scram_Init();
     Remote_Init();
 
     chassis_init();
@@ -139,3 +137,5 @@ void My_RtosInit(void)
     }
     uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
 }
+
+

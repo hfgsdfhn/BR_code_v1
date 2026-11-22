@@ -96,6 +96,7 @@ typedef struct
     j4310_feedback_t feedback;
     float last_raw_position_rad;
     float position_offset_rad;
+    float software_zero_offset_rad;
     uint8_t startup_enable_countdown;
     bool position_tracking_valid;
     bool offline_latched;
@@ -156,6 +157,8 @@ bool J4310_OnFrame(j4310_t *motor,
 void J4310_GetPositionDegrees(const j4310_t *motor,
                               volatile float *position_degrees);
 
+void J4310_ResetSoftwareZero(j4310_t *motor);
+
 void J4310_BuildEnable(const j4310_t *motor,
                        can_frame_t *frame);
 
@@ -194,3 +197,8 @@ void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float o
 #define J4310_DAMPING_KD 2.0f
 
 #endif
+
+
+
+
+

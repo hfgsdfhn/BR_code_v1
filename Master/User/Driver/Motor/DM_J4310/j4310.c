@@ -322,6 +322,21 @@ bool J4310_Stop(j4310_t *motor)
     return true;
 }
 
+void J4310_ResetSoftwareZero(j4310_t *motor)
+{
+    if (motor == NULL || !motor->position_tracking_valid) return;
+    motor->software_zero_offset_rad = motor->last_raw_position_rad;
+    motor->position_offset_rad = motor->last_raw_position_rad;
+    motor->feedback.position_rad = 0.0f;
+    motor->target_position_rad = 0.0f;
+    motor->reference_position_rad = 0.0f;
+    motor->trajectory_start_rad = 0.0f;
+    motor->trajectory_pending = false;
+    motor->trajectory_active = false;
+    PID_Reset(&motor->cascade_position_pid);
+    PID_Reset(&motor->cascade_speed_pid);
+}
+
 void J4310_GetPositionDegrees(const j4310_t *motor, volatile float *position_degrees)
 {
     if (position_degrees != NULL)
@@ -440,7 +455,7 @@ bool J4310_OnFrame(j4310_t *motor,
         motor->feedback.position_rad = 0.0f;
     }
     motor->last_raw_position_rad = raw_position_rad;
-    motor->position_offset_rad = raw_position_rad - motor->feedback.position_rad;
+    motor->position_offset_rad = 0.0f;
     motor->feedback.speed_rad_s = J4310_UintToFloat(speed, -J4310_SPEED_MAX, J4310_SPEED_MAX, 12U);
     motor->feedback.torque_nm = J4310_UintToFloat(torque, -J4310_TORQUE_MAX, J4310_TORQUE_MAX, 12U);
     motor->feedback.mos_temperature = frame->data[6];
@@ -530,10 +545,6 @@ void J4310_BuildMit(const j4310_t *motor,
     uint16_t kd_raw;
     uint16_t torque;
 
-    if (motor->position_tracking_valid)
-    {
-        protocol_position_rad += motor->position_offset_rad;
-    }
     position = J4310_FloatToUint(protocol_position_rad, -J4310_POSITION_MAX, J4310_POSITION_MAX,
                                  16U);
     speed = J4310_FloatToUint(speed_rad_s, -J4310_SPEED_MAX, J4310_SPEED_MAX,
@@ -612,8 +623,9 @@ bool J4310_BuildControlFrame(j4310_t *motor,
         if (motor->feedback.received &&
             fabsf(motor->last_raw_position_rad) <= J4310_ZERO_POSITION_TOLERANCE_RAD)
         {
+            motor->software_zero_offset_rad = 0.0f;
+            motor->position_offset_rad = 0.0f;
             motor->feedback.position_rad = 0.0f;
-            motor->position_offset_rad = motor->last_raw_position_rad;
             motor->target_position_rad = 0.0f;
             motor->reference_position_rad = 0.0f;
             motor->trajectory_start_rad = 0.0f;
@@ -730,7 +742,7 @@ void J4310_SetTargetBasic(j4310_t *motor, j4310_mode_t mode, float target)
     }
     if (mode == J4310_MODE_POSITION)
     {
-        float p = target * J4310_DEG_TO_RAD - motor->position_offset_rad;
+        float p = target * J4310_DEG_TO_RAD;
         if (fabsf(p) > J4310_POSITION_MAX)
             return;
         if (motor->mode != mode || fabsf(p - motor->target_position_rad) > J4310_TRAJECTORY_EPSILON_RAD)
@@ -753,14 +765,18 @@ void J4310_SetTargetMIT(j4310_t *motor, j4310_mode_t mode, float tau_nm, float o
 {
     if (!motor || mode != J4310_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))
         return;
+    if (tau_nm > J4310_TORQUE_LIMIT)
+        tau_nm = J4310_TORQUE_LIMIT;
+    else if (tau_nm < -J4310_TORQUE_LIMIT)
+        tau_nm = -J4310_TORQUE_LIMIT;
     if (motor->target_sink)
     {
         motor->target_sink(motor, mode, tau_nm, output_degrees);
         return;
     }
-    if (fabsf(tau_nm) > J4310_TORQUE_LIMIT || fabsf(output_degrees * J4310_DEG_TO_RAD) > J4310_POSITION_MAX)
+    if (fabsf(output_degrees * J4310_DEG_TO_RAD) > J4310_POSITION_MAX)
         return;
-    float position_target = output_degrees * J4310_DEG_TO_RAD - motor->position_offset_rad;
+    float position_target = output_degrees * J4310_DEG_TO_RAD;
     if (motor->mode != J4310_MODE_MIT || motor->recovery_trajectory ||
         fabsf(position_target - motor->target_position_rad) > J4310_TRAJECTORY_EPSILON_RAD)
     {
@@ -792,3 +808,11 @@ void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now)
         motor->startup_enable_countdown = enable_countdown;
     }
 }
+
+
+
+
+
+
+
+

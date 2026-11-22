@@ -93,6 +93,8 @@ typedef struct
     bool trajectory_active;
     volatile bool startup_hold_active;
     volatile bool startup_hold_initialized;
+
+
     volatile bool recovery_trajectory;
     volatile bool recovery_sync_candidate;
     trapezoid_t speed_planner;
@@ -136,7 +138,6 @@ void RS01_Service(rs01_t *motor);
 void RS01_GetPositionDegrees(const rs01_t *motor,
                              volatile float *position_degrees);
 
-
 void RS01_ResetSoftwareZero(rs01_t *motor);
 void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output_degrees);
 #define RS01_TARGET_SELECT(_1, _2, _3, _4, NAME, ...) NAME
@@ -157,3 +158,6 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
 #define RS01_DAMPING_KD 2.0f
 
 #endif
+
+
+

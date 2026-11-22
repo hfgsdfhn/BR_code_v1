@@ -231,9 +231,13 @@ static HAL_StatusTypeDef BspCan_Start(FDCAN_HandleTypeDef *hfdcan)
             return HAL_ERROR;
         }
     }
-    if (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) !=
-            HAL_OK ||
-        HAL_FDCAN_Start(hfdcan) != HAL_OK ||
+    if (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK ||
+        HAL_FDCAN_Start(hfdcan) != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+    /* CAN2/CAN3 are polled from the TIM6 periodic interrupt; CAN1 keeps RX interrupt mode. */
+    if (hfdcan == &hfdcan1 &&
         HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO0_MESSAGE_LOST, 0U) != HAL_OK)
     {
         return HAL_ERROR;
@@ -326,7 +330,7 @@ bool BspCan_Recover(void)
     return !BspCan_HasBusOff();
 }
 
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
+static void BspCan_DrainFifo(FDCAN_HandleTypeDef *hfdcan,
                                uint32_t rx_fifo0_its)
 {
     FDCAN_RxHeaderTypeDef header;
@@ -399,4 +403,14 @@ void BspCan_OnFrame(const can_frame_t *frame)
     }
     CAN_Parse_SmallBoard(frame);
     Arm_OnFrame(frame);
+}
+
+void BspCan_Poll(FDCAN_HandleTypeDef *hfdcan)
+{
+    if ((hfdcan == &hfdcan2) || (hfdcan == &hfdcan3)) BspCan_DrainFifo(hfdcan, 0U);
+}
+
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t rx_fifo0_its)
+{
+    if (hfdcan == &hfdcan1) BspCan_DrainFifo(hfdcan, rx_fifo0_its);
 }

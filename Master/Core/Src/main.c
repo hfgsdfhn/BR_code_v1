@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 /* BR: no TR down mechanism. */
 #include "my_main.h"
+#include "bsp_can.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -118,7 +119,6 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_UART5_Init();
-  MX_UART7_Init();
   MX_UART8_Init();
   MX_UART9_Init();
   MX_USART3_UART_Init();
@@ -292,7 +292,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
+    static uint8_t can_poll_divider;
     HAL_IncTick();
+    can_poll_divider++;
+    if (can_poll_divider >= 2U)
+    {
+      can_poll_divider = 0U;
+      BspCan_Poll(&hfdcan2);
+      BspCan_Poll(&hfdcan3);
+    }
   }
   /* USER CODE BEGIN Callback 1 */
 
@@ -328,3 +336,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+

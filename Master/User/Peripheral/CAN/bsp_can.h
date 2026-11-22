@@ -68,5 +68,6 @@ bool BspCan_HasBusOff(void);
 bool BspCan_Recover(void);
 
 void BspCan_Service(void);
+void BspCan_Poll(FDCAN_HandleTypeDef *hfdcan);
 
 #endif

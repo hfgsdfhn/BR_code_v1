@@ -6,16 +6,16 @@
 #define BR_PI 3.14159265358979323846f
 #define BR_DEG_TO_RAD (BR_PI / 180.0f)
 
-static const float br_link_37_m = 0.370000f;
-static const float br_link_6_m = 0.060000f;
-static const float br_link_21_5_m = 0.215000f;
-static const float br_link_8_m  = 0.080000f;
-static const float br_command_zero_ground_deg[4] = {25.0f, 155.0f, 195.0f, 190.0f};
+volatile float br_link_37_m = 0.365000f;
+volatile float br_link_6_m = 0.058000f;
+volatile float br_link_21_5_m = 0.215000f;
+volatile float br_link_8_m  = 0.120000f;
+static const float br_command_zero_ground_deg[4] = {15.0f, 150.0f, 195.0f, 212.0f};
 
-static const float br_mass_003_kg = 0.670000000000f;
-static const float br_mass_004_kg = 0.072000000000f;
-static const float br_mass_005_kg = 0.430000000000f;
-static const float br_mass_006_kg = 1.008000000000f;
+volatile float br_mass_003_kg = 0.770000000000f;
+volatile float br_mass_004_kg = 0.172000000000f;
+volatile float br_mass_005_kg = 0.530000000000f;
+volatile float br_mass_006_kg = 1.108000000000f;
 static const float br_com_37_m = 0.21244607f;
 static const float br_com_6_m = 0.049223881f;
 static const float br_com_21_5_m = 0.049902387f;
@@ -27,21 +27,21 @@ static const float br_identity[3][3] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 
 static br_gravity_link_t br_g_links[BR_GRAVITY_LINK_COUNT] =
 {
     {.origin = {0.0f, 0.0f, 0.0f}, .fixed_rotation = br_identity, .axis = {0.0f, 0.0f, 1.0f},
-     .mass_kg = br_mass_003_kg, .com_m = {br_com_37_m, 0.0f, 0.0f}, .joint_index = 1U},
+     .mass_kg = 0.770000000000f, .com_m = {br_com_37_m, 0.0f, 0.0f}, .joint_index = 1U},
     {.origin = {0.0f, 0.0f, 0.0f}, .fixed_rotation = br_identity, .axis = {0.0f, 0.0f, 1.0f},
-     .mass_kg = br_mass_004_kg, .com_m = {br_com_6_m, 0.0f, 0.0f}, .joint_index = 2U},
+     .mass_kg = 0.172000000000f, .com_m = {br_com_6_m, 0.0f, 0.0f}, .joint_index = 2U},
     {.origin = {0.0f, 0.0f, 0.0f}, .fixed_rotation = br_identity, .axis = {0.0f, 0.0f, 1.0f},
-     .mass_kg = br_mass_005_kg, .com_m = {br_com_21_5_m, 0.0f, 0.0f}, .joint_index = 2U},
+     .mass_kg = 0.530000000000f, .com_m = {br_com_21_5_m, 0.0f, 0.0f}, .joint_index = 2U},
     {.origin = {0.0f, 0.0f, 0.0f}, .fixed_rotation = br_identity, .axis = {0.0f, 0.0f, 1.0f},
-     .mass_kg = br_mass_006_kg, .com_m = {br_com_8_m, 0.0f, 0.0f}, .joint_index = 3U}
+     .mass_kg = 1.108000000000f, .com_m = {br_com_8_m, 0.0f, 0.0f}, .joint_index = 3U}
 };
 
 br_gravity_model_t br_gravity_models[2] =
 {
-    {.link = br_g_links, .link_mass_kg = {br_mass_003_kg, br_mass_004_kg, br_mass_005_kg, br_mass_006_kg}, .gravity_base = {0.0f, -9.80665f, 0.0f},
+    {.link = br_g_links, .link_mass_kg = {0.770000000000f, 0.172000000000f, 0.530000000000f, 1.108000000000f}, .gravity_base = {0.0f, -9.80665f, 0.0f},
      .payload_mass_kg = 0.174f, .payload_com_m = {0.0f, 0.0f, 0.0f},
      .tool_offset_m = br_tool_offset_m, .calibrated = true},
-    {.link = br_g_links, .link_mass_kg = {br_mass_003_kg, br_mass_004_kg, br_mass_005_kg, br_mass_006_kg}, .gravity_base = {0.0f, -9.80665f, 0.0f},
+    {.link = br_g_links, .link_mass_kg = {0.770000000000f, 0.172000000000f, 0.530000000000f, 1.108000000000f}, .gravity_base = {0.0f, -9.80665f, 0.0f},
      .payload_mass_kg = 0.174f, .payload_com_m = {0.0f, 0.0f, 0.0f},
      .tool_offset_m = br_tool_offset_m, .calibrated = true}
 };
@@ -87,9 +87,9 @@ static float br_torque(br_vec2_t origin, br_vec2_t center, float mass, const flo
 bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF], float end_world_m[3])
 {
-    const float link1_m = 0.370000f;
+    const float link1_m = 0.365000f;
     const float link2_m = 0.265000f;
-    const float link3_m = 0.080000f;
+    const float link3_m = 0.120000f;
     float alpha1;
     float alpha2;
     float alpha3;
@@ -131,9 +131,9 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
                           float q_target_deg[BR_ARM_DOF],
                           bool prefer_small_second_rs00)
 {
-    const float link1_m = 0.370000f;
+    const float link1_m = 0.365000f;
     const float link2_m = 0.265000f;
-    const float link3_m = 0.080000f;
+    const float link3_m = 0.120000f;
     const float base_alpha1 = 155.0f * BR_DEG_TO_RAD;
     const float base_alpha2 = 160.0f * BR_DEG_TO_RAD;
     const float base_alpha3 = 150.0f * BR_DEG_TO_RAD;
