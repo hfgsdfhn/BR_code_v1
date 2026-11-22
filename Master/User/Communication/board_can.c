@@ -151,8 +151,7 @@ void CAN_Parse_SmallBoard(const can_frame_t *frame)
         return;
     }
 
-    if (((frame->id == BOARD_ID_SPEED) && (frame->length < 6U)) ||
-        ((frame->id >= 0x180U) && (frame->id <= 0x182U) && (frame->length < 6U)) ||
+    if (((frame->id >= 0x180U) && (frame->id <= 0x182U) && (frame->length < 6U)) ||
         (((frame->id == 0x130U) || (frame->id == 0x140U)) && (frame->length < 8U)))
     {
         return;
@@ -160,15 +159,6 @@ void CAN_Parse_SmallBoard(const can_frame_t *frame)
 
     switch (frame->id)
     {
-        case BOARD_ID_SPEED:
-            DJI_Board_FeedBack.chassis_speed.vx =
-                (float)CAN_MergeInt16(frame->data[0], frame->data[1]) / 1000.0f;
-            DJI_Board_FeedBack.chassis_speed.vy =
-                (float)CAN_MergeInt16(frame->data[2], frame->data[3]) / 1000.0f;
-            DJI_Board_FeedBack.chassis_speed.vw =
-                (float)CAN_MergeInt16(frame->data[4], frame->data[5]) / 1000.0f;
-            break;
-
         case 0x180:
             DJI_Board_FeedBack.PID_K[0][0] = (float)CAN_MergeInt16(frame->data[0], frame->data[1]) / 1000.0f;
             DJI_Board_FeedBack.PID_K[0][1] = (float)CAN_MergeInt16(frame->data[2], frame->data[3]) / 1000.0f;

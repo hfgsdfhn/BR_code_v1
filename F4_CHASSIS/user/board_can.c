@@ -5,6 +5,10 @@
 
 extern CAN_HandleTypeDef hcan1;
 
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length);
+
 /**
  * @brief 发送底盘目标速度
  * @param hcan CAN句柄
@@ -18,9 +22,7 @@ HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,
                              float vy,
                              float w)
 {
-    CAN_TxHeaderTypeDef tx_header = {0};
     uint8_t tx_data[8] = {0};
-    uint32_t tx_mailbox;
 
     int16_t raw_vx;
     int16_t raw_vy;
@@ -33,12 +35,6 @@ HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,
     raw_vx = (int16_t)(vx * 1000.0f);
     raw_vy = (int16_t)(vy * 1000.0f);
     raw_w  = (int16_t)(w  * 1000.0f);
-
-    /* 配置CAN帧头 */
-    tx_header.StdId = BOARD_ID_SPEED;
-    tx_header.IDE = CAN_ID_STD;
-    tx_header.RTR = CAN_RTR_DATA;
-    tx_header.DLC = 8U;
 
     /* 打包三个速度，小端序 */
     tx_data[0] = (uint8_t)raw_vx;
@@ -53,8 +49,55 @@ HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,
     tx_data[6] = 0U;
     tx_data[7] = 0U;
 
-    return HAL_CAN_AddTxMessage(hcan, &tx_header,
-                                tx_data, &tx_mailbox);
+    return Can_Transmit(hcan, 0U, 140U, tx_data, sizeof(tx_data));
+}
+
+static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
+                                      uint32_t id, const uint8_t *data,
+                                      uint8_t length)
+{
+    CAN_TxHeaderTypeDef tx_header = {0};
+    uint32_t mailbox;
+    uint32_t start_tick;
+
+    if ((hcan == NULL) || (data == NULL) || (length > 8U) || (header > 1U))
+    {
+        return HAL_ERROR;
+    }
+
+    if (header == 0U)
+    {
+        if (id > 0x7FFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.StdId = id;
+        tx_header.IDE = CAN_ID_STD;
+    }
+    else
+    {
+        if (id > 0x1FFFFFFFU)
+        {
+            return HAL_ERROR;
+        }
+        tx_header.ExtId = id;
+        tx_header.IDE = CAN_ID_EXT;
+    }
+
+    start_tick = HAL_GetTick();
+    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0U)
+    {
+        if ((HAL_GetTick() - start_tick) >= 2U)
+        {
+            return HAL_TIMEOUT;
+        }
+    }
+
+    tx_header.RTR = CAN_RTR_DATA;
+    tx_header.DLC = length;
+    tx_header.TransmitGlobalTime = DISABLE;
+
+    return HAL_CAN_AddTxMessage(hcan, &tx_header, (uint8_t *)data, &mailbox);
 }
 
 /**

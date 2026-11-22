@@ -13,6 +13,7 @@
 #include "remote.h"
 #include "status_task.h"
 #include "cup_task.h"
+#include "ethernet.h"
 #include "../Mechanism/Upper/arm_config.h"
 #include "../Mechanism/Upper/cup_config.h"
 

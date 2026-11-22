@@ -61,6 +61,7 @@ extern FDCAN_HandleTypeDef hfdcan3;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi6;
 extern DMA_HandleTypeDef hdma_uart4_rx;
 extern DMA_HandleTypeDef hdma_uart5_rx;
 extern DMA_HandleTypeDef hdma_uart7_rx;
@@ -517,6 +518,20 @@ void UART8_IRQHandler(void)
   /* USER CODE BEGIN UART8_IRQn 1 */
 
   /* USER CODE END UART8_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SPI6 global interrupt.
+  */
+void SPI6_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI6_IRQn 0 */
+
+  /* USER CODE END SPI6_IRQn 0 */
+  HAL_SPI_IRQHandler(&hspi6);
+  /* USER CODE BEGIN SPI6_IRQn 1 */
+
+  /* USER CODE END SPI6_IRQn 1 */
 }
 
 /**
