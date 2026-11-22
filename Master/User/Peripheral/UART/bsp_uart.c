@@ -1,4 +1,4 @@
-#include "bsp_uart.h"
+﻿#include "bsp_uart.h"
 #include <string.h>
 #include "cmsis_os2.h"
 #include "mins_imu.h"
@@ -8,21 +8,18 @@
 #include "STP-23L.h"
 #include "cup_task.h"
 #include "remote.h"
-#include "scram.h"
 
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t imu_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dt35_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t ustp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dstp23l_rx[UART_RX_BUFFER_SIZE];
-__ALIGNED(CACHE_LINE_SIZE) static uint8_t scram_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t remote_rx[UART_RX_BUFFER_SIZE];
 
 bsp_uart_t uart_list[BSP_UART_COUNT] = {                                                                                                    
     [BSP_UART_IMU] = {&huart3, imu_rx, 0U, Mins_Imu_OnRx},                                                                                                  
     [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, DT35_RxBytes},                                                                                                 
     [BSP_UART_DOWN_STP23L] = {&huart5, dstp23l_rx, 0U, DStp23lRx},                                                                                                  
-    [BSP_UART_UP_STP23L] = {&huart6, ustp23l_rx, 0U, UStp23lRx},                                                                                                    
-    [BSP_UART_SCRAM] = {&huart7, scram_rx, 0U, Scram_RxBytes},                                                                                                  
+    [BSP_UART_UP_STP23L] = {&huart6, ustp23l_rx, 0U, UStp23lRx},
     [BSP_UART_REMOTE] = {&huart9, remote_rx, 0U, Remote_RxBytes}                                                                                                    
 };                                                                                                  
                                                                                                     
@@ -136,8 +133,7 @@ void BspUart_Task(void *argument)
                 }                                                                                                   
             }                                                                                                   
             uart->position = write;                                                                                                 
-        }                                                                                                   
-        Scram_Task();                                                                                                   
+        }
         osDelay(1U);                                                                                                    
     }                                                                                                   
 }                                                                                                   

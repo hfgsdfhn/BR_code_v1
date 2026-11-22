@@ -79,13 +79,20 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName);
 
 /* USER CODE BEGIN 4 */
+/* These variables remain visible in the debugger after a stack overflow. */
+volatile TaskHandle_t g_stack_overflow_task = NULL;
+volatile char *g_stack_overflow_task_name = NULL;
+
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-   (void)xTask;
-   (void)pcTaskName;
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
+    g_stack_overflow_task = xTask;
+    g_stack_overflow_task_name = pcTaskName;
+
+    /* Keep the CPU here so the failing task and task name can be inspected. */
+    taskDISABLE_INTERRUPTS();
+    for (;;)
+    {
+    }
 }
 /* USER CODE END 4 */
 
