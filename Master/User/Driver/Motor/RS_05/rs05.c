@@ -176,12 +176,6 @@ static bool RS05_PollFeedback(rs05_t *m)
     return tx(m->hcan, RS05_CMD_MOTION, zero_torque, m->id, data) == HAL_OK;
 }
 
-static bool RS05_SendSetZero(rs05_t *m)
-{
-    uint8_t data[8] = {1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
-    return (m != NULL) && (tx(m->hcan, RS05_SET_ZERO, RS05_HOST_ID, m->id, data) == HAL_OK);
-}
-
 bool RS05_BuildSpecial(rs05_t *m, uint8_t command)
 {
     if (m != NULL && command == RS05_FALSE)
@@ -474,34 +468,21 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
 
     recovering = !m->feedback_valid;
-
-    if (recovering)
+    if (!m->ever_feedback_received)
     {
-
         if (!m->continuous_valid)
-        {
             m->continuous_position = remainderf(m->single_position, RS05_ANGLE_PERIOD);
-        }
-
         m->continuous_valid = true;
-        m->feedback_valid = true;
-        m->feedback_recovery_pending = false;
-
-        m->ever_feedback_received = true;
-    }
-
-    if (m->set_zero_position_request != 0U &&
-        fabsf(m->single_position) <= RS05_ZERO_POSITION_TOLERANCE_RAD)
-    {
-        m->continuous_position = 0.0f;
+        m->software_zero_offset = m->continuous_position;
     }
     else if (m->continuous_valid)
     {
-        m->continuous_position +=
-            remainderf(m->single_position - remainderf(m->continuous_position, RS05_ANGLE_PERIOD), RS05_ANGLE_PERIOD);
+        m->continuous_position += remainderf(m->single_position - remainderf(m->continuous_position, RS05_ANGLE_PERIOD), RS05_ANGLE_PERIOD);
     }
-
-    m->position = m->continuous_position;
+    m->position = m->continuous_position - m->software_zero_offset;
+    m->feedback_valid = true;
+    m->feedback_recovery_pending = false;
+    m->ever_feedback_received = true;
 
     if (recovering)
     {
@@ -567,29 +548,6 @@ void RS05_Service(rs05_t *m)
         m->reconnect_retry_tick = now;
         (void)RS05_BuildSpecial(m, RS05_ENABLE);
     }
-    if (m->set_zero_position_request != 0U)
-    {
-        if ((uint32_t)(now - m->last_control_tick) >= 5U)
-        {
-            m->last_control_tick = now;
-            (void)RS05_SendSetZero(m);
-            (void)RS05_PollFeedback(m);
-        }
-        if (m->feedback_valid && fabsf(m->single_position) <= RS05_ZERO_POSITION_TOLERANCE_RAD)
-        {
-            m->continuous_position = 0.0f;
-            m->software_zero_offset = 0.0f;
-            m->position = 0.0f;
-            m->hold_position = 0.0f;
-            m->reference_position = 0.0f;
-            m->target = 0.0f;
-            m->trajectory_pending = false;
-            m->trajectory_active = false;
-            m->set_zero_position_request = 0U;
-        }
-        return;
-    }
-
     if (m->mode == RS_MODE_STOP || !m->enabled)
     {
         if ((uint32_t)(now - m->last_control_tick) >= 2U)

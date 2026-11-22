@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RS05_SET_ZERO 6U
 #define RS05_ZERO_POSITION_TOLERANCE_RAD 0.01f
 
 #define RS05_ENABLE 3U
@@ -93,7 +92,6 @@ typedef struct
     volatile bool startup_hold_initialized;
     volatile bool recovery_trajectory;
     volatile bool recovery_sync_candidate;
-    volatile uint8_t set_zero_position_request;
     trapezoid_t speed_planner;
     uint32_t speed_planner_tick;
     bool speed_planner_valid;

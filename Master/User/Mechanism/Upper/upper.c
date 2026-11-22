@@ -8,7 +8,7 @@
 #include <string.h>
 
 extern volatile float arm_target[2][ARM_JOINT_COUNT];
-extern volatile float xarm_pose_pd11[2][ARM_JOINT_COUNT];
+extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
 extern volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 extern float br_joint_velocity[2][ARM_JOINT_COUNT];
 extern bool br_grip[2];
@@ -31,8 +31,8 @@ volatile float br_small_arm_rs00_trajectory_time_s = 1.0f;
 volatile float br_j4310_trajectory_time_s = 0.5f;
 volatile float br_rs05_trajectory_time_s = 0.0f;
 
-volatile float br_root_rs01_kp = 100.0f;
-volatile float br_root_rs01_kd = 20.0f;
+volatile float br_root_rs01_kp = 200.0f;
+volatile float br_root_rs01_kd = 50.0f;
 volatile float br_shoulder_kp = 50.0f;
 volatile float br_shoulder_kd = 5.0f;
 volatile float br_elbow_kp = 50.0f;
@@ -41,10 +41,10 @@ volatile float br_wrist_kp = 30.0f;
 volatile float br_wrist_kd = 2.0f;
 volatile float br_rotation_kp = 30.0f;
 volatile float br_rotation_kd = 5.0f;
-volatile float br_root_m2006_position_kp = 80.247779608f;
+volatile float br_root_m2006_position_kp = 100.247779608f;
 volatile float br_root_m2006_position_ki = 60.359877560f;
 volatile float br_root_m2006_position_kd = 0.0f;
-volatile float br_root_m2006_speed_kp = 2.0f;
+volatile float br_root_m2006_speed_kp = 3.0f;
 volatile float br_root_m2006_speed_ki = 3.0f;
 volatile float br_root_m2006_speed_kd = 0.0f;
 
@@ -73,11 +73,11 @@ volatile float rarm_shoulder_tau_nm = 0.0f;
 volatile float rarm_elbow_tau_nm = 0.0f;
 volatile float rarm_wrist_tau_nm = 0.0f;
 volatile float rarm_rotation_tau_nm = 0.0f;
-volatile float larm_mass_003_kg = 0.600f;
+volatile float larm_mass_003_kg = 1.5f;
 volatile float larm_mass_004_kg = 0.001f;
 volatile float larm_mass_005_kg = 0.06f;
 volatile float larm_mass_006_kg = 1.22f;
-volatile float rarm_mass_003_kg = 0.35f;
+volatile float rarm_mass_003_kg = 1.35f;
 volatile float rarm_mass_004_kg = 0.1f;
 volatile float rarm_mass_005_kg = 0.3f;
 volatile float rarm_mass_006_kg = 1.2f;
@@ -175,7 +175,11 @@ static void Upper_ZeroCalibrationRequest(unsigned arm, unsigned joint)
         else if (joint == ARM_JOINT_WRIST)
             (arm == ARM_LARM_INDEX ? &j4310_larm : &j4310_rarm)->set_zero_position_request = 1U;
         else if (joint == ARM_JOINT_ROTATION)
-            (arm == ARM_LARM_INDEX ? &rs05_larm : &rs05_rarm)->set_zero_position_request = 1U;
+        {
+            rs05_t *m = arm == ARM_LARM_INDEX ? &rs05_larm : &rs05_rarm;
+            if (!zero_calibration_previous[arm][joint])
+                RS05_ResetSoftwareZero(m);
+        }
     }
     zero_calibration_previous[arm][joint] = active;
 }
@@ -201,12 +205,12 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
     else if (joint == ARM_JOINT_ROTATION)
     {
         rs05_t *m = arm == ARM_LARM_INDEX ? &rs05_larm : &rs05_rarm;
-        pending = m->set_zero_position_request != 0U; at_zero = m->feedback_valid && fabsf(m->single_position) <= RS05_ZERO_POSITION_TOLERANCE_RAD;
+        pending = false; at_zero = m->feedback_valid && fabsf(m->position) <= RS05_ZERO_POSITION_TOLERANCE_RAD;
     }
     if (arm_joint_zero_calibration[arm][joint] != 0U && !pending && at_zero)
     {
         arm_feedback_angle[arm][joint] = 0.0f;
-        arm_target[arm][joint] = xarm_pose_pd11[arm][joint];
+        arm_target[arm][joint] = arm_pose_pd11[arm][joint];
         arm_joint_zero_calibration[arm][joint] = 0U;
         zero_calibration_previous[arm][joint] = 0U;
     }
@@ -377,7 +381,7 @@ static bool Upper_ArmTemperatureOverLimit(unsigned arm)
         for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; joint++)
         {
             arm_mode[arm][joint] = ARM_MODE_MIT;
-            arm_target[arm][joint] = xarm_pose_pd11[arm][joint];
+            arm_target[arm][joint] = arm_pose_pd11[arm][joint];
         }
     }
 }

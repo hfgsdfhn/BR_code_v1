@@ -6,7 +6,7 @@
 #define BR_PI 3.14159265358979323846f
 #define BR_DEG_TO_RAD (BR_PI / 180.0f)
 
-volatile float br_link_37_m = 0.365000f;
+volatile float br_link_37_m = 0.220000f;
 volatile float br_link_6_m = 0.058000f;
 volatile float br_link_21_5_m = 0.215000f;
 volatile float br_link_8_m  = 0.120000f;

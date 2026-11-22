@@ -93,6 +93,9 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+  /* Configure GPIO safety states before clock and peripheral initialization. */
+  MX_GPIO_Init();
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -108,7 +111,6 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
   MX_DMA_Init();
   MX_FDCAN1_Init();
   MX_FDCAN2_Init();
