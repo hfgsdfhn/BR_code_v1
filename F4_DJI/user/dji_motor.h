@@ -30,7 +30,7 @@ typedef struct
     uint16_t encoder;       //编码器返回值
     uint16_t last_encoder;
     int32_t encoder_turns;  //转子转动圈数
-    int32_t total_encoder;  
+    float total_encoder;  
     uint8_t encoder_ready;
     float speed_rpm;        //转子速度
     float current;          //电流

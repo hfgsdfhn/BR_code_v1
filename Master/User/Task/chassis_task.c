@@ -39,7 +39,7 @@ void Chassis_Task_(void *argument)
                 SmallBoard_Send_PID(&hfdcan1, 0U, DJI_Board_Target.PID_K[0][0], DJI_Board_Target.PID_K[0][1], DJI_Board_Target.PID_K[0][2]);
                 SmallBoard_Send_PID(&hfdcan1, 1U, DJI_Board_Target.PID_K[1][0], DJI_Board_Target.PID_K[1][1], DJI_Board_Target.PID_K[1][2]);
                 SmallBoard_Send_PID(&hfdcan1, 2U, DJI_Board_Target.PID_K[2][0], DJI_Board_Target.PID_K[2][1], DJI_Board_Target.PID_K[2][2]);
-            }
+            } 
         }
         tick += period;
         osDelayUntil(tick);
