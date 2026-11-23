@@ -1,4 +1,4 @@
-﻿#include "bsp_uart.h"
+#include "bsp_uart.h"
 #include <string.h>
 #include "cmsis_os2.h"
 #include "mins_imu.h"
