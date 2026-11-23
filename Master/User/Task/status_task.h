@@ -13,6 +13,7 @@ struct send_to_chassis_t
     float dt35_front;
     remote_t remote;
     chassis_speed_t target_speed;
+    chassis_speed_t current_speed;
     float target_yaw;
     float current_yaw;
     uint8_t leg_up_flag;

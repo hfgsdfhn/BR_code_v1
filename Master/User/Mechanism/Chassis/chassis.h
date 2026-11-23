@@ -54,6 +54,14 @@ typedef struct
     float vw;
 }chassis_speed_t;
 
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+}chassis_walk_t;
+
 typedef struct send_to_chassis_t send_to_chassis_t;
 
 void chassis_init();

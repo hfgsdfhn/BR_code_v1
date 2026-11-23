@@ -196,3 +196,4 @@ void init_board(void)
 {
     memcpy(DJI_Board_Target.PID_K, leg_pid_config, sizeof(leg_pid_config));
 }
+

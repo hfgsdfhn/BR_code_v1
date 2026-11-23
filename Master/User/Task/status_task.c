@@ -1,6 +1,7 @@
 ﻿#include "status_task.h"
 #include "bsp_can.h"
 #include "mins_imu.h"
+#include "board_can.h"
 #include "my_main.h"
 #include "cup_task.h"
 #include <stdbool.h>
@@ -36,6 +37,7 @@ typedef struct
     float dt35_front;
     remote_t remote;
     chassis_speed_t target_speed;
+    chassis_speed_t current_speed;
     float target_yaw;
     float current_yaw;
     float stp23l_up_distance_cm;
@@ -44,6 +46,7 @@ typedef struct
 } status_common_t;
 
 static status_common_t common;
+chassis_walk_t chassis_walk;
 
 void Status_InitGpio(void)
 {
@@ -75,11 +78,37 @@ void Queue_Init(void)
     Cup_QueueHandle = osMessageQueueNew(1U, sizeof(send_to_cup_t), NULL);
 }
 
+void motor_to_world_speed(DJI_Board *real, status_common_t * common)
+{
+    float w0 = -real->wheel_speed_mps[0];
+    float w1 = -real->wheel_speed_mps[1];
+    float w2 = real->wheel_speed_mps[2];
+    float w3 = real->wheel_speed_mps[3];
+
+    common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f *1.414f);
+    common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f * 1.414f);
+    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.29703);
+
+    chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx / -4.744152898252f;
+    chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy / -4.744152898252f;
+    chassis_walk.z += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vw / 4.744152898252f;
+}
+
 static void Status_ReadAll(void)
 {
-    memset(&common, 0, sizeof(common));
+    memset(&common.remote, 0, sizeof(common.remote));
+    common.dt35_right = 0.0f;
+    common.dt35_front = 0.0f;
+    common.current_speed = (chassis_speed_t){0};
+    common.target_speed = (chassis_speed_t){0};
+    common.target_yaw = 0.0f;
+    common.current_yaw = 0.0f;
+    common.stp23l_up_distance_cm = 0.0f;
+    common.stp23l_down_distance_cm = 0.0f;
+    common.sequence = 0U;
     (void)Remote_GetState(&common.remote);
     common.current_yaw = g_imu.euler.yaw / CHASSIS_RAD_TO_DEG;
+    motor_to_world_speed(&DJI_Board_FeedBack, &common);
     if ((g_imu.update_count != 0U) && !planned_yaw_initialized)
     {
         planned_yaw = common.current_yaw;
@@ -103,7 +132,6 @@ static void Queue_PublishLatest(osMessageQueueId_t queue, const void *message)
 void Send_to_Chassis(void)
 {
     send_to_chassis_t chassis = {0};
-
     chassis.remote = common.remote;
     chassis.target_speed = planned_speed;
     chassis.target_yaw = planned_yaw;
