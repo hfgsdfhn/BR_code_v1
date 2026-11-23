@@ -87,37 +87,34 @@ static float br_torque(br_vec2_t origin, br_vec2_t center, float mass, const flo
 bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF], float end_world_m[3])
 {
-    const float link1_m = 0.365000f;
-    const float link2_m = 0.265000f;
-    const float link3_m = 0.120000f;
-    float alpha1;
-    float alpha2;
-    float alpha3;
-    float yaw;
-    float planar_x;
-    float planar_y;
+    const float l1 = 0.365000f;
+    const float l2 = 0.005800f;
+    const float l3 = 0.021500f;
+    const float l4 = 0.120000f;
+    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
+    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
+    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
+    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
+    float a1, a2, a3, a4, planar_x, planar_y;
 
     if (model == NULL || q == NULL || end_world_m == NULL || model->link == NULL)
         return false;
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         if (!isfinite(q[i])) return false;
 
-    alpha1 = 155.0f * BR_DEG_TO_RAD - q[1];
-    alpha2 = 160.0f * BR_DEG_TO_RAD - q[1] + q[2];
-    alpha3 = 150.0f * BR_DEG_TO_RAD - q[1] + q[2] + q[3];
-    yaw = q[0];
-    planar_x = -link1_m * cosf(alpha1)
-             + link2_m * cosf(alpha2)
-             + link3_m * cosf(alpha3);
-    planar_y = -link1_m * sinf(alpha1)
-             + link2_m * sinf(alpha2)
-             + link3_m * sinf(alpha3);
+    a1 = a1_zero + q[1];
+    a2 = a2_zero + q[1] - q[2];
+    a3 = a3_zero + q[1] - q[2];
+    a4 = a4_zero + q[1] - q[2] - q[3];
+    planar_x = l1 * cosf(a1) + l2 * cosf(a2) + l3 * cosf(a3) + l4 * cosf(a4);
+    planar_y = l1 * sinf(a1) + l2 * sinf(a2) + l3 * sinf(a3) + l4 * sinf(a4);
 
-    end_world_m[0] = -planar_x * sinf(yaw);
-    end_world_m[1] = -planar_x * cosf(yaw);
+    end_world_m[0] = -planar_x * sinf(q[0]);
+    end_world_m[1] = -planar_x * cosf(q[0]);
     end_world_m[2] = -planar_y;
     return true;
 }
+
 static float br_wrap_deg(float angle_deg)
 {
     while (angle_deg > 180.0f) angle_deg -= 360.0f;
@@ -131,20 +128,20 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
                           float q_target_deg[BR_ARM_DOF],
                           bool prefer_small_second_rs00)
 {
-    const float link1_m = 0.365000f;
-    const float link2_m = 0.265000f;
-    const float link3_m = 0.120000f;
-    const float base_alpha1 = 155.0f * BR_DEG_TO_RAD;
-    const float base_alpha2 = 160.0f * BR_DEG_TO_RAD;
-    const float base_alpha3 = 150.0f * BR_DEG_TO_RAD;
+    const float l1 = 0.365000f;
+    const float l2 = 0.005800f;
+    const float l3 = 0.021500f;
+    const float l4 = 0.120000f;
+    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
+    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
+    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
+    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
     const float pi = BR_PI;
-    float radius;
-    float yaw;
-    float alpha3;
-    float wrist_x;
-    float wrist_y;
-    float c2;
-    float s2_abs;
+    const float welded_x = l2 * cosf(a2_zero) + l3 * cosf(a3_zero);
+    const float welded_y = l2 * sinf(a2_zero) + l3 * sinf(a3_zero);
+    const float welded_length = sqrtf(welded_x * welded_x + welded_y * welded_y);
+    const float welded_zero = atan2f(welded_y, welded_x);
+    float radius, yaw, a4, wrist_x, wrist_y, c2, s2_abs;
     float candidate[2][BR_ARM_DOF];
     unsigned best = 0U;
 
@@ -153,56 +150,49 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
         return false;
     for (unsigned i = 0U; i < 3U; ++i)
         if (!isfinite(target_world_m[i])) return false;
-    if (target_world_m[1] <= 0.100000f)
-        return false;
+    if (target_world_m[1] <= 0.100000f) return false;
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         if (!isfinite(current_q[i])) return false;
+
     radius = sqrtf(target_world_m[0] * target_world_m[0] +
                    target_world_m[1] * target_world_m[1]);
-    /* The target convention keeps planar_x negative: X=-planar_x*sin(yaw), Y=-planar_x*cos(yaw). */
-    yaw = radius > 1.0e-6f ? atan2f(target_world_m[0], target_world_m[1])
-                           : current_q[0];
+    yaw = radius > 1.0e-6f ? atan2f(target_world_m[0], target_world_m[1]) : current_q[0];
 
-    alpha3 = base_alpha3 - current_q[1] + current_q[2] + current_q[3];
-    wrist_x = -radius - link3_m * cosf(alpha3);
-    wrist_y = -target_world_m[2] - link3_m * sinf(alpha3);
+    a4 = a4_zero + current_q[1] - current_q[2] - current_q[3];
+    wrist_x = -radius - l4 * cosf(a4);
+    wrist_y = -target_world_m[2] - l4 * sinf(a4);
     c2 = (wrist_x * wrist_x + wrist_y * wrist_y -
-          link1_m * link1_m - link2_m * link2_m) /
-         (2.0f * link1_m * link2_m);
-    if (c2 < -1.0f || c2 > 1.0f)
-        return false;
+          l1 * l1 - welded_length * welded_length) /
+         (2.0f * l1 * welded_length);
+    if (c2 < -1.0f || c2 > 1.0f) return false;
     c2 = fmaxf(-1.0f, fminf(1.0f, c2));
     s2_abs = sqrtf(fmaxf(0.0f, 1.0f - c2 * c2));
 
     for (unsigned branch = 0U; branch < 2U; ++branch)
     {
         const float s2 = branch == 0U ? s2_abs : -s2_abs;
-        const float alpha2 = atan2f(s2, c2);
-        const float theta1 = atan2f(wrist_y, wrist_x) -
-                             atan2f(link2_m * s2,
-                                    link1_m + link2_m * c2);
-        const float alpha1 = theta1 - pi;
-        const float f1 = br_wrap_deg(base_alpha1 * 180.0f / pi -
-                                     alpha1 * 180.0f / pi);
-        const float f2 = br_wrap_deg(alpha2 * 180.0f / pi -
-                                     base_alpha2 * 180.0f / pi + f1);
-        const float f3 = br_wrap_deg(alpha3 * 180.0f / pi -
-                                     base_alpha3 * 180.0f / pi + f1 - f2);
+        const float welded_angle = atan2f(s2, c2);
+        const float a1 = atan2f(wrist_y, wrist_x) -
+                         atan2f(welded_length * s2,
+                                l1 + welded_length * c2);
+        const float q1 = a1 - a1_zero;
+        const float welded_absolute = a1 + welded_angle;
+        const float q2 = q1 - (welded_absolute - welded_zero);
+        const float q3 = a4_zero + q1 - q2 - a4;
+
         candidate[branch][0] = br_wrap_deg(yaw * 180.0f / pi);
-        candidate[branch][1] = f1;
-        candidate[branch][2] = f2;
-        candidate[branch][3] = f3;
+        candidate[branch][1] = br_wrap_deg(q1 * 180.0f / pi);
+        candidate[branch][2] = br_wrap_deg(q2 * 180.0f / pi);
+        candidate[branch][3] = br_wrap_deg(q3 * 180.0f / pi);
         candidate[branch][4] = current_q[4] * 180.0f / pi;
     }
 
     {
-        const float current_second_rs00_deg = current_q[2] * 180.0f / pi;
-        const float error0 = fabsf(br_wrap_deg(candidate[0][2] - current_second_rs00_deg));
-        const float error1 = fabsf(br_wrap_deg(candidate[1][2] - current_second_rs00_deg));
-        if (prefer_small_second_rs00)
-            best = error1 < error0 ? 1U : 0U;
-        else
-            best = error1 > error0 ? 1U : 0U;
+        const float current_q2_deg = current_q[2] * 180.0f / pi;
+        const float error0 = fabsf(br_wrap_deg(candidate[0][2] - current_q2_deg));
+        const float error1 = fabsf(br_wrap_deg(candidate[1][2] - current_q2_deg));
+        best = prefer_small_second_rs00 ? (error1 < error0 ? 1U : 0U)
+                                        : (error1 > error0 ? 1U : 0U);
     }
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         q_target_deg[i] = candidate[best][i];

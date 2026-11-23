@@ -2,7 +2,6 @@
 
 #include "rs00.h"
 #include "bsp_can.h"
-#include "flash.h"
 #include "my_main.h"
 #include "quintic_planner.h"
 #include "rs05.h"
@@ -227,7 +226,8 @@ HAL_StatusTypeDef RS00_Init(rs00_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
     m->mode = RS_MODE_STOP;
-    m->continuous_valid = Flash_LoadMotorAngle(0U, &m->continuous_position);
+    m->continuous_valid = false;
+    m->continuous_position = 0.0f;
     (void)RS00_BuildSpecial(m, RS00_ENABLE);
     return HAL_OK;
 }
@@ -451,8 +451,11 @@ bool RS00_OnFrame(rs00_t *m, const can_frame_t *f)
 
         if (!m->continuous_valid)
         {
-            m->continuous_position = remainderf(m->single_position, RS00_ANGLE_PERIOD);
+            m->continuous_position = m->single_position;
         }
+
+        if (!m->ever_feedback_received)
+            m->set_zero_position_request = 1U;
 
         m->continuous_valid = true;
         m->feedback_valid = true;
@@ -612,8 +615,5 @@ void RS00_SetTargetMIT(rs00_t *motor, rs_mode_t mode, float tau_nm, float output
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }
-
-
-
 
 

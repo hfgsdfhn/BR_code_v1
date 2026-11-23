@@ -240,8 +240,8 @@ bool M2006_OnFrame(m2006_t *motor,
     {
 
         motor->mode = M2006_MODE_POSITION;
-        motor->target_position_rad = motor->position_rad;
-        motor->reference_position_rad = motor->position_rad;
+        motor->target_position_rad = 0.0f;
+        motor->reference_position_rad = 0.0f;
         motor->reference_speed_rad_s = 0.0f;
         motor->reference_acceleration_rad_s2 = 0.0f;
         motor->trajectory_pending = false;
@@ -531,3 +531,4 @@ void M2006_BuildSpecial(m2006_t *motor, uint8_t command)
         motor->target_position_rad = motor->position_rad;
     }
 }
+

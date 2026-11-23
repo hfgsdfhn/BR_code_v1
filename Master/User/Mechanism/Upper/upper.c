@@ -486,7 +486,7 @@ void Upper_Service(uint32_t now) {
     {
       for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
       {
-        arm_target[a][joint] = arm_feedback_angle[a][joint];
+        arm_target[a][joint] = 0.0f;
         arm_mode[a][joint] = ARM_MODE_MIT;
       }
       startup_hold_latched[a] = true;
@@ -612,3 +612,4 @@ void Upper_Service(uint32_t now) {
     }
   }
 }
+

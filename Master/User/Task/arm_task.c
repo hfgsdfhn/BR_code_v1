@@ -46,30 +46,18 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis)
 
 volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 5.0f, 5.0f, 0.0f}, {0.0f, 0.0f, 5.0f, 5.0f, 0.0f}};
 volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 80.0f, 0.0f, 0.0f}, {0.0f, 80.0f, 80.0f, 0.0f, 0.0f}};
-volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 110.0f, -25.0f, 0.0f},
-                                                      {0.0f, 130.0f, 110.0f, -25.0f, 0.0f}};
-volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{0.0f, 155.0f, 115.0f, -5.0f, 0.0f},
-                                                      {0.0f, 155.0f, 115.0f, -5.0f, 0.0f}};
-volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 10.0f, 30.0f, 30.0f, 0.0f},
-                                                    {0.0f, 10.0f, 30.0f, 30.0f, 0.0f}};
-volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 75.0f, 60.0f, 0.0f},
-                                                    {0.0f, 70.0f, 75.0f, 60.0f, 0.0f}};
-volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 90.0f, 70.0f, 0.0f},
-                                                      {0.0f, 70.0f, 90.0f, 70.0f, 0.0f}};
-volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT] = {{-85.0f, 30.0f, 40.0f, -5.0f, 0.0f},
-                                                     {0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 28.0f, -10.0f, 30.0f},
-                                                       {0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 30.0f, 0.0f, 50.0f},
-                                                     {0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 30.0f, 0.0f},
-                                                       {0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 100.0f, 10.0f, 0.0f},
-                                                       {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
-volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT] = {{20.0f, 0.0f, 30.0f, 50.0f, 90.0f},
-                                                     {20.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 50.0f, 90.0f},
-                                                       {0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 110.0f, -25.0f, 0.0f},{0.0f, 130.0f, 110.0f, -25.0f, 0.0f}};
+volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{0.0f, 155.0f, 115.0f, -5.0f, 0.0f},{0.0f, 155.0f, 115.0f, -5.0f, 0.0f}};
+volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 10.0f, 30.0f, 30.0f, 0.0f},{0.0f, 10.0f, 30.0f, 30.0f, 0.0f}};
+volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 63.0f, 58.0f, 0.0f},{0.0f, 70.0f, 63.0f, 58.0f, 0.0f}};
+volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 90.0f, 70.0f, 0.0f},{0.0f, 70.0f, 90.0f, 70.0f, 0.0f}};
+volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT] = {{-85.0f, 30.0f, 40.0f, -5.0f, 0.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 28.0f, -10.0f, 30.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 30.0f, 0.0f, 50.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 30.0f, 0.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 100.0f, 10.0f, 0.0f},{0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
+volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT] = {{20.0f, 0.0f, 30.0f, 50.0f, 90.0f},{20.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float xarm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 50.0f, 90.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
@@ -84,7 +72,7 @@ void Arm_OnFrame(const can_frame_t *frame)
 void Arm_TaskInit(void)
 {
     memset(&upper_state, 0, sizeof(upper_state));
-    upper_state.enable = 0U;
+    upper_state.enable = 1U;
     memset((void *)arm_target, 0, sizeof(arm_target));
     memset((void *)br_mit_tau, 0, sizeof(br_mit_tau));
     memset(br_joint_velocity, 0, sizeof(br_joint_velocity));
@@ -266,6 +254,17 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     bool pa5_low_mode;
     if (status == NULL)
         return;
+
+    /* Reset edge baselines while the remote is offline. */
+    if (status->remote.online == 0U)
+    {
+        previous_pa4_valid = false;
+        previous_keys_valid = false;
+        previous_mode_valid = false;
+        previous_pose_mode_valid = false;
+        return;
+    }
+
     current_pa4 = (uint8_t)((status->remote.switch_state >> 2U) & 1U);
     if (previous_pa4_valid && current_pa4 != previous_pa4)
     {

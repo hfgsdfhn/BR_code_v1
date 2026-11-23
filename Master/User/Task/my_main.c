@@ -1,4 +1,4 @@
-
+﻿
 #include "my_main.h"
 #include "upper.h"
 #include "arm_task.h"
@@ -101,7 +101,7 @@ void My_Init(void)
     RS00_Init(&rs00_rarm[0], &hfdcan3, 2U, -1);
     RS00_Init(&rs00_rarm[1], &hfdcan3, 3U, -1);
     J4310_Init(&j4310_rarm, &hfdcan3, 4U, 1);
-    RS05_Init(&rs05_rarm, &hfdcan3, 5U, -1);
+    RS05_Init(&rs05_rarm, &hfdcan3, 5U, 1);
     configure_motor_gains();
     Arm_TaskInit();
     Status_InitGpio();
