@@ -9,47 +9,34 @@ static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
                                       uint32_t id, const uint8_t *data,
                                       uint8_t length);
 
-/**
- * @brief 发送底盘目标速度
- * @param hcan CAN句柄
- * @param vx X方向目标速度，m/s
- * @param vy Y方向目标速度，m/s
- * @param w 目标角速度，rad/s
- * @retval HAL状态
- */
-HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,
-                             float vx,
-                             float vy,
-                             float w)
+HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,const float erpm[4])
 {
     uint8_t tx_data[8] = {0};
+    int16_t raw_speed[4];
 
-    int16_t raw_vx;
-    int16_t raw_vy;
-    int16_t raw_w;
-
-    if (hcan == NULL)
+    if (hcan == NULL || erpm == NULL)
         return HAL_ERROR;
 
-    /* 定点数转换，放大1000倍 */
-    raw_vx = (int16_t)(vx * 1000.0f);
-    raw_vy = (int16_t)(vy * 1000.0f);
-    raw_w  = (int16_t)(w  * 1000.0f);
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        /* ERPM 转机械角速度 rad/s */
+        float omega = erpm[i] * TWO_PI /
+                      (60.0f * AK60_POLE_PAIRS);
 
-    /* 打包三个速度，小端序 */
-    tx_data[0] = (uint8_t)raw_vx;
-    tx_data[1] = (uint8_t)(raw_vx >> 8);
+        /* 角速度转换为轮子线速度 m/s */
+        float speed = omega * 0.0775f;
 
-    tx_data[2] = (uint8_t)raw_vy;
-    tx_data[3] = (uint8_t)(raw_vy >> 8);
+        /* 放大1000倍 */
+        raw_speed[i] = (int16_t)(speed * 1000.0f);
+    }
 
-    tx_data[4] = (uint8_t)raw_w;
-    tx_data[5] = (uint8_t)(raw_w >> 8);
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        tx_data[i * 2] = (uint8_t)(raw_speed[i] & 0xFF);
+        tx_data[i * 2 + 1] = (uint8_t)((raw_speed[i] >> 8) & 0xFF);
+    }
 
-    tx_data[6] = 0U;
-    tx_data[7] = 0U;
-
-    return Can_Transmit(hcan, 0U, 140U, tx_data, sizeof(tx_data));
+    return Can_Transmit(hcan, 0U, 0x140U, tx_data, 8U);
 }
 
 static HAL_StatusTypeDef Can_Transmit(CAN_HandleTypeDef *hcan, uint8_t header,
@@ -111,7 +98,7 @@ void Chassis_rx(CAN_RxHeaderTypeDef *header, uint8_t data[8])
     int16_t raw_vy;
     int16_t raw_w;
 
-    if ((header == NULL) || (data == NULL))
+    if ((header == NULL) || (data == NULL))	
         return;
 
     /* 检查数据帧格式 */

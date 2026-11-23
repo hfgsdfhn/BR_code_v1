@@ -151,11 +151,6 @@ void CAN_Parse_SmallBoard(const can_frame_t *frame)
         return;
     }
 
-    if (((frame->id >= 0x180U) && (frame->id <= 0x182U) && (frame->length < 6U)) ||
-        (((frame->id == 0x130U) || (frame->id == 0x140U)) && (frame->length < 8U)))
-    {
-        return;
-    }
 
     switch (frame->id)
     {
@@ -184,10 +179,11 @@ void CAN_Parse_SmallBoard(const can_frame_t *frame)
             }
             break;
 
-        case 0x140:
-            for (int i = 0; i < 4; i++) {
-                DJI_Board_FeedBack.wheel_speed_mps[i] =
-                    (float)CAN_MergeInt16(frame->data[i * 2], frame->data[i * 2 + 1]) / 100.0f;
+        case 0x140U:
+            for (uint8_t i = 0; i < 4; i++)
+            {
+                int16_t raw_speed = (int16_t)((uint16_t)frame->data[i * 2] |((uint16_t)frame->data[i * 2 + 1] << 8));
+                DJI_Board_FeedBack.wheel_speed_mps[i] =raw_speed / 1000.0f;
             }
             break;
 

@@ -22,6 +22,12 @@ struct send_to_chassis_t
 
 typedef struct
 {
+    chassis_speed_t current_speed;
+}send_to_ethernet_t;
+
+
+typedef struct
+{
     float dt35_right;
     float dt35_front;
     remote_t remote;
