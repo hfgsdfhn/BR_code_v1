@@ -441,8 +441,9 @@ bool J4310_OnFrame(j4310_t *motor,
     raw_position_rad = motor->direction * J4310_UintToFloat(position, -J4310_POSITION_MAX, J4310_POSITION_MAX, 16U);
     if (!motor->position_tracking_valid)
     {
-        motor->feedback.position_rad = remainderf(raw_position_rad, J4310_TWO_PI);
+        motor->feedback.position_rad = raw_position_rad;
         motor->position_tracking_valid = true;
+        motor->set_zero_position_request = 1U;
     }
     else
     {
@@ -500,11 +501,11 @@ bool J4310_OnFrame(j4310_t *motor,
     }
     if (motor->startup_hold_pending && (motor->feedback.state == J4310_STATE_ENABLED))
     {
-        motor->target_position_rad = motor->feedback.position_rad;
+        motor->target_position_rad = 0.0f;
         motor->target_speed_rad_s = 0.0f;
-        motor->reference_position_rad = motor->feedback.position_rad;
+        motor->reference_position_rad = 0.0f;
         motor->reference_speed_rad_s = 0.0f;
-        motor->trajectory_start_rad = motor->feedback.position_rad;
+        motor->trajectory_start_rad = 0.0f;
         motor->trajectory_pending = false;
         motor->trajectory_active = false;
         motor->kp = 0.0f;
@@ -808,11 +809,4 @@ void J4310_Service(j4310_t *motor, float additional_torque_nm, uint32_t now)
         motor->startup_enable_countdown = enable_countdown;
     }
 }
-
-
-
-
-
-
-
 

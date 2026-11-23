@@ -2,7 +2,6 @@
 
 #include "rs05.h"
 #include "bsp_can.h"
-#include "flash.h"
 #include "my_main.h"
 #include "quintic_planner.h"
 #include "trapezoid_planner.h"
@@ -198,7 +197,8 @@ HAL_StatusTypeDef RS05_Init(rs05_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
     m->mode = RS_MODE_STOP;
-    m->continuous_valid = Flash_LoadMotorAngle(1U, &m->continuous_position);
+    m->continuous_valid = false;
+    m->continuous_position = 0.0f;
     (void)RS05_BuildSpecial(m, RS05_ENABLE);
     return HAL_OK;
 }
@@ -414,7 +414,7 @@ bool RS05_Send(rs05_t *m)
         if (m->trajectory_pending)
             RS05_BeginPositionTrajectory(m, now);
         RS05_UpdatePositionTrajectory(m, now);
-        pos = (float)m->direction * m->reference_position;
+        pos = (float)m->direction * (m->reference_position + m->software_zero_offset);
         vel = (float)m->direction * m->reference_velocity;
         kp = m->mit_kp;
         kd = m->mit_kd;
@@ -470,8 +470,7 @@ bool RS05_OnFrame(rs05_t *m, const can_frame_t *f)
     recovering = !m->feedback_valid;
     if (!m->ever_feedback_received)
     {
-        if (!m->continuous_valid)
-            m->continuous_position = remainderf(m->single_position, RS05_ANGLE_PERIOD);
+        m->continuous_position = m->single_position;
         m->continuous_valid = true;
         m->software_zero_offset = m->continuous_position;
     }
@@ -597,9 +596,4 @@ void RS05_SetTargetMIT(rs05_t *motor, rs_mode_t mode, float tau_nm, float output
     PID_Reset(&motor->cascade_position_pid);
     PID_Reset(&motor->cascade_speed_pid);
 }
-
-
-
-
-
 

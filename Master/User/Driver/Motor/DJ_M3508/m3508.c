@@ -239,8 +239,8 @@ bool M3508_OnFrame(m3508_t *motor,
     {
 
         motor->mode = M3508_MODE_POSITION;
-        motor->target_position_rad = motor->position_rad;
-        motor->reference_position_rad = motor->position_rad;
+        motor->target_position_rad = 0.0f;
+        motor->reference_position_rad = 0.0f;
         motor->reference_speed_rad_s = 0.0f;
         motor->reference_acceleration_rad_s2 = 0.0f;
         motor->trajectory_pending = false;
@@ -515,3 +515,4 @@ void M3508_BuildSpecial(m3508_t *motor, uint8_t command)
         motor->target_position_rad = motor->position_rad;
     }
 }
+
