@@ -1,5 +1,5 @@
 #include "chassis_kinematics.h"
-
+#include "ak_motor.h"
 #include <stddef.h>
 
 //1 - rr 03
@@ -10,8 +10,6 @@
 #define WHEEL_RADIUS        0.0775f   // 轮子半径，m
 #define CHASSIS_LENGTH      0.21f      // 前后方向半轴距，m
 #define CHASSIS_WIDTH       0.21f      // 左右方向半轴距，m
-#define AK60_POLE_PAIRS    21.0f
-#define TWO_PI             6.283185307f
 #define SQRT_2              1.41421356f
 
 /* 电机正向滚动符号，顺序：RF、RR、LF、LR */
@@ -67,7 +65,7 @@ void Chassis_ForwardKinematics(const float motor_speed[4],
 
     actual->vy = (w0 - w1 - w2 + w3) / (4.0f * k);
 
-    actual->vw = (w0 + w1 - w2 - w3) / (4.0f * ( k /SQRT_2) * l);
+    actual->vw = (w0 + w1 - w2 - w3) / (4.0f *  k * l);
 }
 
 /**

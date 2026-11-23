@@ -1,6 +1,7 @@
 #include "chassis_task.h"
 #include "status_task.h"
 #include "chassis.h"
+#include "math.h"
 #include "board_can.h"
 #include "fdcan.h"
 send_to_chassis_t chassis_data_;
@@ -13,7 +14,7 @@ static float behind_leg_pos;
 float leg_target_pos_a = 0;
 float leg_target_pos_f = 0;
 float leg_target_pos_b = 0;
-
+void World_Change(send_to_chassis_t *send);
 void Chassis_Task_(void *argument)
 {
     uint32_t tick = osKernelGetTickCount();
@@ -24,6 +25,7 @@ void Chassis_Task_(void *argument)
         send_to_chassis_t status;
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
+            World_Change(&status);
             if(status.chassis_emmergency_stop ==0)
             Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             else {
@@ -44,4 +46,14 @@ void Chassis_Task_(void *argument)
         tick += period;
         osDelayUntil(tick);
     }
+}
+
+void World_Change(send_to_chassis_t *send)
+{
+    float chassis_vx = send->target_speed.vx;
+    float chassis_vy = send->target_speed.vy;
+    float sint = sinf(send->current_yaw);
+    float cost = cosf(send->current_yaw);
+    send->target_speed.vx = chassis_vx * cost - chassis_vy *sint;
+    send->target_speed.vy = chassis_vx * sint + chassis_vy *cost;
 }

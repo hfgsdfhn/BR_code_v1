@@ -11,7 +11,7 @@ ak_motor_t g_chassis_motors[4];
 float feedback_motor_speed[4] = {0};
 float target_motor_speed[4]   = {0};
 float target_motor_torque[4]  = {0};
-
+HAL_StatusTypeDef au;
 /* 底盘目标/实际量 */
 chassis_speed_t chassis_target_speed;
 chassis_speed_t chassis_actual_speed;
@@ -37,35 +37,32 @@ void My_Loop(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Instance == TIM6) 
-			{
-				    for (uint8_t i = 0U; i < 4U; ++i)
+    if (htim->Instance == TIM6)
     {
-        feedback_motor_speed[i] = g_chassis_motors[i].feedback.speed;
-    }
-
-    Chassis_ForwardKinematics(feedback_motor_speed, &chassis_actual_speed); //解算出速度
-
-    //Chassis_tx(&hcan1,chassis_actual_speed.vx,chassis_actual_speed.vy,chassis_actual_speed.vw); //发送速度
-
-    if (target_mode == 0U)
-    {
-        /* ---- 速度模式 ---- */
-        Chassis_InverseKinematics(&chassis_target_speed, target_motor_speed);
         for (uint8_t i = 0U; i < 4U; ++i)
         {
-            AkMotor_SetSpeed(&g_chassis_motors[i], target_motor_speed[i]);
+            feedback_motor_speed[i] = g_chassis_motors[i].feedback.speed;
         }
-    }
-    else
-    {
-        /* ---- 电流模式 ---- */
-        Chassis_ForceInverseKinematics(&chassis_target_force, target_motor_torque);
-        for (uint8_t i = 0U; i < 4U; ++i)
+
+        if (target_mode == 0U)
         {
-            AkMotor_SetCurrent(&g_chassis_motors[i],
-                               target_motor_torque[i] * torque_to_current);
+            /* ---- 速度模式 ---- */
+            Chassis_InverseKinematics(&chassis_target_speed, target_motor_speed);
+            for (uint8_t i = 0U; i < 4U; ++i)
+            {
+                AkMotor_SetSpeed(&g_chassis_motors[i], target_motor_speed[i]);
+            }
+        }
+        else
+        {
+            /* ---- 电流模式 ---- */
+            Chassis_ForceInverseKinematics(&chassis_target_force, target_motor_torque);
+            for (uint8_t i = 0U; i < 4U; ++i)
+            {
+                AkMotor_SetCurrent(&g_chassis_motors[i],
+                                   target_motor_torque[i] * torque_to_current);
+            }
         }
     }
-}
+    au = Chassis_tx(&hcan1, feedback_motor_speed); //发送速度
 }
