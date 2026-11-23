@@ -22,8 +22,8 @@ static uint8_t leg_down_flag;
 static uint8_t chassis_emmergency_stop;
 
 float chassis_pid[2][4] = {
-    {6.0f, 0.0f, 0.0f,6.0f},
-    {4.0f, 0.0f, 0.0f, 5.0f}
+    {3.0f, 0.0f, 0.0f,6.0f},
+    {1.3f, 0.0f, 0.0f, 6.0f}
 	};
 static float joystick_axis_to_unit(int16_t value)
 {
@@ -87,7 +87,7 @@ void joy_to_mps(send_to_chassis_t *send)
     target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     if (use_imu)
     {
-        float target_yaw_step = 0.001;
+        float target_yaw_step = 0.0003;
 
         if (send->remote.shoulder_left == 1U)
         {
@@ -101,7 +101,7 @@ void joy_to_mps(send_to_chassis_t *send)
         if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
         else if(yaw_error >=1.57f)                 target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
         else target_vw = 0.0f;
-        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw, 0.08f);
+        send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
     }
 
     else

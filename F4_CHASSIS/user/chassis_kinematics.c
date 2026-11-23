@@ -29,20 +29,20 @@ static const float motor_direction[4] =
 void Chassis_InverseKinematics(const chassis_speed_t *target,
                                float *motor_speed)
 {
-    float l = CHASSIS_LENGTH + CHASSIS_WIDTH;
-    float k = (60.0f * AK60_POLE_PAIRS * SQRT_2) / (TWO_PI * WHEEL_RADIUS);
+    float l = 0.2969f;
+    float k = 0.00012195f;  // ERPM 转线速度 m/s
 
-    motor_speed[0] = motor_direction[0] * k *
-                     (target->vx + target->vy + l * target->vw);
+    motor_speed[0] = motor_direction[0] *
+                     ((target->vx + target->vy) / 1.414f + l * target->vw) / k;
 
-    motor_speed[1] = motor_direction[1] * k *
-                     (target->vx - target->vy + l * target->vw);
+    motor_speed[1] = motor_direction[1] *
+                     ((target->vx - target->vy) / 1.414f + l * target->vw) / k;
 
-    motor_speed[2] = motor_direction[2] * k *
-                     (target->vx - target->vy - l * target->vw);
+    motor_speed[2] = motor_direction[2] *
+                     ((target->vx - target->vy) / 1.414f - l * target->vw) / k;
 
-    motor_speed[3] = motor_direction[3] * k *
-                     (target->vx + target->vy - l * target->vw);
+    motor_speed[3] = motor_direction[3] *
+                     ((target->vx + target->vy) / 1.414f - l * target->vw) / k;
 }
 
 /**

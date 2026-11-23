@@ -19,12 +19,8 @@ HAL_StatusTypeDef Chassis_tx(CAN_HandleTypeDef *hcan,const float erpm[4])
 
     for (uint8_t i = 0; i < 4; i++)
     {
-        /* ERPM 转机械角速度 rad/s */
-        float omega = erpm[i] * TWO_PI /
-                      (60.0f * AK60_POLE_PAIRS);
-
-        /* 角速度转换为轮子线速度 m/s */
-        float speed = omega * 0.0775f;
+        /* ERPM轮子线速度 m/s */
+        float speed = erpm[i] * 0.00012195f;
 
         /* 放大1000倍 */
         raw_speed[i] = (int16_t)(speed * 1000.0f);

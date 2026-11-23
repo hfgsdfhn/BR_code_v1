@@ -87,11 +87,11 @@ void motor_to_world_speed(DJI_Board *real, status_common_t * common)
 
     common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f *1.414f);
     common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f * 1.414f);
-    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.29703);
+    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.2970);
 
-    chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx / -4.744152898252f;
-    chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy / -4.744152898252f;
-    chassis_walk.z += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vw / 4.744152898252f;
+    chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx;
+    chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy;
+    chassis_walk.z += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vw;
 }
 
 static void Status_ReadAll(void)
