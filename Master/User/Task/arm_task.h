@@ -1,4 +1,4 @@
-
+﻿
 #ifndef ARM_TASK_H
 #define ARM_TASK_H
 #include "../Peripheral/CAN/bsp_can.h"
@@ -14,6 +14,7 @@ extern volatile uint8_t gpio_pd1;
 extern volatile uint8_t gpio_pd3;
 extern volatile uint8_t gpio_pd4;
 extern volatile uint8_t gpio_pd5;
+extern volatile uint8_t arm_low_low_mode_enable;
 
 extern volatile float arm_pose_pd11[2][ARM_JOINT_COUNT];
 extern volatile float arm_pose_pd13[2][ARM_JOINT_COUNT];

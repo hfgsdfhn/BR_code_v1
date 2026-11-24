@@ -218,10 +218,10 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
     m->output_ratio = 1.0f;
-    m->mode = RS_MODE_MIT;
+    m->mode = RS_MODE_STOP;
     m->target = 0.0f;
     m->startup_hold_active = true;
-    m->run_mode = 0xFFU;
+    m->run_mode = RS01_RUN_MODE_MIT;
     m->continuous_valid = false;
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
     return HAL_OK;
