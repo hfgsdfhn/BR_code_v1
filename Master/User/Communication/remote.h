@@ -30,6 +30,7 @@
 #define KEY_PD6    ((remote.key[2] >> 3) & 0x01U)
 #define KEY_PD7    ((remote.key[2] >> 4) & 0x01U)
 
+#define PA1        (remote.switch_state >>3 & 0x01U)
 typedef enum
 {
     REMOTE_KEY_PE0 = 0U,

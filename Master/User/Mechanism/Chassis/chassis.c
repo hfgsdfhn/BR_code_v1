@@ -82,9 +82,15 @@ void joy_to_mps(send_to_chassis_t *send)
         send->target_speed.vw = 0.0f;
         return;
     }
-    
-    target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
-    target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
+    if(PA1 == 1)
+    {
+        target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
+        target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
+    }
+    else{
+        target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow;
+        target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow;
+    }
     if (use_imu)
     {
         float target_yaw_step = 0.0003;

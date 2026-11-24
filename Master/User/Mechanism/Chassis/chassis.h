@@ -4,12 +4,13 @@
 #include "pid.h"
 
 #define CHASSIS_JOYSTICK_MAX_LINEAR_MPS       2.0f
+#define CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow       0.8f
 #define CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S    2.0f
 #define CHASSIS_CONTROL_PERIOD_S              0.002f
 #define CHASSIS_RAD_TO_DEG                    57.2957795f
 #define CHASSIS_JOYSTICK_CENTER               8
 #define CHASSIS_JOYSTICK_DEADBAND             1
-#define CHASSIS_LINEAR_SPEED_STEP_MPS         0.0042f
+#define CHASSIS_LINEAR_SPEED_STEP_MPS         0.012f
 #define CHASSIS_ANGULAR_SPEED_STEP_RAD_S      0.015f
 
 #define M3508_LEG_MOTOR_ID_MIN 5U
