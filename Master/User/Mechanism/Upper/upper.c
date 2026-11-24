@@ -33,11 +33,11 @@ volatile float br_rs05_trajectory_time_s = 0.0f;
 
 volatile float br_root_rs01_kp = 200.0f;
 volatile float br_root_rs01_kd = 50.0f;
-volatile float br_shoulder_kp = 50.0f;
-volatile float br_shoulder_kd = 5.0f;
-volatile float br_elbow_kp = 50.0f;
-volatile float br_elbow_kd = 3.0f;
-volatile float br_wrist_kp = 30.0f;
+volatile float br_shoulder_kp = 100.0f;
+volatile float br_shoulder_kd = 10.0f;
+volatile float br_elbow_kp = 100.0f;
+volatile float br_elbow_kd = 10.0f;
+volatile float br_wrist_kp = 50.0f;
 volatile float br_wrist_kd = 2.0f;
 volatile float br_rotation_kp = 30.0f;
 volatile float br_rotation_kd = 5.0f;

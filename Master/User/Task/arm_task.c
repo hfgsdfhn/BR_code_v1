@@ -46,7 +46,7 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis, float delta_ms)
 
 volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 5.0f, 5.0f, 0.0f}, {0.0f, 0.0f, 5.0f, 5.0f, 0.0f}};
 volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 80.0f, 0.0f, 0.0f}, {0.0f, 80.0f, 80.0f, 0.0f, 0.0f}};
-volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 133.0f, 99.0f, -15.0f, 0.0f},{0.0f, 133.0f, 99.0f, -15.0f, 0.0f}};
+volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 100.0f, -15.0f, 0.0f},{0.0f, 130.0f, 100.0f, -15.0f, 0.0f}};
 volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{0.0f, 155.0f, 112.0f, -10.0f, 0.0f},{0.0f, 155.0f, 112.0f, -10.0f, 0.0f}};
 volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 10.0f, 30.0f, 30.0f, 0.0f},{0.0f, 10.0f, 30.0f, 30.0f, 0.0f}};
 volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 63.0f, 58.0f, 0.0f},{0.0f, 70.0f, 63.0f, 58.0f, 0.0f}};

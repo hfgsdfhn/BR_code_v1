@@ -30,7 +30,7 @@ static bool id3_id2_released[2];
 volatile float pd13_stp_normal_speed_rad_s = 20.0f;
 volatile float pd13_stp_decel_speed_rad_s = 8.0f;
 volatile float pd13_stp_decel_distance_cm = 10.0f;
-volatile float pd13_stp_upper_stop_distance_cm = 1.5f;
+volatile float pd13_stp_upper_stop_distance_cm = 1.3f;
 volatile float pd13_stp_lower_stop_distance_cm = 3.0f;
 
 volatile uint32_t cup_motor_offline_count = 0U;

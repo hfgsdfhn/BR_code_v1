@@ -66,6 +66,7 @@ void chassis_init()
 
 void joy_to_mps(send_to_chassis_t *send)
 {
+    static uint32_t remote_offline_count = 0U;
     float target_vx;
     float target_vy;
     float target_vw;
@@ -76,11 +77,15 @@ void joy_to_mps(send_to_chassis_t *send)
     }
 
     if (send->remote.online == 0U)
-    {
-        send->target_speed.vx = 0.0f;
-        send->target_speed.vy = 0.0f;
-        send->target_speed.vw = 0.0f;
-        return;
+    {   
+        remote_offline_count++;
+        if (remote_offline_count > 100U)
+        {
+            send->target_speed.vx = 0.0f;
+            send->target_speed.vy = 0.0f;
+            send->target_speed.vw = 0.0f;
+            return;
+        }
     }
     if(PA1 == 1)
     {
@@ -93,7 +98,7 @@ void joy_to_mps(send_to_chassis_t *send)
     }
     if (use_imu)
     {
-        float target_yaw_step = 0.0003;
+        float target_yaw_step = 0.0006f;
 
         if (send->remote.shoulder_left == 1U)
         {
