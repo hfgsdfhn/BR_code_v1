@@ -13,6 +13,7 @@ volatile float arm_target[2][ARM_JOINT_COUNT];
 volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
 volatile uint8_t arm_remote_select;
+volatile uint8_t arm_low_low_mode_enable;
 volatile bool startup_hold_latched[2];
 #define ARM_IK_X_MIN_CM (-100.0f)
 #define ARM_IK_X_MAX_CM (100.0f)
@@ -34,12 +35,11 @@ static void Arm_SeedIKTargetFromFeedback(uint8_t arm)
     arm_end_target_world[arm][2] = arm_end_position_world[arm][2];
 }
 
-static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis)
+static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis, float delta_ms)
 {
-    if (arm >= 2U || axis >= 3U)
-
+    if (arm >= 2U || axis >= 3U || delta_ms <= 0.0f)
         return;
-    arm_end_target_world[arm][axis] += 0.1f * (float)arm_ik_target_direction[arm][axis];
+    arm_end_target_world[arm][axis] += 0.01f * delta_ms * (float)arm_ik_target_direction[arm][axis];
     if (axis == 1U && arm_end_target_world[arm][axis] <= 10.0f)
         arm_end_target_world[arm][axis] = 10.1f;
 }
@@ -78,6 +78,7 @@ void Arm_TaskInit(void)
     memset(br_joint_velocity, 0, sizeof(br_joint_velocity));
     memset(br_grip, 0, sizeof(br_grip));
     arm_remote_select = 0U;
+    arm_low_low_mode_enable = 0U;
     memset((void *)arm_joint_zero_calibration, 0, sizeof(arm_joint_zero_calibration));
     memset((void *)startup_hold_latched, 0, sizeof(startup_hold_latched));
     memset((void *)arm_end_target_world, 0, sizeof(arm_end_target_world));
@@ -249,6 +250,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     static bool previous_pa6_low_mode;
     static bool previous_pa5_low_mode;
     static bool previous_mode_valid;
+    static uint32_t previous_ik_tick;
+    static bool previous_ik_tick_valid;
     uint16_t current_keys, pressed_keys;
     uint8_t current_pa4;
     bool pa5_low_mode;
@@ -262,6 +265,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         previous_keys_valid = false;
         previous_mode_valid = false;
         previous_pose_mode_valid = false;
+        previous_ik_tick_valid = false;
         return;
     }
 
@@ -295,10 +299,15 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         pd15_10_index = 0U;
         pa11_rotation_index = 0U;
     }
+    /* IK is available only while both PA6 and PA5 are low. */
     if (previous_mode_valid && previous_pa6_low_mode && previous_pa5_low_mode && !(pa6_low_mode && pa5_low_mode))
         Arm_DisableRemoteIK();
-    if (pa6_low_mode && pa5_low_mode && (!previous_mode_valid || !previous_pa6_low_mode || !previous_pa5_low_mode))
+    if (arm_low_low_mode_enable != 0U && pa6_low_mode && pa5_low_mode && (!previous_mode_valid || !previous_pa6_low_mode || !previous_pa5_low_mode))
+    {
+        Arm_SeedIKTargetFromFeedback(Arm_SelectedRemoteArm());
         Arm_EnableRemoteIK();
+        previous_ik_tick_valid = false;
+    }
     previous_mode_valid = true;
 
     if (!pa6_low_mode && !pa5_low_mode &&
@@ -312,30 +321,45 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     previous_pa5_low_mode = pa5_low_mode;
     previous_pose_mode_valid = true;
 
+    if (pa6_low_mode && pa5_low_mode && arm_low_low_mode_enable == 0U)
+    {
+        Arm_DisableRemoteIK();
+        previous_ik_tick_valid = false;
+        previous_keys = current_keys;
+        return;
+    }
     if (pa6_low_mode && pa5_low_mode)
     {
         uint8_t arm = Arm_SelectedRemoteArm();
+        Arm_EnableRemoteIK();
         if (pressed_keys & (1U << 0))
+        {
             arm_remote_select ^= 1U;
+            arm = Arm_SelectedRemoteArm();
+            Arm_SeedIKTargetFromFeedback(arm);
+        }
         if (pressed_keys & (1U << 1))
         {
-            Arm_ApplyRemotePose(arm_pose_pd11, false);
-            pd13_11_index = 0U;
-            pd14_11_index = 0U;
-            pd15_11_index = 0U;
+            arm_ik_second_rs00_prefer_small[arm] ^= 1U;
+            if (arm_ik_enable[arm] != 0U)
+                Upper_RefreshArmIK(arm);
         }
+        /* PD12 controls the total arm enable and synchronizes IK in this mode only. */
         if (pressed_keys & (1U << 2))
         {
             upper_state.enable ^= 1U;
             Arm_EnableRemoteIK();
         }
+        uint32_t now_ik_tick = HAL_GetTick();
+        float ik_delta_ms = previous_ik_tick_valid ? (float)(now_ik_tick - previous_ik_tick) : 0.0f;
+        previous_ik_tick = now_ik_tick;
+        previous_ik_tick_valid = true;
         for (uint8_t axis = 0U; axis < 3U; ++axis)
         {
             uint16_t mask = (uint16_t)(1U << (3U + axis));
             if (pressed_keys & mask)
             {
                 arm_ik_target_direction[arm][axis] = (int8_t)-arm_ik_target_direction[arm][axis];
-                Arm_SeedIKTargetFromFeedback(arm);
                 if (axis == 0U)
                 {
                     pd14_11_index = 0U;
@@ -354,7 +378,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
             }
             if (current_keys & mask)
             {
-                Arm_AdjustIKTarget(arm, axis);
+                Arm_AdjustIKTarget(arm, axis, ik_delta_ms);
                 Upper_RefreshArmIK(arm);
             }
         }
@@ -453,7 +477,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         }
         if ((pressed_keys & (1U << 1)) != 0U)
         {
-            Arm_ApplyRemotePose(arm_pose_pd11, false);
+            Arm_ApplyDualPose(arm_pose_pd11[ARM_LARM_INDEX], arm_pose_pd11[ARM_RARM_INDEX]);
             pd13_10_index = 0U;
             pd14_10_index = 0U;
             pd15_10_index = 0U;

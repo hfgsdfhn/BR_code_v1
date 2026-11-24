@@ -109,9 +109,12 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
     planar_x = l1 * cosf(a1) + l2 * cosf(a2) + l3 * cosf(a3) + l4 * cosf(a4);
     planar_y = l1 * sinf(a1) + l2 * sinf(a2) + l3 * sinf(a3) + l4 * sinf(a4);
 
-    end_world_m[0] = -planar_x * sinf(q[0]);
+    if (model == &br_gravity_models[1])
+        end_world_m[0] = planar_x * sinf(q[0]);
+    else
+        end_world_m[0] = -planar_x * sinf(q[0]);
     end_world_m[1] = -planar_x * cosf(q[0]);
-    end_world_m[2] = -planar_y;
+    end_world_m[2] = planar_y;
     return true;
 }
 
@@ -156,11 +159,20 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
 
     radius = sqrtf(target_world_m[0] * target_world_m[0] +
                    target_world_m[1] * target_world_m[1]);
-    yaw = radius > 1.0e-6f ? atan2f(target_world_m[0], target_world_m[1]) : current_q[0];
+    if (radius > 1.0e-6f)
+    {
+        yaw = model == &br_gravity_models[1]
+                  ? atan2f(target_world_m[0], target_world_m[1])
+                  : atan2f(-target_world_m[0], target_world_m[1]);
+    }
+    else
+    {
+        yaw = current_q[0];
+    }
 
     a4 = a4_zero + current_q[1] - current_q[2] - current_q[3];
     wrist_x = -radius - l4 * cosf(a4);
-    wrist_y = -target_world_m[2] - l4 * sinf(a4);
+    wrist_y = target_world_m[2] - l4 * sinf(a4);
     c2 = (wrist_x * wrist_x + wrist_y * wrist_y -
           l1 * l1 - welded_length * welded_length) /
          (2.0f * l1 * welded_length);
