@@ -434,7 +434,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     previous_pa5_mode_valid = true;
 
     /* PA6 low mapping: K0=PD12, K1=PD10, K2=PD11, K3=PD15,
-       K4=PD13, K5=PD14, K6=PA12, K7=PA11, K8=PA8. */
+       K4=PA11, K5=PD14, K6=PA12, K7=PD13, K8=PA8. */
     if ((pressed_keys & (1U << 2)) != 0U)
         suction_enable ^= 1U;
     if ((pressed_keys & (1U << 0)) != 0U)
@@ -534,7 +534,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         pa11_second_press = false;
         pa8_sequence_state = 0U;
     }
-    if ((pressed_keys & (1U << 4)) != 0U)
+    if ((pressed_keys & (1U << 7)) != 0U)
     {
         id3_hold_target[ucup] = suction_target[ucup][1U];
         id3_hold_target[dcup] = suction_target[dcup][1U];
@@ -559,7 +559,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         pa11_second_press = false;
         pa8_sequence_state = 0U;
     }
-    if ((pressed_keys & (1U << 7)) != 0U)
+    if ((pressed_keys & (1U << 4)) != 0U)
     {
         id3_hold_target[ucup] = suction_target[ucup][1U];
         id3_hold_target[dcup] = suction_target[dcup][1U];
