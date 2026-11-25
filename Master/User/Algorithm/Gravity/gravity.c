@@ -88,8 +88,8 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF], float end_world_m[3])
 {
     const float l1 = 0.365000f;
-    const float l2 = 0.005800f;
-    const float l3 = 0.021500f;
+    const float l2 = 0.058000f;
+    const float l3 = 0.215000f;
     const float l4 = 0.120000f;
     const float a1_zero = 15.0f * BR_DEG_TO_RAD;
     const float a2_zero = 150.0f * BR_DEG_TO_RAD;
@@ -132,8 +132,8 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
                           bool prefer_small_second_rs00)
 {
     const float l1 = 0.365000f;
-    const float l2 = 0.005800f;
-    const float l3 = 0.021500f;
+    const float l2 = 0.058000f;
+    const float l3 = 0.215000f;
     const float l4 = 0.120000f;
     const float a1_zero = 15.0f * BR_DEG_TO_RAD;
     const float a2_zero = 150.0f * BR_DEG_TO_RAD;
@@ -153,7 +153,7 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
         return false;
     for (unsigned i = 0U; i < 3U; ++i)
         if (!isfinite(target_world_m[i])) return false;
-    if (target_world_m[1] <= 0.100000f) return false;
+    if (target_world_m[1] < 0.0f) return false;
     for (unsigned i = 0U; i < BR_ARM_DOF; ++i)
         if (!isfinite(current_q[i])) return false;
 
@@ -162,8 +162,8 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
     if (radius > 1.0e-6f)
     {
         yaw = model == &br_gravity_models[1]
-                  ? atan2f(target_world_m[0], target_world_m[1])
-                  : atan2f(-target_world_m[0], target_world_m[1]);
+                  ? atan2f(-target_world_m[0], target_world_m[1])
+                  : atan2f(target_world_m[0], target_world_m[1]);
     }
     else
     {

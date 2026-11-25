@@ -99,7 +99,7 @@ void joy_to_mps(send_to_chassis_t *send)
     }
     if (use_imu)
     {
-        float target_yaw_step = 0.0006f;
+        float target_yaw_step = 0.001f;
 
         if (send->remote.shoulder_left == 1U)
         {

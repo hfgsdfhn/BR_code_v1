@@ -15,7 +15,6 @@ extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
 extern volatile bool startup_hold_latched[2];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
-
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
 volatile float arm_end_position_world[2][3];
 volatile float arm_end_target_world[2][3];
@@ -103,7 +102,7 @@ void Upper_SetArmIKTarget(uint8_t arm, float x_cm, float y_cm, float z_cm)
     if (arm >= 2U || !isfinite(x_cm) || !isfinite(y_cm) || !isfinite(z_cm))
         return;
     arm_end_target_world[arm][0] = x_cm;
-    arm_end_target_world[arm][1] = y_cm <= 10.0f ? 10.1f : y_cm;
+    arm_end_target_world[arm][1] = y_cm < 0.0f ? 0.0f : y_cm;
     arm_end_target_world[arm][2] = z_cm;
 }
 

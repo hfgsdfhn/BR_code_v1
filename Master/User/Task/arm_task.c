@@ -17,7 +17,7 @@ volatile uint8_t arm_low_low_mode_enable;
 volatile bool startup_hold_latched[2];
 #define ARM_IK_X_MIN_CM (-100.0f)
 #define ARM_IK_X_MAX_CM (100.0f)
-#define ARM_IK_Y_MIN_CM (10.1f)
+#define ARM_IK_Y_MIN_CM (0.0f)
 #define ARM_IK_Y_MAX_CM (100.0f)
 #define ARM_IK_Z_MIN_CM (-100.0f)
 #define ARM_IK_Z_MAX_CM (100.0f)
@@ -31,7 +31,7 @@ static void Arm_SeedIKTargetFromFeedback(uint8_t arm)
     if (arm >= 2U)
         return;
     arm_end_target_world[arm][0] = arm_end_position_world[arm][0];
-    arm_end_target_world[arm][1] = arm_end_position_world[arm][1] <= 10.0f ? 10.1f : arm_end_position_world[arm][1];
+    arm_end_target_world[arm][1] = arm_end_position_world[arm][1] < ARM_IK_Y_MIN_CM ? ARM_IK_Y_MIN_CM : arm_end_position_world[arm][1];
     arm_end_target_world[arm][2] = arm_end_position_world[arm][2];
 }
 
@@ -324,6 +324,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     if (pa6_low_mode && pa5_low_mode && arm_low_low_mode_enable == 0U)
     {
         Arm_DisableRemoteIK();
+        if (pressed_keys & (1U << 1))
+            arm_low_low_mode_enable ^= 1U;
         previous_ik_tick_valid = false;
         previous_keys = current_keys;
         return;
