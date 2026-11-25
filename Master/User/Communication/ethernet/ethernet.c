@@ -6,6 +6,7 @@
 #include "main.h"
 #include "cmsis_os2.h"
 #include <stdint.h>
+#include <string.h>
 
 /* W5500 硬件配置 */
 #define W5500_CS_LOW()       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET)
@@ -20,6 +21,22 @@
 
 #define W5500_UDP_SOCKET     0U
 #define W5500_UDP_PORT       5000U
+
+#define STATUS_HEADER_FIRST  0xA5U
+#define STATUS_HEADER_SECOND 0x5AU
+#define STATUS_HEADER_SIZE   2U
+#define STATUS_CRC_OFFSET    (STATUS_HEADER_SIZE + 14U)
+#define STATUS_FRAME_SIZE    (STATUS_CRC_OFFSET + 2U)
+
+typedef struct
+{
+    send_to_ethernet_t status;
+    uint8_t ip[4];
+    uint16_t port;
+} status_datagram_t;
+
+static osMessageQueueId_t s_status_tx;
+static osMessageQueueId_t s_status_rx;
 
 static uint8_t s_udp_receive_buffer[2048];
 static osThreadId_t s_udp_task_handle = NULL;
@@ -195,7 +212,16 @@ void W5500_UdpInit(void)
         .priority = osPriorityNormal
     };
 
-    if (s_udp_task_handle == NULL)
+    if (s_status_tx == NULL)
+    {
+        s_status_tx = osMessageQueueNew(1U, sizeof(status_datagram_t), NULL);
+    }
+    if (s_status_rx == NULL)
+    {
+        s_status_rx = osMessageQueueNew(1U, sizeof(status_datagram_t), NULL);
+    }
+
+    if (s_udp_task_handle == NULL && s_status_tx != NULL && s_status_rx != NULL)
     {
         s_udp_task_handle = osThreadNew(
             W5500_UdpTask,
@@ -203,6 +229,64 @@ void W5500_UdpInit(void)
             &udp_task_attributes
         );
     }
+}
+
+osStatus_t W5500_SendStatus(const send_to_ethernet_t *status, const uint8_t ip[4], uint16_t port)
+{
+    status_datagram_t packet;
+
+    if (status == NULL || ip == NULL || port == 0U)
+    {
+        return osErrorParameter;
+    }
+    if (s_udp_task_handle == NULL)
+    {
+        return osErrorResource;
+    }
+
+    memcpy(&packet.status, status, sizeof(packet.status));
+    memcpy(packet.ip, ip, sizeof(packet.ip));
+    packet.port = port;
+    return osMessageQueuePut(s_status_tx, &packet, 0U, 0U);
+}
+
+
+static void Status_WriteInt16(uint8_t *data, int16_t value)
+{
+    uint16_t bits = (uint16_t)value;
+    data[0] = (uint8_t)bits;
+    data[1] = (uint8_t)(bits >> 8);
+}
+
+static int16_t Status_ReadInt16(const uint8_t *data)
+{
+    int32_t value = (int32_t)data[0] | ((int32_t)data[1] << 8);
+    if (value > INT16_MAX)
+    {
+        value -= 65536;
+    }
+    return (int16_t)value;
+}
+
+/* CRC-16/MODBUS*/
+static uint16_t Status_Crc16(const uint8_t *data, size_t length)
+{
+    uint16_t crc = 0xFFFFU;
+
+    for (size_t i = 0U; i < length; i++)
+    {
+        crc ^= data[i];
+        for (uint8_t bit = 0U; bit < 8U; bit++)
+        {
+            uint16_t low_bit = crc & 1U;
+            crc >>= 1;
+            if (low_bit != 0U)
+            {
+                crc ^= 0xA001U;
+            }
+        }
+    }
+    return crc;
 }
 
 /* UDP 回环任务 */
@@ -213,6 +297,8 @@ static void W5500_UdpTask(void *argument)
     uint8_t socket_status;
     uint8_t remote_ip[4];
     uint16_t remote_port;
+
+    status_datagram_t packet;
 
     for (;;)
     {
@@ -239,6 +325,28 @@ static void W5500_UdpTask(void *argument)
             }
         }
 
+        if (osMessageQueueGet(s_status_tx, &packet, NULL, 0U) == osOK)
+        {
+            uint8_t frame[STATUS_FRAME_SIZE];
+
+            frame[0] = STATUS_HEADER_FIRST;
+            frame[1] = STATUS_HEADER_SECOND;
+            uint8_t *payload = &frame[STATUS_HEADER_SIZE];
+            Status_WriteInt16(&payload[0], packet.status.vx);
+            Status_WriteInt16(&payload[2], packet.status.vy);
+            Status_WriteInt16(&payload[4], packet.status.vw);
+            Status_WriteInt16(&payload[6], packet.status.yaw);
+            Status_WriteInt16(&payload[8], packet.status.dt35_left);
+            Status_WriteInt16(&payload[10], packet.status.dt35_front);
+            payload[12] = 0U;
+            payload[13] = packet.status.remote_state;
+
+            uint16_t crc = Status_Crc16(frame, STATUS_CRC_OFFSET);
+            frame[STATUS_CRC_OFFSET] = (uint8_t)crc;
+            frame[STATUS_CRC_OFFSET + 1U] = (uint8_t)(crc >> 8);
+            sendto(W5500_UDP_SOCKET, frame, sizeof(frame), packet.ip, packet.port);
+        }
+
         /* 接收 UDP 数据 */
         int32_t received = recvfrom(
             W5500_UDP_SOCKET,
@@ -248,19 +356,28 @@ static void W5500_UdpTask(void *argument)
             &remote_port
         );
 
-        /* 收到数据后原样返回 */
-        if (received > 0)
+        if (received == (int32_t)STATUS_FRAME_SIZE &&
+            s_udp_receive_buffer[0] == STATUS_HEADER_FIRST &&
+            s_udp_receive_buffer[1] == STATUS_HEADER_SECOND)
         {
-            sendto(
-                W5500_UDP_SOCKET,
-                s_udp_receive_buffer,
-                (uint16_t)received,
-                remote_ip,
-                remote_port
-            );
-
+            uint16_t crc = (uint16_t)s_udp_receive_buffer[STATUS_CRC_OFFSET] |
+                           ((uint16_t)s_udp_receive_buffer[STATUS_CRC_OFFSET + 1U] << 8);
+            if (Status_Crc16(s_udp_receive_buffer, STATUS_CRC_OFFSET) == crc)
+            {
+                const uint8_t *payload = &s_udp_receive_buffer[STATUS_HEADER_SIZE];
+                packet.status.vx = Status_ReadInt16(&payload[0]);
+                packet.status.vy = Status_ReadInt16(&payload[2]);
+                packet.status.vw = Status_ReadInt16(&payload[4]);
+                packet.status.yaw = Status_ReadInt16(&payload[6]);
+                packet.status.dt35_left = Status_ReadInt16(&payload[8]);
+                packet.status.dt35_front = Status_ReadInt16(&payload[10]);
+                packet.status.action_task = payload[12];
+                packet.status.remote_state = payload[13];
+                memcpy(packet.ip, remote_ip, sizeof(packet.ip));
+                packet.port = remote_port;
+                osMessageQueuePut(s_status_rx, &packet, 0U, 0U);
+            }
         }
-
         osDelay(2U);
     }
 }

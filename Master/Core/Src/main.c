@@ -20,6 +20,7 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "bdma.h"
 #include "dma.h"
 #include "fdcan.h"
 #include "spi.h"
@@ -80,6 +81,7 @@ int main(void)
 
   /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
+
   /* Enable the CPU Cache */
 
   /* Enable I-Cache---------------------------------------------------------*/
@@ -92,9 +94,6 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* Configure GPIO safety states before clock and peripheral initialization. */
-  MX_GPIO_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -111,7 +110,9 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_GPIO_Init();
   MX_DMA_Init();
+  MX_BDMA_Init();
   MX_FDCAN1_Init();
   MX_FDCAN2_Init();
   MX_FDCAN3_Init();
@@ -125,8 +126,8 @@ int main(void)
   MX_UART8_Init();
   MX_UART9_Init();
   MX_USART3_UART_Init();
-  MX_USART6_UART_Init();
   MX_USART10_UART_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
   /* Flash commands use 8-bit SPI frames. */
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -296,16 +297,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
-    static uint8_t can_poll_divider;
-
     HAL_IncTick();
-    can_poll_divider++;
-    if (can_poll_divider >= 2U)
-    {
-      can_poll_divider = 0U;
-      BspCan_Poll(&hfdcan2);
-      BspCan_Poll(&hfdcan3);
-    }
   }
   /* USER CODE BEGIN Callback 1 */
 

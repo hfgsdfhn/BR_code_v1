@@ -30,7 +30,7 @@ void Chassis_InverseKinematics(const chassis_speed_t *target,
                                float *motor_speed)
 {
     float l = 0.2969f;
-    float k = 0.00012195f;  // ERPM 转线速度 m/s
+    float k = 0.00009682f;  // ERPM 转线速度 m/s
 
     motor_speed[0] = motor_direction[0] *
                      ((target->vx + target->vy) / 1.414f + l * target->vw) / k;
@@ -48,7 +48,7 @@ void Chassis_InverseKinematics(const chassis_speed_t *target,
 /**
  * @brief 底盘正运动学
  * @param motor_speed 四个电机实际角速度，rad/s
- * @param actual 底盘实际速度
+ * @param actual 底盘实际速度t
  */
 void Chassis_ForwardKinematics(const float motor_speed[4],
                                 chassis_speed_t *actual)

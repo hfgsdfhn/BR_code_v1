@@ -87,12 +87,13 @@ void joy_to_mps(send_to_chassis_t *send)
             return;
         }
     }
-    if(PA1 == 1)
+    if(PA1 == 1)        //快速
     {
         target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
         target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS;
     }
-    else{
+    else
+    {            //慢速
         target_vx = joystick_axis_to_unit(send->remote.joy_x) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow;
         target_vy = joystick_axis_to_unit(send->remote.joy_y) * CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow;
     }

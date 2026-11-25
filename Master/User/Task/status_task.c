@@ -31,20 +31,6 @@ static chassis_speed_t planned_speed;
 static float planned_yaw;
 static bool planned_yaw_initialized;
 
-typedef struct
-{
-    float dt35_right;
-    float dt35_front;
-    remote_t remote;
-    chassis_speed_t target_speed;
-    chassis_speed_t current_speed;
-    float target_yaw;
-    float current_yaw;
-    float stp23l_up_distance_cm;
-    float stp23l_down_distance_cm;
-    uint32_t sequence;
-} status_common_t;
-
 static status_common_t common;
 chassis_walk_t chassis_walk;
 
@@ -85,9 +71,9 @@ void motor_to_world_speed(DJI_Board *real, status_common_t * common)
     float w2 = real->wheel_speed_mps[2];
     float w3 = real->wheel_speed_mps[3];
 
-    common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f *1.414f);
+    common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f * 1.414f);
     common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f * 1.414f);
-    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.2970);
+    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.2970f);
 
     chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx;
     chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy;
@@ -141,6 +127,15 @@ void Send_to_Chassis(void)
     planned_speed = chassis.target_speed;
     planned_yaw = chassis.target_yaw;
     Queue_PublishLatest(Chassis_QueueHandle, &chassis);
+}
+
+void Send_To_Enthernet()
+{
+    send_to_ethernet_t ethernet;
+    ethernet.vx  = (int16_t)(common.current_speed.vx * 1000.0f);
+    ethernet.vy  = (int16_t)(common.current_speed.vy * 1000.0f);
+    ethernet.vw  = (int16_t)(common.current_speed.vw * 1000.0f);
+    ethernet.yaw = (int16_t)(common.current_yaw * 1000.0f);
 }
 
 void Send_to_Arm(void)

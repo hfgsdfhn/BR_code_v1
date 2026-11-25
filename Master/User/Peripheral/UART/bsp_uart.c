@@ -10,14 +10,14 @@
 #include "remote.h"
 
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t imu_rx[UART_RX_BUFFER_SIZE];
-__ALIGNED(CACHE_LINE_SIZE) static uint8_t dt35_rx[UART_RX_BUFFER_SIZE];
+__ALIGNED(CACHE_LINE_SIZE)  uint8_t dt35_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t ustp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t dstp23l_rx[UART_RX_BUFFER_SIZE];
 __ALIGNED(CACHE_LINE_SIZE) static uint8_t remote_rx[UART_RX_BUFFER_SIZE];
 
 bsp_uart_t uart_list[BSP_UART_COUNT] = {                                                                                                    
     [BSP_UART_IMU] = {&huart3, imu_rx, 0U, Mins_Imu_OnRx},                                                                                                  
-    [BSP_UART_DT35] = {&huart4, dt35_rx, 0U, DT35_RxBytes},                                                                                                 
+    [BSP_UART_DT35] = {&huart7, dt35_rx, 0U, DT35_RxBytes},                                                                                                 
     [BSP_UART_DOWN_STP23L] = {&huart5, dstp23l_rx, 0U, DStp23lRx},                                                                                                  
     [BSP_UART_UP_STP23L] = {&huart6, ustp23l_rx, 0U, UStp23lRx},
     [BSP_UART_REMOTE] = {&huart9, remote_rx, 0U, Remote_RxBytes}                                                                                                    
@@ -29,7 +29,7 @@ bool BspUart_RegisterRxCallback(bsp_uart_channel_t channel, bsp_uart_rx_callback
 {                                                                                                   
     if ((uint32_t)channel >= BSP_UART_COUNT) return false;                                                                                                  
     uart_list[channel].callback = callback;                                                                                                 
-    return true;                                                                                                    
+    return true;                                             
 }                                                                                                   
                                                                                                     
 static void BspUart_GetAlignedCacheRange(const uint8_t *buffer, uint32_t size,                                                                                                  
@@ -70,7 +70,6 @@ static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
                                       &aligned_buffer, &aligned_size);                                                                                                  
         SCB_CleanInvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);                                                                                                   
     }                                                                                                   
-                                                                                                    
     status = HAL_UART_Receive_DMA(uart->handle, uart->buffer, UART_RX_BUFFER_SIZE);                                                                                                 
     if (status == HAL_OK) __HAL_DMA_DISABLE_IT(uart->handle->hdmarx, DMA_IT_HT);                                                                                                    
     return status;                                                                                                  

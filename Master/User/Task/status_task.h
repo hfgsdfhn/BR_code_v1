@@ -3,9 +3,36 @@
 
 #include "remote.h"
 #include "cmsis_os2.h"
+#include "dt35.h"
 #include "chassis.h"
 #include <stdint.h>
 
+
+typedef struct
+{
+    float dt35_right;
+    float dt35_front;
+    remote_t remote;
+    chassis_speed_t target_speed;
+    chassis_speed_t current_speed;
+    float target_yaw;
+    float current_yaw;
+    float stp23l_up_distance_cm;
+    float stp23l_down_distance_cm;
+    uint32_t sequence;
+} status_common_t;
+
+typedef struct
+{
+    int16_t vx;
+    int16_t vy;
+    int16_t vw;
+    int16_t yaw;
+    int16_t dt35_left;
+    int16_t dt35_front;
+    uint8_t action_task;       //用来下任务 暂时先空发
+    uint8_t remote_state;      //遥控器是否在线
+}send_to_ethernet_t;
 
 struct send_to_chassis_t
 {
@@ -20,11 +47,6 @@ struct send_to_chassis_t
     uint8_t leg_back_flag;
     uint8_t chassis_emmergency_stop;
 };
-
-typedef struct
-{
-    chassis_speed_t current_speed;
-}send_to_ethernet_t;
 
 
 typedef struct
