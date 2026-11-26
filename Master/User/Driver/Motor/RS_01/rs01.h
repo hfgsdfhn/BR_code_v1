@@ -56,8 +56,6 @@ typedef struct
     FDCAN_HandleTypeDef *hcan;
     uint8_t id;
     int direction;
-    /* Ratio from motor-side rotation to the mechanism output. */
-    float output_ratio;
     rs_mode_t mode;
     float target;
     float hold_position;

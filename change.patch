@@ -1,0 +1,53 @@
+﻿diff --git a/Master/User/Algorithm/Gravity/gravity.c b/Master/User/Algorithm/Gravity/gravity.c
+--- a/Master/User/Algorithm/Gravity/gravity.c
++++ b/Master/User/Algorithm/Gravity/gravity.c
+@@ -10,7 +10,16 @@ volatile float br_link_21_5_m = 0.215000f;
+ volatile float br_link_8_m  = 0.120000f;
+-static const float br_command_zero_ground_deg[4] = {15.0f, 150.0f, 195.0f, 212.0f};
++static const float br_command_zero_ground_deg[2][4] =
++{
++    {20.0f, 155.0f, 195.0f, 240.0f},
++    {20.0f, 150.0f, 195.0f, 235.0f}
++};
++
++static const float *br_zero_ground_deg(const br_gravity_model_t *model)
++{
++    return model == &br_gravity_models[1] ? br_command_zero_ground_deg[1]
++                                          : br_command_zero_ground_deg[0];
++}
+@@ -56,12 +65,13 @@ static br_vec2_t br_polar(float length, float angle)
+-static void br_pose(const float q[BR_ARM_DOF], br_vec2_t joint[4], br_vec2_t com[4], br_vec2_t *tool)
++static void br_pose(const br_gravity_model_t *model, const float q[BR_ARM_DOF], br_vec2_t joint[4], br_vec2_t com[4], br_vec2_t *tool)
+ {
+-    const float a1 = br_command_zero_ground_deg[0] * BR_DEG_TO_RAD + q[1];
+-    const float a2 = br_command_zero_ground_deg[1] * BR_DEG_TO_RAD + q[1] - q[2];
+-    const float a3 = br_command_zero_ground_deg[2] * BR_DEG_TO_RAD + q[1] - q[2];
+-    const float a4 = br_command_zero_ground_deg[3] * BR_DEG_TO_RAD + q[1] - q[2] - q[3];
++    const float *zero_ground_deg = br_zero_ground_deg(model);
++    const float a1 = zero_ground_deg[0] * BR_DEG_TO_RAD + q[1];
++    const float a2 = zero_ground_deg[1] * BR_DEG_TO_RAD + q[1] - q[2];
++    const float a3 = zero_ground_deg[2] * BR_DEG_TO_RAD + q[1] - q[2];
++    const float a4 = zero_ground_deg[3] * BR_DEG_TO_RAD + q[1] - q[2] - q[3];
+@@ -91,10 +101,11 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
+-    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
+-    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
+-    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
+-    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
++    const float *zero_ground_deg = br_zero_ground_deg(model);
++    const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
++    const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
++    const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
++    const float a4_zero = zero_ground_deg[3] * BR_DEG_TO_RAD;
+@@ -135,10 +146,11 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
+-    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
+-    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
+-    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
+-    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
++    const float *zero_ground_deg = br_zero_ground_deg(model);
++    const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
++    const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
++    const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
++    const float a4_zero = zero_ground_deg[3] * BR_DEG_TO_RAD;
+@@ -223,7 +235,7 @@ bool BR_GravityEvaluate(const br_gravity_model_t *model,
+-    br_pose(q, joint, com, &tool);
++    br_pose(model, q, joint, com, &tool);

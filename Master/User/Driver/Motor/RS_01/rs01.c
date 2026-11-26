@@ -217,11 +217,8 @@ HAL_StatusTypeDef RS01_Init(rs01_t *m, FDCAN_HandleTypeDef *hcan, uint8_t id, in
     m->hcan = hcan;
     m->id = id;
     m->direction = (direction < 0) ? -1 : 1;
-    m->output_ratio = 1.0f;
     m->mode = RS_MODE_STOP;
     m->target = 0.0f;
-    m->startup_hold_active = true;
-    m->run_mode = RS01_RUN_MODE_MIT;
     m->continuous_valid = false;
     (void)RS01_BuildSpecial(m, RS01_ENABLE);
     return HAL_OK;
@@ -367,7 +364,7 @@ bool RS01_Send(rs01_t *m)
                  RS01_SPEED_PID_I_LIMIT);
         m->cascade_configured = true;
     }
-    pos = (float)m->direction * (m->position + m->software_zero_offset) / m->output_ratio;
+    pos = (float)m->direction * (m->position + m->software_zero_offset);
     if (m->mode == RS_MODE_POSITION)
     {
         float speed_ref;
@@ -387,8 +384,8 @@ bool RS01_Send(rs01_t *m)
         if (m->trajectory_pending)
             RS01_BeginPositionTrajectory(m, now);
         RS01_UpdatePositionTrajectory(m, now);
-        pos = (float)m->direction * (m->reference_position + m->software_zero_offset) / m->output_ratio;
-        vel = (float)m->direction * m->reference_velocity / m->output_ratio;
+        pos = (float)m->direction * (m->reference_position + m->software_zero_offset);
+        vel = (float)m->direction * m->reference_velocity;
         kp = m->mit_kp;
         kd = m->mit_kd;
         tq = (float)m->direction * m->tau_ff_nm;
@@ -434,9 +431,9 @@ bool RS01_OnFrame(rs01_t *m, const can_frame_t *f)
     m->feedback_state = (uint8_t)((f->id >> 22) & 0x03U);
     m->enabled = (m->feedback_state == 2U) && (m->fault == 0U);
 
-    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX) * m->output_ratio;
+    m->single_position = (float)m->direction * dec(rdbe(&f->data[0]), RS01_POSITION_MIN, RS01_POSITION_MAX);
 
-    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX) * m->output_ratio;
+    m->velocity = dec(rdbe(&f->data[2]), -RS01_VELOCITY_MAX, RS01_VELOCITY_MAX);
 
     m->torque = dec(rdbe(&f->data[4]), -RS01_TORQUE_MAX, RS01_TORQUE_MAX);
     m->temperature_c = (float)rdbe(&f->data[6]) * 0.1f;
@@ -559,7 +556,7 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
     }
     if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX || fabsf(tau_nm) > RS01_TORQUE_MAX)
         return;
-    float position_target = output_degrees * RS01_DEG_TO_RAD * motor->output_ratio;
+    float position_target = output_degrees * RS01_DEG_TO_RAD;
     if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||
         fabsf(position_target - motor->target) > RS01_TRAJECTORY_EPSILON_RAD)
     {

@@ -1,18 +1,20 @@
-
+﻿
 #include "cup_task.h"
 
-#include "cmsis_os2.h"
-#include "upper.h"
-#include "bsp_uart.h"
-#include "STP-23L.h"
-#include "my_main.h"
-#include "fdcan.h"
-#include "status_task.h"
-#include "arm_task.h"
+#include "../Mechanism/Chassis/chassis.h"
 #include "../Mechanism/Upper/cup_config.h"
+#include "STP-23L.h"
+#include "arm_task.h"
+#include "bsp_uart.h"
+#include "cmsis_os2.h"
+#include "fdcan.h"
+#include "my_main.h"
+#include "status_task.h"
+#include "upper.h"
 
-#include <stddef.h>
+#include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 volatile uint8_t suction_enable = 1U;
 volatile float suction_target[2][3];
@@ -24,9 +26,25 @@ static bool pd13_position_second_group;
 static bool id3_wait_for_id2;
 static float id3_hold_target[2];
 static bool id3_id2_released[2];
+typedef enum
+{
+    CUP_ACT_NONE,
+    CUP_ACT_PD13,
+    CUP_ACT_PD14,
+    CUP_ACT_PD15,
+    CUP_ACT_PA8,
+    CUP_ACT_PA11,
+    CUP_ACT_PA12
+} cup_act_t;
+static cup_act_t cup_act;
+static uint8_t cup_act_step;
+static uint32_t cup_act_deadline;
+static bool cup_act_wait;
+static uint8_t pd13_press_step, pa8_press_step, pa11_press_step, pa12_press_step;
+static void Cup_ServiceAction(void);
 
-#define PD13_UPPER_ID2_MAX_DEG  890.0f
-#define PD13_LOWER_ID2_MAX_DEG  820.0f
+#define PD13_UPPER_ID2_MAX_DEG 890.0f
+#define PD13_LOWER_ID2_MAX_DEG 820.0f
 volatile float pd13_stp_normal_speed_rad_s = 20.0f;
 volatile float pd13_stp_decel_speed_rad_s = 8.0f;
 volatile float pd13_stp_decel_distance_cm = 10.0f;
@@ -54,8 +72,7 @@ static void SuctionCup_KeepTrailingHeader(suction_stp23l_parser_t *parser)
 {
     uint16_t trailing_count = 0U;
     uint16_t index = STP23L_FRAME_SIZE;
-    while (index > 0U && trailing_count < STP23L_HEADER_SIZE &&
-           parser->frame[index - 1U] == STP23L_HEADER_BYTE)
+    while (index > 0U && trailing_count < STP23L_HEADER_SIZE && parser->frame[index - 1U] == STP23L_HEADER_BYTE)
     {
         --index;
         ++trailing_count;
@@ -69,10 +86,8 @@ static uint8_t SuctionCup_IsValidFrame(const suction_stp23l_parser_t *parser)
 {
     uint8_t checksum = 0U;
     uint16_t index;
-    if (parser->frame[4] != STP23L_DEVICE_ADDRESS ||
-        parser->frame[5] != STP23L_DISTANCE_COMMAND ||
-        SuctionCup_ReadU16(&parser->frame[6]) != 0U ||
-        SuctionCup_ReadU16(&parser->frame[8]) != STP23L_DATA_SIZE)
+    if (parser->frame[4] != STP23L_DEVICE_ADDRESS || parser->frame[5] != STP23L_DISTANCE_COMMAND ||
+        SuctionCup_ReadU16(&parser->frame[6]) != 0U || SuctionCup_ReadU16(&parser->frame[8]) != STP23L_DATA_SIZE)
         return 0U;
     for (index = 4U; index < STP23L_CHECKSUM_OFFSET; ++index)
         checksum = (uint8_t)(checksum + parser->frame[index]);
@@ -98,8 +113,7 @@ static float SuctionCup_DecodeDistanceCm(const suction_stp23l_parser_t *parser)
     return (count == 0U) ? 0.0f : ((float)sum / (float)count) / 10.0f;
 }
 
-static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser,
-                                  const uint8_t *data, uint16_t size,
+static void SuctionCup_ParseBytes(suction_stp23l_parser_t *parser, const uint8_t *data, uint16_t size,
                                   volatile float *distance_cm)
 {
     uint16_t byte_index;
@@ -302,8 +316,10 @@ static void SuctionCup_ServicePd13StpLink(void)
         else
         {
             float position_limit = side == 0U ? PD13_UPPER_ID2_MAX_DEG : PD13_LOWER_ID2_MAX_DEG;
-            float speed = (distance <= pd13_stp_decel_distance_cm ||
-                           position >= position_limit - pd13_stp_decel_distance_cm) ? pd13_stp_decel_speed_rad_s : pd13_stp_normal_speed_rad_s;
+            float speed =
+                (distance <= pd13_stp_decel_distance_cm || position >= position_limit - pd13_stp_decel_distance_cm)
+                    ? pd13_stp_decel_speed_rad_s
+                    : pd13_stp_normal_speed_rad_s;
             M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, speed);
         }
     }
@@ -345,247 +361,315 @@ void SuctionCup_Service(void)
             float down_rotation_target = suction_target[dcup][1U];
             if (id3_wait_for_id2)
             {
-                if (suction_feedback_angle[ucup][0U] > 300.0f ||
-                    suction_feedback_angle[dcup][0U] > 300.0f)
+                if (suction_feedback_angle[ucup][0U] > 300.0f || suction_feedback_angle[dcup][0U] > 300.0f)
                 {
                     id3_id2_released[ucup] = true;
                     id3_id2_released[dcup] = true;
                 }
-                if (!id3_id2_released[ucup]) up_rotation_target = id3_hold_target[ucup];
-                if (!id3_id2_released[dcup]) down_rotation_target = id3_hold_target[dcup];
+                if (!id3_id2_released[ucup])
+                    up_rotation_target = id3_hold_target[ucup];
+                if (!id3_id2_released[dcup])
+                    down_rotation_target = id3_hold_target[dcup];
             }
-            m2006_ucup[1].trajectory_time_s = ((up_rotation_target > 100.0f || (up_rotation_target < 10.0f && suction_feedback_angle[ucup][1U] > 100.0f)) ? BR_M2006_CUP1_ROTATION_TRAJECTORY_TIME_S : BR_M2006_CUP1_TRAJECTORY_TIME_S);
-            m2006_dcup[1].trajectory_time_s = ((down_rotation_target > 100.0f || (down_rotation_target < 10.0f && suction_feedback_angle[dcup][1U] > 100.0f)) ? BR_M2006_CUP1_ROTATION_TRAJECTORY_TIME_S : BR_M2006_CUP1_TRAJECTORY_TIME_S);
+            m2006_ucup[1].trajectory_time_s =
+                ((up_rotation_target > 100.0f ||
+                  (up_rotation_target < 10.0f && suction_feedback_angle[ucup][1U] > 100.0f))
+                     ? BR_M2006_CUP1_ROTATION_TRAJECTORY_TIME_S
+                     : BR_M2006_CUP1_TRAJECTORY_TIME_S);
+            m2006_dcup[1].trajectory_time_s =
+                ((down_rotation_target > 100.0f ||
+                  (down_rotation_target < 10.0f && suction_feedback_angle[dcup][1U] > 100.0f))
+                     ? BR_M2006_CUP1_ROTATION_TRAJECTORY_TIME_S
+                     : BR_M2006_CUP1_TRAJECTORY_TIME_S);
         }
         bool up_ready = m2006_ucup[i].feedback_online;
         bool down_ready = m2006_dcup[i].feedback_online;
 
         if (!(i == 0U && (pd13_stp_state == 1U || pd13_stp_state == 2U) && pd13_stp_started[0] && !pd13_stp_done[0]))
-            M2006_SetTargetDeferred(&m2006_ucup[i],
-                                    (enabled && up_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                    (enabled && up_ready) ? ((i == 1U && id3_wait_for_id2 && !id3_id2_released[ucup]) ? id3_hold_target[ucup] : suction_target[ucup][i]) : 0.0f);
+            M2006_SetTargetDeferred(&m2006_ucup[i], (enabled && up_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                    (enabled && up_ready) ? ((i == 1U && id3_wait_for_id2 && !id3_id2_released[ucup])
+                                                                 ? id3_hold_target[ucup]
+                                                                 : suction_target[ucup][i])
+                                                          : 0.0f);
         if (!(i == 0U && (pd13_stp_state == 1U || pd13_stp_state == 2U) && pd13_stp_started[1] && !pd13_stp_done[1]))
-            M2006_SetTargetDeferred(&m2006_dcup[i],
-                                    (enabled && down_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
-                                    (enabled && down_ready) ? ((i == 1U && id3_wait_for_id2 && !id3_id2_released[dcup]) ? id3_hold_target[dcup] : suction_target[dcup][i]) : 0.0f);
+            M2006_SetTargetDeferred(&m2006_dcup[i], (enabled && down_ready) ? M2006_MODE_POSITION : M2006_MODE_STOP,
+                                    (enabled && down_ready) ? ((i == 1U && id3_wait_for_id2 && !id3_id2_released[dcup])
+                                                                   ? id3_hold_target[dcup]
+                                                                   : suction_target[dcup][i])
+                                                            : 0.0f);
     }
     M3508_SetTargetDeferred(&m3508_dcup[0],
                             (enabled && m3508_dcup[0].feedback_online) ? M3508_MODE_POSITION : M3508_MODE_STOP,
                             (enabled && m3508_dcup[0].feedback_online) ? suction_target[dcup][2U] : 0.0f);
 
     SuctionCup_ServicePd13StpLink();
+    Cup_ServiceAction();
     SuctionCup_SendGroupFrames();
 }
+
+static void Cup_ResetAction(void)
+{
+    cup_act = CUP_ACT_NONE;
+    cup_act_step = 0U;
+    cup_act_deadline = 0U;
+    cup_act_wait = false;
+    pa8_sequence_state = 0U;
+    pd13_stp_state = 0U;
+    pd13_stp_started[0] = false;
+    pd13_stp_started[1] = false;
+    pd13_stp_done[0] = false;
+    pd13_stp_done[1] = false;
+    id3_wait_for_id2 = false;
+}
+static void Cup_SetTarget(float ux, float dx, float y)
+{
+    suction_target[ucup][0U] = ux;
+    suction_target[dcup][0U] = dx;
+    suction_target[ucup][1U] = y;
+    suction_target[dcup][1U] = y;
+}
+static bool Cup_Reached(float ux, float dx, float y)
+{
+    return fabsf(suction_feedback_angle[ucup][0U] - ux) <= 5.0f &&
+           fabsf(suction_feedback_angle[dcup][0U] - dx) <= 5.0f &&
+           fabsf(suction_feedback_angle[ucup][1U] - y) <= 5.0f && fabsf(suction_feedback_angle[dcup][1U] - y) <= 5.0f;
+}
+static void Cup_ServiceAction(void)
+{
+    uint32_t now = HAL_GetTick();
+    if (cup_act == CUP_ACT_NONE)
+        return;
+    if (cup_act == CUP_ACT_PD13)
+    {
+        if (cup_act_step == 0U && suction_feedback_angle[dcup][2U] >= 0.0f && suction_feedback_angle[dcup][2U] < 20.0f)
+        {
+            Cup_SetTarget(125.0f, 125.0f, 85.0f);
+            pd13_stp_state = 1U;
+            cup_act_step = 1U;
+        }
+        else if (cup_act_step == 1U && pd13_stp_state == 3U)
+        {
+            cup_act_step = 3U;
+        }
+        else if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f &&
+                 suction_feedback_angle[dcup][2U] < 230.0f)
+        {
+            Cup_SetTarget(500.0f, 500.0f, 0.0f);
+            pd13_stp_state = 0U;
+            pd13_stp_started[0] = false;
+            pd13_stp_started[1] = false;
+            pd13_stp_done[0] = false;
+            pd13_stp_done[1] = false;
+            cup_act_step = 3U;
+        }
+        return;
+    }
+    if (!cup_act_wait)
+    {
+        bool done;
+
+        if (cup_act == CUP_ACT_PD14)
+        {
+            done = Cup_Reached(840.0f, 790.0f, 0.0f);
+        }
+        else if (cup_act == CUP_ACT_PD15)
+        {
+            done = Cup_Reached(840.0f, 790.0f, 160.0f);
+        }
+        else if (cup_act == CUP_ACT_PA11)
+        {
+            done = Cup_Reached(125.0f, 125.0f, 85.0f);
+        }
+        else
+        {
+            done = cup_act_step != 0U ? Cup_Reached(840.0f, 790.0f, 85.0f) : Cup_Reached(125.0f, 125.0f, 85.0f);
+        }
+
+        if (done)
+        {
+            if (cup_act == CUP_ACT_PA11 && cup_act_step != 0U)
+            {
+                cup_act_wait = false;
+                cup_act = CUP_ACT_NONE;
+            }
+            else
+            {
+                cup_act_wait = true;
+                cup_act_deadline = now + ((cup_act == CUP_ACT_PA11 && cup_act_step == 0U) ? 6000U : 1000U);
+            }
+        }
+    }
+    else if ((int32_t)(now - cup_act_deadline) >= 0)
+    {
+        gpio_pd7 = 0U;
+        gpio_pb6 = 0U;
+        if (cup_act == CUP_ACT_PA11 && cup_act_step != 0U)
+        {
+            gpio_pb7 = 0U;
+            gpio_pd4 = 0U;
+        }
+        else
+        {
+            gpio_pb7 = 1U;
+            gpio_pd4 = 1U;
+        }
+        cup_act_wait = false;
+    }
+}
+
 static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
 {
     static uint16_t previous_keys;
     static bool previous_keys_valid;
-    static bool pd14_second_press;
-    static bool pd15_second_press;
-    static bool pa11_second_press;
-    static bool previous_pa5_low_mode;
-    static bool previous_pa5_mode_valid;
-    uint16_t current_keys;
-    uint16_t pressed_keys;
-    bool pa5_low_mode;
+    static bool previous_pa5;
+    uint16_t keys;
+    uint16_t pressed;
+    bool pa5;
+
     if (status == NULL)
         return;
-    if ((status->remote.switch_state & (1U << 0)) == 0U)
+
+    if ((status->remote.switch_state & (1U << 0U)) == 0U)
     {
-        previous_keys = 0U;
         previous_keys_valid = false;
-        pd14_second_press = false;
-        pd15_second_press = false;
-        pa11_second_press = false;
-        pa8_sequence_state = 0U;
-        pd13_stp_state = 0U;
-        pd13_stp_started[0] = false;
-        pd13_stp_started[1] = false;
-        pd13_stp_done[0] = false;
-        pd13_stp_done[1] = false;
-        pd13_position_second_group = false;
+        Cup_ResetAction();
         return;
     }
-    if ((status->remote.switch_state & (1U << 1U)) != 0U) { previous_keys = 0U; previous_keys_valid = false; return; }
-    current_keys = (uint16_t)(status->remote.key[0] & 0xFFU);
-    current_keys |= (uint16_t)((status->remote.key[1] & 1U) << 8);
+
+    if ((status->remote.switch_state & (1U << 1U)) != 0U)
+    {
+        previous_keys_valid = false;
+        return;
+    }
+
+    keys = (uint16_t)status->remote.key[0];
+    keys |= (uint16_t)((status->remote.key[1] & 1U) << 8U);
+
     if (!previous_keys_valid)
     {
-        previous_keys = current_keys;
+        previous_keys = keys;
         previous_keys_valid = true;
         return;
     }
-    pressed_keys = (uint16_t)(current_keys & (uint16_t)~previous_keys);
-    pa5_low_mode = ((status->remote.switch_state & (1U << 1U)) != 0U);
-    if (previous_pa5_mode_valid && pa5_low_mode != previous_pa5_low_mode)
-    {
-        pd14_second_press = false;
-        pd15_second_press = false;
-        pa11_second_press = false;
-        pa8_sequence_state = 0U;
-        pd13_stp_state = 0U;
-        pd13_stp_started[0] = false;
-        pd13_stp_started[1] = false;
-        pd13_stp_done[0] = false;
-        pd13_stp_done[1] = false;
-        pd13_position_second_group = false;
-    }
-    previous_pa5_low_mode = pa5_low_mode;
-    previous_pa5_mode_valid = true;
 
-    /* PA6 low mapping: K0=PD12, K1=PD10, K2=PD11, K3=PD15,
-       K4=PA11, K5=PD14, K6=PA12, K7=PD13, K8=PA8. */
-    if ((pressed_keys & (1U << 2)) != 0U)
+    pressed = (uint16_t)(keys & (uint16_t)~previous_keys);
+    pa5 = ((status->remote.switch_state & (1U << 1U)) != 0U);
+    if (pa5 != previous_pa5)
+        Cup_ResetAction();
+    previous_pa5 = pa5;
+
+    if ((pressed & (1U << 2U)) != 0U)
         suction_enable ^= 1U;
-    if ((pressed_keys & (1U << 0)) != 0U)
+
+    if ((pressed & (1U << 0U)) != 0U)
     {
+        Cup_ResetAction();
         gpio_pd7 ^= 1U;
         gpio_pb6 ^= 1U;
     }
-    if ((pressed_keys & (1U << 1)) != 0U)
+
+    if ((pressed & (1U << 1U)) != 0U)
     {
+        Cup_ResetAction();
         gpio_pb7 ^= 1U;
         gpio_pd4 ^= 1U;
     }
-    if ((pressed_keys & (1U << 5)) != 0U)
-        gpio_pd3 ^= 1U;
-    if ((pressed_keys & (1U << 8)) != 0U)
-        suction_target[dcup][2U] = (suction_target[dcup][2U] == 220.0f) ? 0.0f : 220.0f;
-    if ((pressed_keys & (1U << 6)) != 0U)
+
+    if ((pressed & (1U << 3U)) != 0U)
     {
-        pd13_stp_state = 0U;
-        pd13_stp_started[0] = false;
-        pd13_stp_started[1] = false;
-        pd13_stp_done[0] = false;
-        pd13_stp_done[1] = false;
-        if (pa8_sequence_state == 0U || pa8_sequence_state == 4U)
+        bool pd13_first_press = (pd13_press_step == 0U);
+
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PD13;
+        pd13_press_step = pd13_first_press ? 1U : 0U;
+        pa11_press_step = 0U;
+        pa8_press_step = 0U;
+        pa12_press_step = 0U;
+        gpio_pd7 = 1U;
+        gpio_pb6 = 1U;
+        gpio_pb7 = 0U;
+        gpio_pd4 = 0U;
+
+        if (pd13_first_press)
         {
-            suction_target[dcup][2U] = 400.0f;
-            pa8_sequence_state = 1U;
-        }
-        else if (pa8_sequence_state == 2U)
-        {
-            suction_target[dcup][0U] = 125.0f;
-            suction_target[dcup][1U] = 85.0f;
-            pa8_sequence_state = 3U;
-        }
-        pd14_second_press = false;
-        pd15_second_press = false;
-        pa11_second_press = false;
-        pd13_stp_state = 0U;
-        pd13_stp_started[0] = false;
-        pd13_stp_started[1] = false;
-        pd13_stp_done[0] = false;
-        pd13_stp_done[1] = false;
-    }
-    if ((pressed_keys & (1U << 3)) != 0U)
-    {
-        if (!pa5_low_mode)
-        {
-            id3_wait_for_id2 = false;
-            id3_id2_released[ucup] = false;
-            id3_id2_released[dcup] = false;
-            if (pd13_stp_state == 0U)
-            {
-                pd13_stp_state = 1U;
-                pd13_stp_started[0] = false;
-                pd13_stp_started[1] = false;
-                pd13_stp_done[0] = false;
-                pd13_stp_done[1] = false;
-                suction_target[ucup][0U] = 125.0f;
-                suction_target[dcup][0U] = 125.0f;
-                suction_target[ucup][1U] = 85.0f;
-                suction_target[dcup][1U] = 85.0f;
-            }
-            else
-            {
-                pd13_stp_state = 0U;
-                pd13_stp_started[0] = false;
-                pd13_stp_started[1] = false;
-                pd13_stp_done[0] = false;
-                pd13_stp_done[1] = false;
-                suction_target[ucup][0U] = 125.0f;
-                suction_target[dcup][0U] = 125.0f;
-                suction_target[ucup][1U] = 85.0f;
-                suction_target[dcup][1U] = 85.0f;
-            }
+            gpio_pd3 = 0U;
+            suction_target[dcup][2U] = 0.0f;
+            cup_act_step = 0U;
         }
         else
         {
-            pd13_position_second_group = !pd13_position_second_group;
-            id3_wait_for_id2 = false;
-            id3_id2_released[ucup] = false;
-            id3_id2_released[dcup] = false;
-            if (pd13_position_second_group)
-            {
-                suction_target[ucup][0U] = 125.0f;
-                suction_target[dcup][0U] = 125.0f;
-            }
-            else
-            {
-                suction_target[ucup][0U] = 840.0f;
-                suction_target[dcup][0U] = 790.0f;
-            }
-            suction_target[ucup][1U] = 85.0f;
-            suction_target[dcup][1U] = 85.0f;
+            gpio_pd3 = 1U;
+            suction_target[dcup][2U] = 220.0f;
+            cup_act_step = 2U;
         }
-        pd15_second_press = false;
-        pd14_second_press = false;
-        pa11_second_press = false;
-        pa8_sequence_state = 0U;
     }
-    if ((pressed_keys & (1U << 7)) != 0U)
+
+    if ((pressed & (1U << 4U)) != 0U)
     {
-        id3_hold_target[ucup] = suction_target[ucup][1U];
-        id3_hold_target[dcup] = suction_target[dcup][1U];
-        id3_wait_for_id2 = true;
-        id3_id2_released[ucup] = false;
-        id3_id2_released[dcup] = false;
-        if (!pd14_second_press)
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PD14;
+        Cup_SetTarget(840.0f, 790.0f, 0.0f);
+    }
+
+    if ((pressed & (1U << 5U)) != 0U)
+    {
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PD15;
+        Cup_SetTarget(840.0f, 790.0f, 160.0f);
+    }
+
+    if ((pressed & (1U << 6U)) != 0U)
+    {
+        pa8_press_step = (uint8_t)((pa8_press_step + 1U) % 2U);
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PA8;
+        cup_act_step = pa8_press_step;
+        Cup_SetTarget(cup_act_step != 0U ? 840.0f : 125.0f, cup_act_step != 0U ? 790.0f : 125.0f, 85.0f);
+    }
+
+    if ((pressed & (1U << 7U)) != 0U)
+    {
+        bool pa11_first_press = (pa11_press_step == 0U);
+        pa11_press_step = pa11_first_press ? 1U : 0U;
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PA11;
+        cup_act_step = pa11_first_press ? 0U : 1U;
+        pd13_press_step = 0U;
+        pa8_press_step = 0U;
+        pa12_press_step = 0U;
+
+        if (pa11_first_press)
         {
-            suction_target[ucup][0U] = 840.0f;
-            suction_target[dcup][0U] = 790.0f;
-            pd14_second_press = true;
+            set_target_position(305.0f, 0.0f, 9.6f);
+            gpio_pd7 = 1U;
+            gpio_pb6 = 1U;
+            gpio_pb7 = 0U;
+            gpio_pd4 = 0U;
+            Cup_SetTarget(125.0f, 125.0f, 85.0f);
         }
         else
         {
-            suction_target[ucup][0U] = 500.0f;
-            suction_target[dcup][0U] = 500.0f;
-            pd14_second_press = false;
+            set_target_position(0.0f, 0.0f, 0.0f);
+            gpio_pd7 = 0U;
+            gpio_pb6 = 0U;
+            gpio_pb7 = 0U;
+            gpio_pd4 = 0U;
+            Cup_SetTarget(125.0f, 125.0f, 85.0f);
         }
-        suction_target[ucup][1U] = 0.0f;
-        suction_target[dcup][1U] = 0.0f;
-        pd15_second_press = false;
-        pa11_second_press = false;
-        pa8_sequence_state = 0U;
     }
-    if ((pressed_keys & (1U << 4)) != 0U)
+
+    if ((pressed & (1U << 8U)) != 0U)
     {
-        id3_hold_target[ucup] = suction_target[ucup][1U];
-        id3_hold_target[dcup] = suction_target[dcup][1U];
-        id3_wait_for_id2 = true;
-        id3_id2_released[ucup] = false;
-        id3_id2_released[dcup] = false;
-        if (!pa11_second_press)
-        {
-            suction_target[ucup][0U] = 840.0f;
-            suction_target[dcup][0U] = 790.0f;
-            pa11_second_press = true;
-        }
-        else
-        {
-            suction_target[ucup][0U] = 500.0f;
-            suction_target[dcup][0U] = 500.0f;
-            pa11_second_press = false;
-        }
-        suction_target[ucup][1U] = 160.0f;
-        suction_target[dcup][1U] = 160.0f;
-        pd14_second_press = false;
-        pd15_second_press = false;
-        pa8_sequence_state = 0U;
+        pa12_press_step = (uint8_t)((pa12_press_step + 1U) % 2U);
+        Cup_ResetAction();
+        cup_act = CUP_ACT_PA12;
+        cup_act_step = pa12_press_step;
+        Cup_SetTarget(cup_act_step != 0U ? 840.0f : 125.0f, cup_act_step != 0U ? 790.0f : 125.0f, 85.0f);
     }
-    previous_keys = current_keys;
+
+    previous_keys = keys;
 }
+
 void SuctionCup_Task(void *argument)
 {
     (void)argument;

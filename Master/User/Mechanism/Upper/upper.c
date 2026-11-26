@@ -1,4 +1,4 @@
-
+﻿
 #include "upper.h"
 #include "cup_config.h"
 #include "cup_task.h"
@@ -13,7 +13,7 @@ extern volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 extern float br_joint_velocity[2][ARM_JOINT_COUNT];
 extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
-extern volatile bool startup_hold_latched[2];
+extern volatile bool startup_hold_latched[2][ARM_JOINT_COUNT];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
 volatile float arm_end_position_world[2][3];
@@ -480,15 +480,25 @@ void Upper_Service(uint32_t now) {
     rs05_t *rs05 = a == 0U ? &rs05_larm : &rs05_rarm;
     j4310_t *j4310 = a == 0U ? &j4310_larm : &j4310_rarm;
     bool online = rs00[0].feedback_valid && rs00[1].feedback_valid &&
-                  rs05->feedback_valid && j4310->feedback.received;
-    if (!startup_hold_latched[a] && online)
+                  rs05->feedback_valid && j4310->feedback.received &&
+                  (a == ARM_LARM_INDEX || rs01_rarm.feedback_valid);
+    for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
     {
-      for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; ++joint)
+      bool feedback_valid = false;
+      if (joint == ARM_JOINT_ROOT)
+        feedback_valid = a == ARM_LARM_INDEX ? m2006_larm.feedback_online : rs01_rarm.feedback_valid;
+      else if (joint == ARM_JOINT_SHOULDER || joint == ARM_JOINT_ELBOW)
+        feedback_valid = rs00[joint == ARM_JOINT_SHOULDER ? 0 : 1].feedback_valid;
+      else if (joint == ARM_JOINT_WRIST)
+        feedback_valid = j4310->feedback.received;
+      else if (joint == ARM_JOINT_ROTATION)
+        feedback_valid = rs05->feedback_valid;
+      if (feedback_valid && !startup_hold_latched[a][joint])
       {
         arm_target[a][joint] = 0.0f;
         arm_mode[a][joint] = ARM_MODE_MIT;
+        startup_hold_latched[a][joint] = true;
       }
-      startup_hold_latched[a] = true;
     }
 
     q_deg[0] = arm_feedback_angle[a][ARM_JOINT_ROOT];
@@ -611,4 +621,5 @@ void Upper_Service(uint32_t now) {
     }
   }
 }
+
 

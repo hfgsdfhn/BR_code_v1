@@ -123,11 +123,11 @@ void M3508_BuildSpecial(m3508_t *motor, uint8_t command);
 
 void M3508_SetTargetDeferred(m3508_t *motor, m3508_mode_t mode, float target);
 
-#define M3508_POSITION_KP 10.4720f
+#define M3508_POSITION_KP 20.4720f
 #define M3508_POSITION_KI 0.0f
 #define M3508_POSITION_KD 0.0f
 #define M3508_POSITION_INTEGRAL_LIMIT 0.0f
-#define M3508_SPEED_KP 1.3988f
+#define M3508_SPEED_KP 2.3988f
 #define M3508_SPEED_KI 0.9325f
 #define M3508_SPEED_KD 0.0f
 #define M3508_SPEED_OUTPUT_LIMIT 3.0f

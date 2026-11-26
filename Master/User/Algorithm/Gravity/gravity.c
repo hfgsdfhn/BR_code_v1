@@ -10,7 +10,17 @@ volatile float br_link_37_m = 0.220000f;
 volatile float br_link_6_m = 0.058000f;
 volatile float br_link_21_5_m = 0.215000f;
 volatile float br_link_8_m  = 0.120000f;
-static const float br_command_zero_ground_deg[4] = {15.0f, 150.0f, 195.0f, 212.0f};
+static const float br_command_zero_ground_deg[2][4] =
+{
+    {20.0f, 150.0f, 195.0f, 235.0f},
+    {20.0f, 150.0f, 195.0f, 235.0f}
+};
+
+static const float *br_zero_ground_deg(const br_gravity_model_t *model)
+{
+    return model == &br_gravity_models[1] ? br_command_zero_ground_deg[1]
+                                          : br_command_zero_ground_deg[0];
+}
 
 volatile float br_mass_003_kg = 0.770000000000f;
 volatile float br_mass_004_kg = 0.172000000000f;
@@ -56,12 +66,13 @@ static br_vec2_t br_polar(float length, float angle)
 
 
 
-static void br_pose(const float q[BR_ARM_DOF], br_vec2_t joint[4], br_vec2_t com[4], br_vec2_t *tool)
+static void br_pose(const br_gravity_model_t *model, const float q[BR_ARM_DOF], br_vec2_t joint[4], br_vec2_t com[4], br_vec2_t *tool)
 {
-    const float a1 = br_command_zero_ground_deg[0] * BR_DEG_TO_RAD + q[1];
-    const float a2 = br_command_zero_ground_deg[1] * BR_DEG_TO_RAD + q[1] - q[2];
-    const float a3 = br_command_zero_ground_deg[2] * BR_DEG_TO_RAD + q[1] - q[2];
-    const float a4 = br_command_zero_ground_deg[3] * BR_DEG_TO_RAD + q[1] - q[2] - q[3];
+    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float a1 = zero_ground_deg[0] * BR_DEG_TO_RAD + q[1];
+    const float a2 = zero_ground_deg[1] * BR_DEG_TO_RAD + q[1] - q[2];
+    const float a3 = zero_ground_deg[2] * BR_DEG_TO_RAD + q[1] - q[2];
+    const float a4 = zero_ground_deg[3] * BR_DEG_TO_RAD + q[1] - q[2] - q[3];
     const br_vec2_t p0 = {0.0f, 0.0f};
     const br_vec2_t p1 = br_add(p0, br_polar(br_link_37_m, a1));
     const br_vec2_t p2 = br_add(p1, br_polar(br_link_6_m, a2));
@@ -91,10 +102,11 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
     const float l2 = 0.058000f;
     const float l3 = 0.215000f;
     const float l4 = 0.120000f;
-    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
-    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
-    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
-    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
+    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
+    const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
+    const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
+    const float a4_zero = zero_ground_deg[3] * BR_DEG_TO_RAD;
     float a1, a2, a3, a4, planar_x, planar_y;
 
     if (model == NULL || q == NULL || end_world_m == NULL || model->link == NULL)
@@ -135,10 +147,11 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
     const float l2 = 0.058000f;
     const float l3 = 0.215000f;
     const float l4 = 0.120000f;
-    const float a1_zero = 15.0f * BR_DEG_TO_RAD;
-    const float a2_zero = 150.0f * BR_DEG_TO_RAD;
-    const float a3_zero = 195.0f * BR_DEG_TO_RAD;
-    const float a4_zero = 212.0f * BR_DEG_TO_RAD;
+    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
+    const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
+    const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
+    const float a4_zero = zero_ground_deg[3] * BR_DEG_TO_RAD;
     const float pi = BR_PI;
     const float welded_x = l2 * cosf(a2_zero) + l3 * cosf(a3_zero);
     const float welded_y = l2 * sinf(a2_zero) + l3 * sinf(a3_zero);
@@ -223,7 +236,7 @@ bool BR_GravityEvaluate(const br_gravity_model_t *model,
     for (unsigned i = 0U; i < BR_GRAVITY_LINK_COUNT; ++i)
         if (!isfinite(model->link_mass_kg[i]) || model->link_mass_kg[i] < 0.0f) return false;
     memset(tau, 0, sizeof(float) * BR_ARM_DOF);
-    br_pose(q, joint, com, &tool);
+    br_pose(model, q, joint, com, &tool);
 
     tau[1] = br_torque(joint[0], com[0], model->link_mass_kg[0], model->gravity_base) +
              br_torque(joint[0], com[1], model->link_mass_kg[1], model->gravity_base) +

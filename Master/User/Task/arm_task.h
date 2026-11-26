@@ -1,8 +1,8 @@
 ﻿
 #ifndef ARM_TASK_H
 #define ARM_TASK_H
-#include "../Peripheral/CAN/bsp_can.h"
 #include "../Mechanism/Upper/upper.h"
+#include "../Peripheral/CAN/bsp_can.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -54,6 +54,3 @@ void Arm_OnFrame(const can_frame_t *frame);
 bool Arm_TxQueueInit(void);
 
 #endif
-
-
-

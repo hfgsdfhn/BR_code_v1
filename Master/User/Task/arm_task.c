@@ -14,7 +14,7 @@ volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 volatile arm_mode_t arm_mode[2][ARM_JOINT_COUNT];
 volatile uint8_t arm_remote_select;
 volatile uint8_t arm_low_low_mode_enable;
-volatile bool startup_hold_latched[2];
+volatile bool startup_hold_latched[2][ARM_JOINT_COUNT];
 #define ARM_IK_X_MIN_CM (-100.0f)
 #define ARM_IK_X_MAX_CM (100.0f)
 #define ARM_IK_Y_MIN_CM (0.0f)
@@ -23,15 +23,22 @@ volatile bool startup_hold_latched[2];
 #define ARM_IK_Z_MAX_CM (100.0f)
 
 static int8_t arm_ik_target_direction[2][3] = {{-1, -1, -1}, {-1, -1, -1}};
+static uint8_t pd13_sequence_stage;
+static uint8_t pd13_sequence_arm;
+static uint8_t pd13_11_index;
 
-static uint8_t Arm_SelectedRemoteArm(void) { return arm_remote_select != 0U ? ARM_RARM_INDEX : ARM_LARM_INDEX; }
+static uint8_t Arm_SelectedRemoteArm(void)
+{
+    return arm_remote_select != 0U ? ARM_RARM_INDEX : ARM_LARM_INDEX;
+}
 
 static void Arm_SeedIKTargetFromFeedback(uint8_t arm)
 {
     if (arm >= 2U)
         return;
     arm_end_target_world[arm][0] = arm_end_position_world[arm][0];
-    arm_end_target_world[arm][1] = arm_end_position_world[arm][1] < ARM_IK_Y_MIN_CM ? ARM_IK_Y_MIN_CM : arm_end_position_world[arm][1];
+    arm_end_target_world[arm][1] =
+        arm_end_position_world[arm][1] < ARM_IK_Y_MIN_CM ? ARM_IK_Y_MIN_CM : arm_end_position_world[arm][1];
     arm_end_target_world[arm][2] = arm_end_position_world[arm][2];
 }
 
@@ -44,20 +51,34 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis, float delta_ms)
         arm_end_target_world[arm][axis] = 10.1f;
 }
 
-volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 5.0f, 5.0f, 0.0f}, {0.0f, 0.0f, 5.0f, 5.0f, 0.0f}};
-volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 80.0f, 0.0f, 0.0f}, {0.0f, 80.0f, 80.0f, 0.0f, 0.0f}};
-volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 100.0f, -15.0f, 0.0f},{0.0f, 130.0f, 100.0f, -15.0f, 0.0f}};
-volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{0.0f, 155.0f, 112.0f, -10.0f, 0.0f},{0.0f, 155.0f, 112.0f, -10.0f, 0.0f}};
-volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 10.0f, 30.0f, 30.0f, 0.0f},{0.0f, 10.0f, 30.0f, 30.0f, 0.0f}};
-volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 63.0f, 58.0f, 0.0f},{0.0f, 70.0f, 63.0f, 58.0f, 0.0f}};
-volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 90.0f, 70.0f, 0.0f},{0.0f, 70.0f, 90.0f, 70.0f, 0.0f}};
-volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT] = {{-85.0f, 30.0f, 40.0f, -5.0f, 0.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 28.0f, -10.0f, 30.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 30.0f, 0.0f, 50.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 30.0f, 0.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 100.0f, 10.0f, 0.0f},{0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
-volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT] = {{20.0f, 0.0f, 30.0f, 50.0f, 90.0f},{20.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
-volatile float xarm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 30.0f, 50.0f, 90.0f},{0.0f, 0.0f, 30.0f, 50.0f, 90.0f}};
+volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 3.57f, 29.09f, 0.0f}, 
+                                                    {0.0f, 0.0f, 3.72f, 30.1f, 0.0f}};
+volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 78.57f, 24.09f, 0.0f}, 
+                                                    {0.0f, 80.0f, 78.72f, 25.1f, 0.0f}};
+volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 98.57f, 9.09f, 0.0f},
+                                                      {0.0f, 130.0f, 98.72f, 10.1f, 0.0f}};
+volatile float arm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{0.0f, 155.0f, 110.57f, 14.09f, 0.0f},
+                                                      {0.0f, 155.0f, 110.72f, 15.1f, 0.0f}};
+volatile float arm_pose_pd14[2][ARM_JOINT_COUNT] = {{0.0f, 10.0f, 28.57f, 54.09f, 0.0f},
+                                                    {0.0f, 10.0f, 28.72f, 55.1f, 0.0f}};
+volatile float arm_pose_pd15[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 61.57f, 82.09f, 0.0f},
+                                                    {0.0f, 70.0f, 61.72f, 83.1f, 0.0f}};
+volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 88.57f, 94.09f, 0.0f},
+                                                      {0.0f, 70.0f, 88.72f, 95.1f, 0.0f}};
+volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT] = {{-85.0f, 30.0f, 38.57f, 19.09f, 0.0f},
+                                                     {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
+volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 26.57f, 14.09f, 30.0f},
+                                                       {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
+volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 28.57f, 24.09f, 50.0f},
+                                                     {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
+volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 28.57f, 54.09f, 0.0f},
+                                                       {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
+volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 98.57f, 34.09f, 0.0f},
+                                                       {0.0f, 0.0f, -1.28f, 25.1f, 0.0f}};
+volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT] = {{20.0f, 0.0f, 28.57f, 74.09f, 90.0f},
+                                                     {20.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
+volatile float xarm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 28.57f, 74.09f, 90.0f},
+                                                       {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
@@ -95,7 +116,10 @@ void Arm_TaskInit(void)
                 (arm == ARM_LARM_INDEX && joint == ARM_JOINT_ROOT) ? ARM_MODE_POSITION : ARM_MODE_MIT;
 }
 
-void Arm_TaskStop(void) { upper_state.enable = 0U; }
+void Arm_TaskStop(void)
+{
+    upper_state.enable = 0U;
+}
 
 bool Arm_TxQueueInit(void)
 {
@@ -233,13 +257,38 @@ static void Arm_EnableRemoteIK(void)
     Upper_SetArmIKEnabled(1U, upper_state.enable != 0U);
 }
 
+static bool Arm_PoseReached(uint8_t arm, const volatile float pose[2][ARM_JOINT_COUNT])
+{
+    if (arm >= 2U || pose == NULL)
+        return false;
+    for (uint8_t joint = ARM_JOINT_ROOT; joint <= ARM_JOINT_WRIST; ++joint)
+    {
+        if (fabsf(arm_feedback_angle[arm][joint] - pose[arm][joint]) > 0.8f)
+            return false;
+    }
+    return true;
+}
+
+static void Arm_UpdatePd13Sequence(void)
+{
+    if (pd13_sequence_stage == 1U && Arm_PoseReached(pd13_sequence_arm, arm_pose_pd13_1))
+    {
+        Arm_ApplyRemotePose(arm_pose_pd13_2, true);
+        pd13_sequence_stage = 2U;
+    }
+    else if (pd13_sequence_stage == 2U && Arm_PoseReached(pd13_sequence_arm, arm_pose_pd13_2))
+    {
+        pd13_sequence_stage = 0U;
+        pd13_11_index = 0U;
+    }
+}
+
 static void Arm_ProcessRemote(const send_to_arm_t *status)
 {
     static uint16_t previous_keys;
     static bool previous_keys_valid;
     static uint8_t pd14_11_index = 1U;
     static uint8_t pd14_10_index;
-    static uint8_t pd13_11_index;
     static uint8_t pd15_11_index;
     static uint8_t pd15_10_index;
     static uint8_t pd13_10_index;
@@ -266,6 +315,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         previous_mode_valid = false;
         previous_pose_mode_valid = false;
         previous_ik_tick_valid = false;
+        pd13_sequence_stage = 0U;
         return;
     }
 
@@ -291,6 +341,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     if (previous_mode_valid && (previous_pa6_low_mode != pa6_low_mode || previous_pa5_low_mode != pa5_low_mode))
     {
         arm_remote_select = 0U;
+        pd13_sequence_stage = 0U;
         pd13_11_index = 0U;
         pd14_11_index = 0U;
         pd15_11_index = 0U;
@@ -302,7 +353,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     /* IK is available only while both PA6 and PA5 are low. */
     if (previous_mode_valid && previous_pa6_low_mode && previous_pa5_low_mode && !(pa6_low_mode && pa5_low_mode))
         Arm_DisableRemoteIK();
-    if (arm_low_low_mode_enable != 0U && pa6_low_mode && pa5_low_mode && (!previous_mode_valid || !previous_pa6_low_mode || !previous_pa5_low_mode))
+    if (arm_low_low_mode_enable != 0U && pa6_low_mode && pa5_low_mode &&
+        (!previous_mode_valid || !previous_pa6_low_mode || !previous_pa5_low_mode))
     {
         Arm_SeedIKTargetFromFeedback(Arm_SelectedRemoteArm());
         Arm_EnableRemoteIK();
@@ -336,6 +388,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         if (pressed_keys & (1U << 0))
         {
             arm_remote_select ^= 1U;
+            pd13_sequence_stage = 0U;
             arm = Arm_SelectedRemoteArm();
             Arm_SeedIKTargetFromFeedback(arm);
         }
@@ -345,7 +398,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
             if (arm_ik_enable[arm] != 0U)
                 Upper_RefreshArmIK(arm);
         }
-        /* PD12 controls the total arm enable and synchronizes IK in this mode only. */
+        /* PD12 controls the total arm enable and synchronizes IK in this mode only.
+         */
         if (pressed_keys & (1U << 2))
         {
             upper_state.enable ^= 1U;
@@ -400,6 +454,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     if (!pa6_low_mode && (pressed_keys & (1U << 0)) != 0U)
     {
         arm_remote_select ^= 1U;
+        pd13_sequence_stage = 0U;
         pd13_11_index = 0U;
         pd14_11_index = 0U;
         pd15_11_index = 0U;
@@ -410,18 +465,16 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     {
         if ((pressed_keys & (1U << 3)) != 0U)
         {
-            if (pd13_11_index == 0U)
-                Arm_ApplyRemotePose(arm_pose_pd13, true);
-            else if (pd13_11_index == 1U)
-                Arm_ApplyRemotePose(arm_pose_pd13_1, true);
-            else
-                Arm_ApplyRemotePose(arm_pose_pd13_2, true);
-            pd13_11_index = (uint8_t)((pd13_11_index + 1U) % 3U);
+            pd13_sequence_arm = Arm_SelectedRemoteArm();
+            Arm_ApplyRemotePose(arm_pose_pd13_1, true);
+            pd13_sequence_stage = 1U;
+            pd13_11_index = 1U;
             pd14_11_index = 0U;
             pd15_11_index = 0U;
         }
         if ((pressed_keys & (1U << 4)) != 0U)
         {
+            pd13_sequence_stage = 0U;
             Arm_ApplyRemotePose(arm_pose_pd14, true);
             pd14_11_index = (uint8_t)((pd14_11_index + 1U) % 2U);
             pd13_11_index = 0U;
@@ -431,10 +484,12 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         {
             if (pd15_11_index == 0U)
             {
+                pd13_sequence_stage = 0U;
                 Arm_ApplyRemotePose(arm_pose_pd15, true);
             }
             else
             {
+                pd13_sequence_stage = 0U;
                 Arm_ApplyRemotePose(arm_pose_pd15_2, true);
             }
             pd15_11_index = (uint8_t)((pd15_11_index + 1U) % 2U);
@@ -443,6 +498,7 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         }
         if ((pressed_keys & (1U << 1)) != 0U)
         {
+            pd13_sequence_stage = 0U;
             Arm_ApplyRemotePose(arm_pose_pd11, false);
             pd13_11_index = 0U;
             pd14_11_index = 0U;
@@ -509,6 +565,7 @@ void Arm_Task(void *argument)
         send_to_arm_t status;
         if (osMessageQueueGet(Arm_QueueHandle, &status, NULL, 0U) == osOK)
             Arm_ProcessRemote(&status);
+        Arm_UpdatePd13Sequence();
         next += (osKernelGetTickFreq() * 2U + 999U) / 1000U;
         if (osDelayUntil(next) != osOK)
             next = osKernelGetTickCount();

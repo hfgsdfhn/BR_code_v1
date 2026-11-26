@@ -1,12 +1,12 @@
 
 #ifndef SUCTION_CUP_H
 #define SUCTION_CUP_H
-#include <stdint.h>
-#include <stdbool.h>
-#include "STP-23L.h"
 #include "../Driver/Motor/DJ_M2006/m2006.h"
 #include "../Driver/Motor/DJ_M3508/m3508.h"
 #include "../Peripheral/CAN/bsp_can.h"
+#include "STP-23L.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef struct
 {
