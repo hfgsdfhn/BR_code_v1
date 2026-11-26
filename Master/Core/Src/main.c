@@ -74,7 +74,6 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -297,7 +296,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
+    static uint8_t can_poll_divider;
+
     HAL_IncTick();
+    can_poll_divider++;
+    if (can_poll_divider >= 2U)
+    {
+      can_poll_divider = 0U;
+      BspCan_Poll(&hfdcan2);
+      BspCan_Poll(&hfdcan3);
+    }
   }
   /* USER CODE BEGIN Callback 1 */
 
