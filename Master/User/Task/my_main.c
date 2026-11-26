@@ -1,4 +1,5 @@
 ﻿
+#include "ethernet.h"
 #include "my_main.h"
 #include "upper.h"
 #include "arm_task.h"
@@ -109,7 +110,7 @@ void My_Init(void)
     Upper_BindMotors(&upper_state);
     SuctionCup_Init();
     Remote_Init();
-
+W5500_Port_Init();
     chassis_init();
 }
 
@@ -135,6 +136,7 @@ void My_RtosInit(void)
         };
         (void)osThreadNew(SuctionCup_Task, NULL, &attributes);
     }
+    W5500_UdpInit();
     uart_task_handle = osThreadNew(BspUart_Task, NULL, &uart_task_attributes);
 }
 

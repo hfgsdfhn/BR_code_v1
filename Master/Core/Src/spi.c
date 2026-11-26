@@ -28,6 +28,7 @@ SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi6;
 DMA_HandleTypeDef hdma_spi1_rx;
 DMA_HandleTypeDef hdma_spi1_tx;
+DMA_HandleTypeDef hdma_spi6_rx;
 
 /* SPI1 init function */
 void MX_SPI1_Init(void)
@@ -89,7 +90,7 @@ void MX_SPI6_Init(void)
   hspi6.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi6.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi6.Init.NSS = SPI_NSS_SOFT;
-  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi6.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi6.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi6.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi6.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -195,9 +196,9 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
   */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI6;
     PeriphClkInitStruct.PLL3.PLL3M = 5;
-    PeriphClkInitStruct.PLL3.PLL3N = 100;
+    PeriphClkInitStruct.PLL3.PLL3N = 160;
     PeriphClkInitStruct.PLL3.PLL3P = 2;
-    PeriphClkInitStruct.PLL3.PLL3Q = 5;
+    PeriphClkInitStruct.PLL3.PLL3Q = 4;
     PeriphClkInitStruct.PLL3.PLL3R = 2;
     PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_2;
     PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
@@ -223,6 +224,24 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF8_SPI6;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* SPI6 DMA Init */
+    /* SPI6_RX Init */
+    hdma_spi6_rx.Instance = BDMA_Channel0;
+    hdma_spi6_rx.Init.Request = BDMA_REQUEST_SPI6_RX;
+    hdma_spi6_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_spi6_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_spi6_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_spi6_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_spi6_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_spi6_rx.Init.Mode = DMA_NORMAL;
+    hdma_spi6_rx.Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(&hdma_spi6_rx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(spiHandle,hdmarx,hdma_spi6_rx);
 
     /* SPI6 interrupt Init */
     HAL_NVIC_SetPriority(SPI6_IRQn, 5, 0);
@@ -275,6 +294,9 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     PB5     ------> SPI6_MOSI
     */
     HAL_GPIO_DeInit(GPIOB, ENCODER_SPI_SCK_Pin|ENCODER_SPI_MISO_Pin|ENCODER_SPI_MOSI_Pin);
+
+    /* SPI6 DMA DeInit */
+    HAL_DMA_DeInit(spiHandle->hdmarx);
 
     /* SPI6 interrupt Deinit */
     HAL_NVIC_DisableIRQ(SPI6_IRQn);

@@ -27,6 +27,7 @@ void Mins_Imu_Init(mins_imu_t *imu, bsp_uart_t *uart);
 void Mins_Imu_RequestEuler(mins_imu_t *imu);
 
 void Mins_Imu_OnRx(const uint8_t *data, uint16_t len);
+float Mins_Imu_GetContinuousYaw(void);
 
 extern mins_imu_t g_imu;
 
