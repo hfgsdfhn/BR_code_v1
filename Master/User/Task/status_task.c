@@ -89,6 +89,8 @@ static void Status_ReadAll(void)
     common.target_speed = (chassis_speed_t){0};
     common.target_yaw = 0.0f;
     common.current_yaw = 0.0f;
+    common.chassis_walk.x = chassis_walk.x;
+    common.chassis_walk.y = chassis_walk.y;
     common.stp23l_up_distance_cm = 0.0f;
     common.stp23l_down_distance_cm = 0.0f;
     common.sequence = 0U;
@@ -122,6 +124,7 @@ void Send_to_Chassis(void)
     chassis.target_speed = planned_speed;
     chassis.target_yaw = planned_yaw;
     chassis.current_yaw = Mins_Imu_GetContinuousYaw() / CHASSIS_RAD_TO_DEG;
+    chassis.chassis_walk = common.chassis_walk;
     key_to_chassis(&chassis);
     joy_to_mps(&chassis);
     planned_speed = chassis.target_speed;

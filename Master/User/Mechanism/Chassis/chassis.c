@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include "dt35.h"
 #include "chassis_task.h"
+#include "path_follow.h"
+#include "path.h"
+#include <stdlib.h>
 #include "board_can.h"
 #include "math.h"
 #include "pid.h"
@@ -64,6 +67,7 @@ void chassis_init()
     PID_Init(&yaw_pid, chassis_pid[0][0], chassis_pid[0][1], chassis_pid[0][2],chassis_pid[0][3], 1.0f);
     PID_Init(&turn_pid, chassis_pid[1][0], chassis_pid[1][1],chassis_pid[1][2],chassis_pid[1][3], 1.0f);
     PID_Init(&dt35_pid, chassis_pid[2][0], chassis_pid[2][1],chassis_pid[2][2], chassis_pid[2][3], 0.0f);
+    PathFollow_Init(&path_to_xiepo,&path,PATH_SIZE, 0.0f,1.0f,2.0f,0.0f);
 }
 
 void joy_to_mps(send_to_chassis_t *send)
@@ -112,8 +116,8 @@ void joy_to_mps(send_to_chassis_t *send)
             send->target_yaw += target_yaw_step;
         }
         float yaw_error = fabsf(send->target_yaw - send->current_yaw);
-        if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = -PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
-        else if(yaw_error >=1.57f)                 target_vw = -PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
+        if(yaw_error < 1.57f && yaw_error >0.001f) target_vw = PID_Calc(&yaw_pid, send->target_yaw, send->current_yaw,0.002f);
+        else if(yaw_error >=1.57f)                 target_vw = PID_Calc(&turn_pid, send->target_yaw, send->current_yaw,0.002f);
         else target_vw = 0.0f;
         send->target_speed.vw = T_Speed_Control(send->target_speed.vw, target_vw,CHASSIS_ANGULAR_SPEED_STEP_RAD_S);
     }

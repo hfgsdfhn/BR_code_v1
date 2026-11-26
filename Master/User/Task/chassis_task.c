@@ -1,6 +1,7 @@
 #include "chassis_task.h"
 #include "status_task.h"
 #include "chassis.h"
+#include "path_follow.h"
 #include "math.h"
 #include "board_can.h"
 #include "mins_imu.h"
@@ -19,12 +20,15 @@ void Chassis_Task_(void *argument)
         send_to_chassis_t status;
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
-            World_Change(&status);
             if (PA0 && dt35_data.left_distance/1000.0f <= 0.5f)    status.target_speed.vy = -PID_Calc(&dt35_pid, 0.2f, dt35_data.left_distance/1000.0f,0.002f);
-
+            if(PC3) PathFollow_Calc(&path_to_xiepo,status.chassis_walk.x,status.chassis_walk.y,&status.target_speed);
             if(status.chassis_emmergency_stop == 0)
-            Chassis_SendSpeed(&hfdcan1, &status.target_speed);
-            else {
+            {
+                World_Change(&status);
+                Chassis_SendSpeed(&hfdcan1, &status.target_speed);
+            }
+            else 
+            {
                 chassis_speed_t stop = { .vx = 0.0f, .vy = 0.0f, .vw = 0.0f };
                 Chassis_SendSpeed(&hfdcan1, &stop);
             }

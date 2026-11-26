@@ -15,6 +15,7 @@ typedef struct
     remote_t remote;
     chassis_speed_t target_speed;
     chassis_speed_t current_speed;
+    chassis_walk_t chassis_walk;
     float target_yaw;
     float current_yaw;
     float stp23l_up_distance_cm;
@@ -40,6 +41,7 @@ struct send_to_chassis_t
     float dt35_front;
     remote_t remote;
     chassis_speed_t target_speed;
+    chassis_walk_t chassis_walk;
     chassis_speed_t current_speed;
     float target_yaw;
     float current_yaw;

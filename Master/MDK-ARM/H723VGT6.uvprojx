@@ -839,6 +839,11 @@
               <FilePath>..\User\Algorithm\Quintic\quintic_planner.h</FilePath>
             </File>
             <File>
+              <FileName>path_follow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Algorithm\path_follow.c</FilePath>
+            </File>
+            <File>
               <FileName>trapezoid_planner.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Algorithm\Trapezoid\trapezoid_planner.c</FilePath>

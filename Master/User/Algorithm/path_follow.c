@@ -2,6 +2,8 @@
 #include "path_follow.h"
 #include <math.h>
 
+path_follow_t path_to_xiepo;
+
 typedef struct
 {
     float x;
@@ -85,8 +87,7 @@ void PathFollow_Reset(path_follow_t *follow)
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,
-                     float yaw_rad,
-                     path_follow_speed_t *speed)
+                     chassis_speed_t *speed)
 {
     const path_point_t *points;
     const path_point_t *nearest;
