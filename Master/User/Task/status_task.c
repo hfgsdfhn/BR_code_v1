@@ -66,10 +66,10 @@ void Queue_Init(void)
 
 void motor_to_world_speed(DJI_Board *real, status_common_t * common)
 {
-    float w0 = -real->wheel_speed_mps[0];
-    float w1 = -real->wheel_speed_mps[1];
-    float w2 = real->wheel_speed_mps[2];
-    float w3 = real->wheel_speed_mps[3];
+    float w0 = real->wheel_speed_mps[0];
+    float w1 = real->wheel_speed_mps[1];
+    float w2 = -real->wheel_speed_mps[2];
+    float w3 = -real->wheel_speed_mps[3];
 
     common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f) * 1.414f;
     common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f) * 1.414f;

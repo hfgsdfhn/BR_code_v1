@@ -55,7 +55,6 @@ typedef struct
     float vw;
 }chassis_speed_t;
 
-
 typedef struct
 {
     float x;

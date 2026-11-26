@@ -15,10 +15,10 @@
 /* 电机正向滚动符号，顺序：RF、RR、LF、LR */
 static const float motor_direction[4] =
 {
-    -1.0f,
-    -1.0f,
-     1.0f,
-     1.0f
+    1.0f,
+    1.0f,
+     -1.0f,
+     -1.0f
 };
 
 /**

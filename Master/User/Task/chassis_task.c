@@ -8,13 +8,6 @@
 send_to_chassis_t chassis_data_;
 uint8_t dji_flag = 1;   //调试用
 DJI_leg_pos_e dji_leg_pos_type = 0;
-static float all_leg_pos;
-static float front_leg_pos;
-static float behind_leg_pos;
-
-float leg_target_pos_a = 0;
-float leg_target_pos_f = 0;
-float leg_target_pos_b = 0;
 void World_Change(send_to_chassis_t *send);
 void Chassis_Task_(void *argument)
 {
@@ -28,6 +21,7 @@ void Chassis_Task_(void *argument)
         {
             World_Change(&status);
             if (PA0 && dt35_data.left_distance/1000.0f <= 0.5f)    status.target_speed.vy = -PID_Calc(&dt35_pid, 0.2f, dt35_data.left_distance/1000.0f,0.002f);
+
             if(status.chassis_emmergency_stop == 0)
             Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             else {
@@ -36,7 +30,7 @@ void Chassis_Task_(void *argument)
             }
 
             leg_task();
-
+            
             // if(dji_flag)
             // {
             //     dji_flag = 0U;
