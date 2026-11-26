@@ -3,7 +3,7 @@
 #include "remote.h"
 #include "pid.h"
 
-#define CHASSIS_JOYSTICK_MAX_LINEAR_MPS       2.0f
+#define CHASSIS_JOYSTICK_MAX_LINEAR_MPS       1.5f
 #define CHASSIS_JOYSTICK_MAX_LINEAR_MPS_slow       0.8f
 #define CHASSIS_SHOULDER_MAX_ANGULAR_RAD_S    2.0f
 #define CHASSIS_CONTROL_PERIOD_S              0.002f
@@ -73,5 +73,5 @@ void set_target_position(float posa,float front, float behind);
 void l2_leg_up(L2_Leg_up_e leg_up);
 void leg_task();
 extern pid_t yaw_pid;
-
+extern pid_t dt35_pid;
 #endif

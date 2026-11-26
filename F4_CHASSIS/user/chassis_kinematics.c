@@ -30,7 +30,7 @@ void Chassis_InverseKinematics(const chassis_speed_t *target,
                                float *motor_speed)
 {
     float l = 0.2969f;
-    float k = 0.00009682f;  // ERPM 转线速度 m/s
+    float k = 0.00008988f;  // ERPM 转线速度 m/s
 
     motor_speed[0] = motor_direction[0] *
                      ((target->vx + target->vy) / 1.414f + l * target->vw) / k;

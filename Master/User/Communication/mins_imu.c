@@ -83,6 +83,11 @@ static float Mins_Imu_WrapYawDelta(float yaw_delta)
     return yaw_delta;
 }
 
+float Mins_Imu_GetContinuousYaw(void)
+{
+    return g_imu.yaw_total * ERROR_K;
+}
+
 static void Mins_Imu_ProcessEulerFrame(const uint8_t *frame)
 {
     float raw_yaw;
@@ -102,7 +107,7 @@ static void Mins_Imu_ProcessEulerFrame(const uint8_t *frame)
         g_imu.yaw_total -= Mins_Imu_WrapYawDelta(raw_yaw - g_imu.yaw_last_raw);
         g_imu.yaw_last_raw = raw_yaw;
     }
-    g_imu.euler.yaw = g_imu.yaw_total * ERROR_K;
+    g_imu.euler.yaw = Mins_Imu_WrapYawDelta(Mins_Imu_GetContinuousYaw());
     g_imu.update_count++;
 }
 

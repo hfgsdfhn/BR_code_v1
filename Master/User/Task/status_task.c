@@ -71,9 +71,9 @@ void motor_to_world_speed(DJI_Board *real, status_common_t * common)
     float w2 = real->wheel_speed_mps[2];
     float w3 = real->wheel_speed_mps[3];
 
-    common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f * 1.414f);
-    common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f * 1.414f);
-    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.2970f);
+    common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f) * 1.414f;
+    common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f) * 1.414f;
+    common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.28853451f);
 
     chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx;
     chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy;
@@ -97,7 +97,7 @@ static void Status_ReadAll(void)
     motor_to_world_speed(&DJI_Board_FeedBack, &common);
     if ((g_imu.update_count != 0U) && !planned_yaw_initialized)
     {
-        planned_yaw = common.current_yaw;
+        planned_yaw = Mins_Imu_GetContinuousYaw() / CHASSIS_RAD_TO_DEG;
         planned_yaw_initialized = true;
     }
     common.stp23l_up_distance_cm = ustp23l_distance_cm;
@@ -121,7 +121,7 @@ void Send_to_Chassis(void)
     chassis.remote = common.remote;
     chassis.target_speed = planned_speed;
     chassis.target_yaw = planned_yaw;
-    chassis.current_yaw = common.current_yaw;
+    chassis.current_yaw = Mins_Imu_GetContinuousYaw() / CHASSIS_RAD_TO_DEG;
     key_to_chassis(&chassis);
     joy_to_mps(&chassis);
     planned_speed = chassis.target_speed;

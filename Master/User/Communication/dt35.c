@@ -76,8 +76,8 @@ void DT35_RxBytes(const uint8_t *data, uint16_t size)
             }
 
             /* 解析浮点数 */
-            memcpy(&dt35_data.left_distance, &rx_frame[2], sizeof(float));
-            memcpy(&dt35_data.front_distance, &rx_frame[6], sizeof(float));
+            memcpy(&dt35_data.front_distance, &rx_frame[2], sizeof(float));
+            memcpy(&dt35_data.left_distance, &rx_frame[6], sizeof(float));
         }
     }
 }

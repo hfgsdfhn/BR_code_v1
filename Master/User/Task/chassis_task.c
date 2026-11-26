@@ -3,6 +3,7 @@
 #include "chassis.h"
 #include "math.h"
 #include "board_can.h"
+#include "mins_imu.h"
 #include "fdcan.h"
 send_to_chassis_t chassis_data_;
 uint8_t dji_flag = 1;   //调试用
@@ -26,7 +27,8 @@ void Chassis_Task_(void *argument)
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
             World_Change(&status);
-            if(status.chassis_emmergency_stop ==0)
+            if (PA0 && dt35_data.left_distance/1000.0f <= 0.5f)    status.target_speed.vy = -PID_Calc(&dt35_pid, 0.2f, dt35_data.left_distance/1000.0f,0.002f);
+            if(status.chassis_emmergency_stop == 0)
             Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             else {
                 chassis_speed_t stop = { .vx = 0.0f, .vy = 0.0f, .vw = 0.0f };
@@ -35,13 +37,13 @@ void Chassis_Task_(void *argument)
 
             leg_task();
 
-            if(dji_flag)
-            {
-                dji_flag = 0U;
-                SmallBoard_Send_PID(&hfdcan1, 0U, DJI_Board_Target.PID_K[0][0], DJI_Board_Target.PID_K[0][1], DJI_Board_Target.PID_K[0][2]);
-                SmallBoard_Send_PID(&hfdcan1, 1U, DJI_Board_Target.PID_K[1][0], DJI_Board_Target.PID_K[1][1], DJI_Board_Target.PID_K[1][2]);
-                SmallBoard_Send_PID(&hfdcan1, 2U, DJI_Board_Target.PID_K[2][0], DJI_Board_Target.PID_K[2][1], DJI_Board_Target.PID_K[2][2]);
-            } 
+            // if(dji_flag)
+            // {
+            //     dji_flag = 0U;
+            //     SmallBoard_Send_PID(&hfdcan1, 0U, DJI_Board_Target.PID_K[0][0], DJI_Board_Target.PID_K[0][1], DJI_Board_Target.PID_K[0][2]);
+            //     SmallBoard_Send_PID(&hfdcan1, 1U, DJI_Board_Target.PID_K[1][0], DJI_Board_Target.PID_K[1][1], DJI_Board_Target.PID_K[1][2]);
+            //     SmallBoard_Send_PID(&hfdcan1, 2U, DJI_Board_Target.PID_K[2][0], DJI_Board_Target.PID_K[2][1], DJI_Board_Target.PID_K[2][2]);
+            // } 
         }
         tick += period;
         osDelayUntil(tick);
