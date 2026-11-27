@@ -20,11 +20,11 @@ void Chassis_Task_(void *argument)
         send_to_chassis_t status;
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
-            if (PA0 && dt35_data.left_distance/1000.0f <= 0.5f)    status.target_speed.vy = -PID_Calc(&dt35_pid, 0.2f, dt35_data.left_distance/1000.0f,0.002f);
             if(PC3) PathFollow_Calc(&path_to_xiepo,status.chassis_walk.x,status.chassis_walk.y,&status.target_speed);
             if(status.chassis_emmergency_stop == 0)
             {
                 World_Change(&status);
+                if (PA0 && dt35_data.left_distance/1000.0f <= 0.5f)    status.target_speed.vy = -PID_Calc(&dt35_pid, 0.2f, dt35_data.left_distance/1000.0f,0.002f);
                 Chassis_SendSpeed(&hfdcan1, &status.target_speed);
             }
             else 

@@ -51,6 +51,22 @@ static void M2006_ResetMotion(m2006_t *motor)
     motor->trajectory_active = false;
 }
 
+void M2006_StartSoftwareZeroCalibration(m2006_t *motor)
+{
+    if (motor == NULL)
+        return;
+    motor->startup_zero_calibrating = true;
+    motor->startup_zero_complete = false;
+    motor->zero_stable_frames = 0U;
+    motor->mode = M2006_MODE_SPEED;
+    motor->target_speed_rad_s = M2006_STARTUP_ZERO_SPEED_RAD_S;
+    motor->speed_reference_valid = false;
+}
+bool M2006_IsSoftwareZeroCalibrated(const m2006_t *motor)
+{
+    return motor != NULL && motor->startup_zero_complete;
+}
+
 void M2006_ResetSoftwareZero(m2006_t *motor)
 {
     if (motor == NULL || !motor->received)
@@ -231,6 +247,18 @@ bool M2006_OnFrame(m2006_t *motor,
     {
         motor->total_encoder += difference;
     }
+    if (motor->startup_zero_calibrating)
+    {
+        if (motor->encoder == motor->last_encoder)
+        {
+            if (motor->zero_stable_frames < M2006_ZERO_STABLE_FRAMES)
+                motor->zero_stable_frames++;
+        }
+        else
+        {
+            motor->zero_stable_frames = 0U;
+        }
+    }
     motor->last_encoder = motor->encoder;
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M2006_ENCODER_COUNT * M2006_REDUCTION_RATIO);
@@ -238,17 +266,24 @@ bool M2006_OnFrame(m2006_t *motor,
 
     if (first_feedback)
     {
-
-        motor->mode = M2006_MODE_POSITION;
-        motor->target_position_rad = 0.0f;
-        motor->reference_position_rad = 0.0f;
-        motor->reference_speed_rad_s = 0.0f;
-        motor->reference_acceleration_rad_s2 = 0.0f;
-        motor->trajectory_pending = false;
-        motor->trajectory_active = false;
-        motor->startup_hold_active = true;
+        if (motor->startup_zero_calibrating)
+        {
+            motor->mode = M2006_MODE_SPEED;
+            motor->target_speed_rad_s = M2006_STARTUP_ZERO_SPEED_RAD_S;
+            motor->speed_reference_valid = false;
+        }
+        else
+        {
+            motor->mode = M2006_MODE_POSITION;
+            motor->target_position_rad = 0.0f;
+            motor->reference_position_rad = 0.0f;
+            motor->reference_speed_rad_s = 0.0f;
+            motor->reference_acceleration_rad_s2 = 0.0f;
+            motor->trajectory_pending = false;
+            motor->trajectory_active = false;
+            motor->startup_hold_active = true;
+        }
     }
-
     if (feedback_needs_reanchor && motor->received)
     {
         if (motor->mode == M2006_MODE_POSITION)
@@ -276,6 +311,13 @@ void M2006_SetTargetDeferred(m2006_t *motor,
                      m2006_mode_t mode,
                      float target)
 {
+    if (motor->startup_zero_calibrating)
+    {
+        motor->mode = M2006_MODE_SPEED;
+        motor->target_speed_rad_s = M2006_STARTUP_ZERO_SPEED_RAD_S;
+        return;
+    }
+
     bool mode_changed = mode != motor->mode;
     bool target_changed;
     float target_position_rad = target * M2006_DEG_TO_RAD * motor->output_ratio;
@@ -427,6 +469,23 @@ int16_t M2006_Calc(m2006_t *motor,
     float current;
     float current_raw;
 
+    if (motor->startup_zero_calibrating)
+    {
+        if (motor->zero_stable_frames >= M2006_ZERO_STABLE_FRAMES)
+        {
+            M2006_ResetSoftwareZero(motor);
+            motor->startup_zero_calibrating = false;
+            motor->startup_zero_complete = true;
+            motor->mode = M2006_MODE_STOP;
+            return 0;
+        }
+        motor->mode = M2006_MODE_SPEED;
+        motor->target_speed_rad_s = M2006_STARTUP_ZERO_SPEED_RAD_S;
+        M2006_UpdateSpeedRamp(motor, dt_s);
+        current = PID_Calc(&motor->speed_pid, motor->reference_speed_rad_s, motor->speed_rad_s, dt_s);
+        goto m2006_output_current;
+    }
+
     if (motor->mode == M2006_MODE_STOP)
     {
         return 0;
@@ -472,6 +531,7 @@ int16_t M2006_Calc(m2006_t *motor,
     {
         return 0;
     }
+m2006_output_current:
     current_raw = motor->direction * current / M2006_CURRENT_SCALE;
 
     if (current_raw > M2006_CURRENT_RAW_LIMIT)

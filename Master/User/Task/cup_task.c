@@ -18,7 +18,6 @@
 
 volatile uint8_t suction_enable = 1U;
 volatile float suction_target[2][3];
-static volatile uint8_t pa8_sequence_state;
 static volatile uint8_t pd13_stp_state;
 static bool pd13_stp_started[2];
 static bool pd13_stp_done[2];
@@ -38,9 +37,7 @@ typedef enum
 } cup_act_t;
 static cup_act_t cup_act;
 static uint8_t cup_act_step;
-static uint32_t cup_act_deadline;
-static bool cup_act_wait;
-static uint8_t pd13_press_step, pa8_press_step, pa11_press_step, pa12_press_step;
+static uint8_t pd13_press_step, pd14_press_step, pd15_press_step, pa8_press_step, pa11_press_step, pa12_press_step, k0_press_step;
 static void Cup_ServiceAction(void);
 
 #define PD13_UPPER_ID2_MAX_DEG 890.0f
@@ -292,7 +289,7 @@ static void SuctionCup_ServicePd13StpLink(void)
     {
         float up_id3 = suction_feedback_angle[ucup][1U];
         float down_id3 = suction_feedback_angle[dcup][1U];
-        if (up_id3 >= 80.0f && up_id3 <= 90.0f && down_id3 >= 80.0f && down_id3 <= 90.0f)
+        if (up_id3 >= 80.0f && up_id3 <= 95.0f && down_id3 >= 80.0f && down_id3 <= 95.0f)
             pd13_stp_state = 2U;
         return;
     }
@@ -333,25 +330,6 @@ void SuctionCup_Service(void)
 
     SuctionCup_MotorWatchdog();
     enabled = suction_enable != 0U;
-    if (pa8_sequence_state == 1U && m3508_dcup[0].feedback_online)
-    {
-        float m3508_angle = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
-        if (m3508_angle > 380.0f && m3508_angle < 400.0f)
-        {
-            suction_target[dcup][0U] = 800.0f;
-            suction_target[dcup][1U] = 85.0f;
-            pa8_sequence_state = 2U;
-        }
-    }
-    else if (pa8_sequence_state == 3U && m2006_dcup[0].feedback_online)
-    {
-        float m2006_angle = m2006_dcup[0].position_rad * ARM_RAD_TO_DEG;
-        if (m2006_angle > 130.0f && m2006_angle < 140.0f)
-        {
-            suction_target[dcup][2U] = 0.0f;
-            pa8_sequence_state = 4U;
-        }
-    }
 
     for (i = 0U; i < 2U; i++)
     {
@@ -411,9 +389,6 @@ static void Cup_ResetAction(void)
 {
     cup_act = CUP_ACT_NONE;
     cup_act_step = 0U;
-    cup_act_deadline = 0U;
-    cup_act_wait = false;
-    pa8_sequence_state = 0U;
     pd13_stp_state = 0U;
     pd13_stp_started[0] = false;
     pd13_stp_started[1] = false;
@@ -436,14 +411,42 @@ static bool Cup_Reached(float ux, float dx, float y)
 }
 static void Cup_ServiceAction(void)
 {
-    uint32_t now = HAL_GetTick();
     if (cup_act == CUP_ACT_NONE)
         return;
+    if (cup_act == CUP_ACT_PA12)
+    {
+        if (cup_act_step == 0U && m3508_dcup[0].feedback_online)
+        {
+            float m3508_angle = m3508_dcup[0].position_rad * ARM_RAD_TO_DEG;
+            if (m3508_angle > 380.0f && m3508_angle < 400.0f)
+            {
+                gpio_pb6 = 1U;
+                gpio_pd4 = 0U;
+                suction_target[dcup][0U] = 800.0f;
+                cup_act_step = 1U;
+            }
+        }
+        return;
+    }
+    if (cup_act == CUP_ACT_PA8)
+    {
+        if (cup_act_step == 0U && suction_feedback_angle[dcup][2U] > -10.0f && suction_feedback_angle[dcup][2U] < 10.0f)
+        {
+            Cup_SetTarget(830.0f, 700.0f, 95.0f);
+            cup_act_step = 1U;
+        }
+        else if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f && suction_feedback_angle[dcup][2U] < 230.0f)
+        {
+            Cup_SetTarget(550.0f, 550.0f, 5.0f);
+            cup_act_step = 3U;
+        }
+        return;
+    }
     if (cup_act == CUP_ACT_PD13)
     {
         if (cup_act_step == 0U && suction_feedback_angle[dcup][2U] >= 0.0f && suction_feedback_angle[dcup][2U] < 20.0f)
         {
-            Cup_SetTarget(125.0f, 125.0f, 85.0f);
+            Cup_SetTarget(125.0f, 125.0f, 95.0f);
             pd13_stp_state = 1U;
             cup_act_step = 1U;
         }
@@ -454,7 +457,7 @@ static void Cup_ServiceAction(void)
         else if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f &&
                  suction_feedback_angle[dcup][2U] < 230.0f)
         {
-            Cup_SetTarget(500.0f, 500.0f, 0.0f);
+            Cup_SetTarget(550.0f, 550.0f, 5.0f);
             pd13_stp_state = 0U;
             pd13_stp_started[0] = false;
             pd13_stp_started[1] = false;
@@ -464,56 +467,18 @@ static void Cup_ServiceAction(void)
         }
         return;
     }
-    if (!cup_act_wait)
     {
         bool done;
-
         if (cup_act == CUP_ACT_PD14)
-        {
-            done = Cup_Reached(840.0f, 790.0f, 0.0f);
-        }
+            done = Cup_Reached(830.0f, 780.0f, 5.0f);
         else if (cup_act == CUP_ACT_PD15)
-        {
-            done = Cup_Reached(840.0f, 790.0f, 160.0f);
-        }
+            done = Cup_Reached(830.0f, 780.0f, 185.0f);
         else if (cup_act == CUP_ACT_PA11)
-        {
-            done = Cup_Reached(125.0f, 125.0f, 85.0f);
-        }
+            done = Cup_Reached(550.0f, 550.0f, 5.0f);
         else
-        {
-            done = cup_act_step != 0U ? Cup_Reached(840.0f, 790.0f, 85.0f) : Cup_Reached(125.0f, 125.0f, 85.0f);
-        }
-
+            done = cup_act_step != 0U ? Cup_Reached(830.0f, 700.0f, 95.0f) : Cup_Reached(550.0f, 550.0f, 5.0f);
         if (done)
-        {
-            if (cup_act == CUP_ACT_PA11 && cup_act_step != 0U)
-            {
-                cup_act_wait = false;
-                cup_act = CUP_ACT_NONE;
-            }
-            else
-            {
-                cup_act_wait = true;
-                cup_act_deadline = now + ((cup_act == CUP_ACT_PA11 && cup_act_step == 0U) ? 6000U : 1000U);
-            }
-        }
-    }
-    else if ((int32_t)(now - cup_act_deadline) >= 0)
-    {
-        gpio_pd7 = 0U;
-        gpio_pb6 = 0U;
-        if (cup_act == CUP_ACT_PA11 && cup_act_step != 0U)
-        {
-            gpio_pb7 = 0U;
-            gpio_pd4 = 0U;
-        }
-        else
-        {
-            gpio_pb7 = 1U;
-            gpio_pd4 = 1U;
-        }
-        cup_act_wait = false;
+            cup_act = CUP_ACT_NONE;
     }
 }
 
@@ -564,15 +529,33 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     if ((pressed & (1U << 0U)) != 0U)
     {
         Cup_ResetAction();
-        gpio_pd7 ^= 1U;
-        gpio_pb6 ^= 1U;
+        k0_press_step ^= 1U;
+        if (k0_press_step != 0U)
+        {
+            gpio_pd7 = 1U;
+            gpio_pb6 = 1U;
+            gpio_pb7 = 0U;
+            gpio_pd4 = 0U;
+        }
+        else
+        {
+            gpio_pd7 = 0U;
+            gpio_pb6 = 0U;
+            gpio_pb7 = 1U;
+            gpio_pd4 = 1U;
+        }
     }
 
     if ((pressed & (1U << 1U)) != 0U)
     {
         Cup_ResetAction();
-        gpio_pb7 ^= 1U;
-        gpio_pd4 ^= 1U;
+        gpio_pd7 = 0U;
+        gpio_pb6 = 0U;
+        gpio_pb7 = 0U;
+        gpio_pd4 = 0U;
+        gpio_pd3 = 0U;
+        suction_target[dcup][2U] = 0.0f;
+        Cup_SetTarget(125.0f, 125.0f, 95.0f);
     }
 
     if ((pressed & (1U << 3U)) != 0U)
@@ -580,9 +563,11 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool pd13_first_press = (pd13_press_step == 0U);
 
         Cup_ResetAction();
+        k0_press_step = 0U;
+        pa8_press_step = 0U;
+        pa12_press_step = 0U;
         cup_act = CUP_ACT_PD13;
         pd13_press_step = pd13_first_press ? 1U : 0U;
-        pa11_press_step = 0U;
         pa8_press_step = 0U;
         pa12_press_step = 0U;
         gpio_pd7 = 1U;
@@ -606,25 +591,60 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
 
     if ((pressed & (1U << 4U)) != 0U)
     {
+        bool second_press = (pd14_press_step != 0U);
+        pd14_press_step = second_press ? 0U : 1U;
         Cup_ResetAction();
-        cup_act = CUP_ACT_PD14;
-        Cup_SetTarget(840.0f, 790.0f, 0.0f);
+        if (second_press)
+        {
+            gpio_pd3 = 0U;
+            suction_target[dcup][2U] = 0.0f;
+            Cup_ResetAction();
+        }
+        else
+        {
+            gpio_pd3 = 1U;
+            suction_target[dcup][2U] = 220.0f;
+            cup_act = CUP_ACT_PD14;
+            Cup_SetTarget(830.0f, 780.0f, 5.0f);
+        }
     }
 
     if ((pressed & (1U << 5U)) != 0U)
     {
+        bool second_press = (pd15_press_step != 0U);
+        pd15_press_step = second_press ? 0U : 1U;
         Cup_ResetAction();
-        cup_act = CUP_ACT_PD15;
-        Cup_SetTarget(840.0f, 790.0f, 160.0f);
+        if (second_press)
+        {
+            gpio_pd3 = 0U;
+            suction_target[dcup][2U] = 0.0f;
+            Cup_ResetAction();
+        }
+        else
+        {
+            gpio_pd3 = 1U;
+            suction_target[dcup][2U] = 220.0f;
+            cup_act = CUP_ACT_PD15;
+            Cup_SetTarget(830.0f, 780.0f, 185.0f);
+        }
     }
 
     if ((pressed & (1U << 6U)) != 0U)
     {
-        pa8_press_step = (uint8_t)((pa8_press_step + 1U) % 2U);
+        bool first_press = (pa8_press_step == 0U);
+        pa8_press_step = first_press ? 1U : 0U;
         Cup_ResetAction();
+        k0_press_step = 0U;
+        pd13_press_step = 0U;
+        pa12_press_step = 0U;
         cup_act = CUP_ACT_PA8;
-        cup_act_step = pa8_press_step;
-        Cup_SetTarget(cup_act_step != 0U ? 840.0f : 125.0f, cup_act_step != 0U ? 790.0f : 125.0f, 85.0f);
+        cup_act_step = first_press ? 0U : 2U;
+        gpio_pd7 = 1U;
+        gpio_pb6 = 1U;
+        gpio_pb7 = 0U;
+        gpio_pd4 = 0U;
+        gpio_pd3 = first_press ? 0U : 1U;
+        suction_target[dcup][2U] = first_press ? 0.0f : 220.0f;
     }
 
     if ((pressed & (1U << 7U)) != 0U)
@@ -634,10 +654,6 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         Cup_ResetAction();
         cup_act = CUP_ACT_PA11;
         cup_act_step = pa11_first_press ? 0U : 1U;
-        pd13_press_step = 0U;
-        pa8_press_step = 0U;
-        pa12_press_step = 0U;
-
         if (pa11_first_press)
         {
             set_target_position(305.0f, 0.0f, 9.6f);
@@ -645,7 +661,9 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pb6 = 1U;
             gpio_pb7 = 0U;
             gpio_pd4 = 0U;
-            Cup_SetTarget(125.0f, 125.0f, 85.0f);
+            gpio_pd3 = 0U;
+            suction_target[dcup][2U] = 350.0f;
+            Cup_SetTarget(600.0f, 600.0f, 5.0f);
         }
         else
         {
@@ -654,7 +672,9 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pb6 = 0U;
             gpio_pb7 = 0U;
             gpio_pd4 = 0U;
-            Cup_SetTarget(125.0f, 125.0f, 85.0f);
+            gpio_pd3 = 0U;
+            suction_target[dcup][2U] = 0.0f;
+            Cup_SetTarget(550.0f, 550.0f, 5.0f);
         }
     }
 
@@ -662,9 +682,24 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     {
         pa12_press_step = (uint8_t)((pa12_press_step + 1U) % 2U);
         Cup_ResetAction();
+        k0_press_step = 0U;
+        pd13_press_step = 0U;
+        pa8_press_step = 0U;
         cup_act = CUP_ACT_PA12;
-        cup_act_step = pa12_press_step;
-        Cup_SetTarget(cup_act_step != 0U ? 840.0f : 125.0f, cup_act_step != 0U ? 790.0f : 125.0f, 85.0f);
+        cup_act_step = pa12_press_step == 0U ? 2U : 0U;
+        if (pa12_press_step != 0U)
+        {
+            suction_target[ucup][0U] = 125.0f;
+            suction_target[dcup][0U] = 125.0f;
+            suction_target[ucup][1U] = 95.0f;
+            suction_target[dcup][1U] = 95.0f;
+            suction_target[dcup][2U] = 400.0f;
+        }
+        else
+        {
+            suction_target[dcup][0U] = 125.0f;
+            suction_target[dcup][1U] = 95.0f;
+        }
     }
 
     previous_keys = keys;

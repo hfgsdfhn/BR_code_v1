@@ -91,6 +91,10 @@ void My_Init(void)
 
     M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, -1);
     M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, -1);
+    M2006_StartSoftwareZeroCalibration(&m2006_ucup[0]);
+    M2006_StartSoftwareZeroCalibration(&m2006_ucup[1]);
+    M2006_StartSoftwareZeroCalibration(&m2006_dcup[0]);
+    M2006_StartSoftwareZeroCalibration(&m2006_dcup[1]);
 
     M2006_Init(&m2006_larm, &hfdcan2, 1U, -1);
     RS00_Init(&rs00_larm[0], &hfdcan2, 2U, 1);

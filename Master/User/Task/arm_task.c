@@ -1,4 +1,4 @@
-﻿#include "arm_task.h"
+#include "arm_task.h"
 #include "../Peripheral/CAN/bsp_can.h"
 #include "cmsis_os2.h"
 #include "cup_task.h"
@@ -23,9 +23,9 @@ volatile bool startup_hold_latched[2][ARM_JOINT_COUNT];
 #define ARM_IK_Z_MAX_CM (100.0f)
 
 static int8_t arm_ik_target_direction[2][3] = {{-1, -1, -1}, {-1, -1, -1}};
-static uint8_t pd13_sequence_stage;
-static uint8_t pd13_sequence_arm;
-static uint8_t pd13_11_index;
+static uint8_t dual_pose_sequence;
+static uint8_t dual_pose_sequence_stage;
+static bool pd13_pd5_high_seen;
 
 static uint8_t Arm_SelectedRemoteArm(void)
 {
@@ -51,8 +51,8 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis, float delta_ms)
         arm_end_target_world[arm][axis] = 10.1f;
 }
 
-volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 3.57f, 29.09f, 0.0f}, 
-                                                    {0.0f, 0.0f, 3.72f, 30.1f, 0.0f}};
+volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, -1.43f, 24.09f, 0.0f}, 
+                                                    {0.0f, 0.0f, -1.28f, 25.1f, 0.0f}};
 volatile float arm_pose_pd13[2][ARM_JOINT_COUNT] = {{0.0f, 80.0f, 78.57f, 24.09f, 0.0f}, 
                                                     {0.0f, 80.0f, 78.72f, 25.1f, 0.0f}};
 volatile float arm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{0.0f, 130.0f, 98.57f, 9.09f, 0.0f},
@@ -67,13 +67,13 @@ volatile float arm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 88.57f, 94.0
                                                       {0.0f, 70.0f, 88.72f, 95.1f, 0.0f}};
 volatile float xarm_pose_pd13[2][ARM_JOINT_COUNT] = {{-85.0f, 30.0f, 38.57f, 19.09f, 0.0f},
                                                      {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
-volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 26.57f, 14.09f, 30.0f},
+volatile float xarm_pose_pd13_1[2][ARM_JOINT_COUNT] = {{-85.0f, 68.0f, 26.57f, 14.09f, 30.0f},
                                                        {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
-volatile float xarm_pose_pd14[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 28.57f, 24.09f, 50.0f},
+volatile float xarm_pose_pd13_2[2][ARM_JOINT_COUNT] = {{-85.0f, 40.0f, 28.57f, 24.09f, 50.0f},
                                                      {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
-volatile float xarm_pose_pd14_1[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 28.57f, 54.09f, 0.0f},
+volatile float xarm_pose_pd13_3[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 28.57f, 54.09f, 0.0f},
                                                        {0.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
-volatile float xarm_pose_pd14_2[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 98.57f, 34.09f, 0.0f},
+volatile float xarm_pose_pd13_4[2][ARM_JOINT_COUNT] = {{0.0f, 70.0f, 98.57f, 34.09f, 0.0f},
                                                        {0.0f, 0.0f, -1.28f, 25.1f, 0.0f}};
 volatile float xarm_pose_pd15[2][ARM_JOINT_COUNT] = {{20.0f, 0.0f, 28.57f, 74.09f, 90.0f},
                                                      {20.0f, 0.0f, 28.72f, 75.1f, 90.0f}};
@@ -257,29 +257,47 @@ static void Arm_EnableRemoteIK(void)
     Upper_SetArmIKEnabled(1U, upper_state.enable != 0U);
 }
 
-static bool Arm_PoseReached(uint8_t arm, const volatile float pose[2][ARM_JOINT_COUNT])
+static bool Arm_DualPoseReached(const volatile float pose[2][ARM_JOINT_COUNT])
 {
-    if (arm >= 2U || pose == NULL)
-        return false;
-    for (uint8_t joint = ARM_JOINT_ROOT; joint <= ARM_JOINT_WRIST; ++joint)
-    {
-        if (fabsf(arm_feedback_angle[arm][joint] - pose[arm][joint]) > 0.8f)
-            return false;
-    }
+    for (uint8_t arm = 0U; arm < 2U; ++arm)
+        for (uint8_t joint = ARM_JOINT_ROOT; joint <= ARM_JOINT_WRIST; ++joint)
+            if (fabsf(arm_feedback_angle[arm][joint] - pose[arm][joint]) > 5.0f)
+                return false;
     return true;
 }
 
-static void Arm_UpdatePd13Sequence(void)
+static void Arm_UpdateDualPoseSequence(void)
 {
-    if (pd13_sequence_stage == 1U && Arm_PoseReached(pd13_sequence_arm, arm_pose_pd13_1))
+    if (dual_pose_sequence == 1U)
     {
-        Arm_ApplyRemotePose(arm_pose_pd13_2, true);
-        pd13_sequence_stage = 2U;
-    }
-    else if (pd13_sequence_stage == 2U && Arm_PoseReached(pd13_sequence_arm, arm_pose_pd13_2))
-    {
-        pd13_sequence_stage = 0U;
-        pd13_11_index = 0U;
+        if (dual_pose_sequence_stage == 1U && Arm_DualPoseReached(xarm_pose_pd13))
+        {
+            Arm_ApplyDualPose(xarm_pose_pd13_1[ARM_LARM_INDEX], xarm_pose_pd13_1[ARM_RARM_INDEX]);
+            gpio_pd5 = 1U;
+            pd13_pd5_high_seen = true;
+            dual_pose_sequence_stage = 2U;
+        }
+        else if (dual_pose_sequence_stage == 2U && pd13_pd5_high_seen && gpio_pd5 == 0U)
+        {
+            Arm_ApplyDualPose(xarm_pose_pd13_2[ARM_LARM_INDEX], xarm_pose_pd13_2[ARM_RARM_INDEX]);
+            pd13_pd5_high_seen = false;
+            dual_pose_sequence_stage = 3U;
+        }
+        else if (dual_pose_sequence_stage == 3U && Arm_DualPoseReached(xarm_pose_pd13_2))
+        {
+            Arm_ApplyDualPose(xarm_pose_pd13_3[ARM_LARM_INDEX], xarm_pose_pd13_3[ARM_RARM_INDEX]);
+            dual_pose_sequence_stage = 4U;
+        }
+        else if (dual_pose_sequence_stage == 4U && Arm_DualPoseReached(xarm_pose_pd13_3))
+        {
+            Arm_ApplyDualPose(xarm_pose_pd13_4[ARM_LARM_INDEX], xarm_pose_pd13_4[ARM_RARM_INDEX]);
+            dual_pose_sequence_stage = 5U;
+        }
+        else if (dual_pose_sequence_stage == 5U && Arm_DualPoseReached(xarm_pose_pd13_4))
+        {
+            dual_pose_sequence = 0U;
+            dual_pose_sequence_stage = 0U;
+        }
     }
 }
 
@@ -290,6 +308,9 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     static uint8_t pd14_11_index = 1U;
     static uint8_t pd14_10_index;
     static uint8_t pd15_11_index;
+    static uint8_t pd13_11_by_arm[2];
+    static uint8_t pd14_11_by_arm[2] = {1U, 1U};
+    static uint8_t pd15_11_by_arm[2];
     static uint8_t pd15_10_index;
     static uint8_t pd13_10_index;
     static uint8_t pa11_rotation_index;
@@ -314,8 +335,10 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         previous_keys_valid = false;
         previous_mode_valid = false;
         previous_pose_mode_valid = false;
+        memset(pd13_11_by_arm, 0, sizeof(pd13_11_by_arm));
+        dual_pose_sequence = 0U;
+        dual_pose_sequence_stage = 0U;
         previous_ik_tick_valid = false;
-        pd13_sequence_stage = 0U;
         return;
     }
 
@@ -341,14 +364,16 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     if (previous_mode_valid && (previous_pa6_low_mode != pa6_low_mode || previous_pa5_low_mode != pa5_low_mode))
     {
         arm_remote_select = 0U;
-        pd13_sequence_stage = 0U;
-        pd13_11_index = 0U;
+        dual_pose_sequence = 0U;
+        dual_pose_sequence_stage = 0U;
         pd14_11_index = 0U;
         pd15_11_index = 0U;
         pd13_10_index = 0U;
         pd14_10_index = 0U;
         pd15_10_index = 0U;
         pa11_rotation_index = 0U;
+        dual_pose_sequence = 0U;
+        dual_pose_sequence_stage = 0U;
     }
     /* IK is available only while both PA6 and PA5 are low. */
     if (previous_mode_valid && previous_pa6_low_mode && previous_pa5_low_mode && !(pa6_low_mode && pa5_low_mode))
@@ -365,14 +390,25 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
     if (!pa6_low_mode && !pa5_low_mode &&
         (!previous_pose_mode_valid || previous_pa6_low_mode != pa6_low_mode || previous_pa5_low_mode != pa5_low_mode))
     {
-        pd13_11_index = 0U;
+        memset(pd13_11_by_arm, 0, sizeof(pd13_11_by_arm));
         pd14_11_index = 0U;
         pd15_11_index = 0U;
     }
     previous_pa6_low_mode = pa6_low_mode;
     previous_pa5_low_mode = pa5_low_mode;
     previous_pose_mode_valid = true;
-
+    if (pa6_low_mode && !pa5_low_mode && (pressed_keys & (1U << 6)) != 0U)
+    {
+        memset(pd13_11_by_arm, 0, sizeof(pd13_11_by_arm));
+        pd14_11_index = 0U;
+        pd15_11_index = 0U;
+        memset(pd14_11_by_arm, 0, sizeof(pd14_11_by_arm));
+        memset(pd15_11_by_arm, 0, sizeof(pd15_11_by_arm));
+        pd13_10_index = 0U;
+        pd14_10_index = 0U;
+        pd15_10_index = 0U;
+        pa11_rotation_index = 0U;
+    }
     if (pa6_low_mode && pa5_low_mode && arm_low_low_mode_enable == 0U)
     {
         Arm_DisableRemoteIK();
@@ -388,7 +424,6 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         if (pressed_keys & (1U << 0))
         {
             arm_remote_select ^= 1U;
-            pd13_sequence_stage = 0U;
             arm = Arm_SelectedRemoteArm();
             Arm_SeedIKTargetFromFeedback(arm);
         }
@@ -422,12 +457,10 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
                 }
                 else if (axis == 1U)
                 {
-                    pd13_11_index = 0U;
                     pd15_11_index = 0U;
                 }
                 else
                 {
-                    pd13_11_index = 0U;
                     pd14_11_index = 0U;
                 }
             }
@@ -451,11 +484,15 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         return;
     }
 
+    if (!pa6_low_mode && pa5_low_mode && dual_pose_sequence == 1U && (pressed_keys & (uint16_t)~((1U << 0) | (1U << 2) | (1U << 6) | (1U << 7) | (1U << 8))) != 0U)
+    {
+        dual_pose_sequence = 0U;
+        dual_pose_sequence_stage = 0U;
+    }
+
     if (!pa6_low_mode && (pressed_keys & (1U << 0)) != 0U)
     {
         arm_remote_select ^= 1U;
-        pd13_sequence_stage = 0U;
-        pd13_11_index = 0U;
         pd14_11_index = 0U;
         pd15_11_index = 0U;
     }
@@ -463,66 +500,60 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
         upper_state.enable ^= 1U;
     if (!pa6_low_mode && !pa5_low_mode)
     {
+        uint8_t arm = Arm_SelectedRemoteArm();
         if ((pressed_keys & (1U << 3)) != 0U)
         {
-            pd13_sequence_arm = Arm_SelectedRemoteArm();
-            Arm_ApplyRemotePose(arm_pose_pd13_1, true);
-            pd13_sequence_stage = 1U;
-            pd13_11_index = 1U;
-            pd14_11_index = 0U;
-            pd15_11_index = 0U;
+            const volatile float (*pose)[ARM_JOINT_COUNT] =
+                pd13_11_by_arm[arm] == 0U ? arm_pose_pd13_1 : arm_pose_pd13_2;
+            Arm_ApplyRemotePose(pose, true);
+            pd13_11_by_arm[arm] ^= 1U;
+            pd14_11_by_arm[arm] = 0U;
+            pd15_11_by_arm[arm] = 0U;
         }
         if ((pressed_keys & (1U << 4)) != 0U)
         {
-            pd13_sequence_stage = 0U;
             Arm_ApplyRemotePose(arm_pose_pd14, true);
-            pd14_11_index = (uint8_t)((pd14_11_index + 1U) % 2U);
-            pd13_11_index = 0U;
-            pd15_11_index = 0U;
+            pd14_11_by_arm[arm] = (uint8_t)((pd14_11_by_arm[arm] + 1U) % 2U);
+            pd13_11_by_arm[arm] = 0U;
+            pd15_11_by_arm[arm] = 0U;
         }
         if ((pressed_keys & (1U << 5)) != 0U)
         {
-            if (pd15_11_index == 0U)
+            if (pd15_11_by_arm[arm] == 0U)
             {
-                pd13_sequence_stage = 0U;
                 Arm_ApplyRemotePose(arm_pose_pd15, true);
             }
             else
             {
-                pd13_sequence_stage = 0U;
                 Arm_ApplyRemotePose(arm_pose_pd15_2, true);
             }
-            pd15_11_index = (uint8_t)((pd15_11_index + 1U) % 2U);
-            pd13_11_index = 0U;
-            pd14_11_index = 0U;
+            pd15_11_by_arm[arm] = (uint8_t)((pd15_11_by_arm[arm] + 1U) % 2U);
+            pd13_11_by_arm[arm] = 0U;
+            pd14_11_by_arm[arm] = 0U;
         }
         if ((pressed_keys & (1U << 1)) != 0U)
         {
-            pd13_sequence_stage = 0U;
             Arm_ApplyRemotePose(arm_pose_pd11, false);
-            pd13_11_index = 0U;
-            pd14_11_index = 0U;
-            pd15_11_index = 0U;
+            pd13_11_by_arm[arm] = 0U;
+            pd14_11_by_arm[arm] = 0U;
+            pd15_11_by_arm[arm] = 0U;
         }
     }
-    else if (!pa6_low_mode)
+    else if (!pa6_low_mode && pa5_low_mode)
     {
         if ((pressed_keys & (1U << 3)) != 0U)
         {
-            const volatile float (*pose)[ARM_JOINT_COUNT] = pd13_10_index == 0U ? xarm_pose_pd13 : xarm_pose_pd13_2;
-            Arm_ApplyDualPose(pose[ARM_LARM_INDEX], pose[ARM_RARM_INDEX]);
-            pd13_10_index = (uint8_t)((pd13_10_index + 1U) % 2U);
+            Arm_ApplyDualPose(xarm_pose_pd13[ARM_LARM_INDEX], xarm_pose_pd13[ARM_RARM_INDEX]);
+            dual_pose_sequence = 1U;
+            dual_pose_sequence_stage = 1U;
+            pd13_pd5_high_seen = false;
+            pd13_10_index = 0U;
             pd14_10_index = 0U;
             pd15_10_index = 0U;
         }
         if ((pressed_keys & (1U << 4)) != 0U)
         {
-            const volatile float (*pose)[ARM_JOINT_COUNT] =
-                pd14_10_index == 0U ? xarm_pose_pd14 : (pd14_10_index == 1U ? xarm_pose_pd14_1 : xarm_pose_pd14_2);
-            Arm_ApplyDualPose(pose[ARM_LARM_INDEX], pose[ARM_RARM_INDEX]);
-            pd14_10_index = (uint8_t)((pd14_10_index + 1U) % 3U);
-            pd13_10_index = 0U;
-            pd15_10_index = 0U;
+            /* PD14 remains decoded but has no action in this mode. */
         }
         if ((pressed_keys & (1U << 5)) != 0U)
         {
@@ -531,6 +562,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
             pd15_10_index = (uint8_t)((pd15_10_index + 1U) % 2U);
             pd13_10_index = 0U;
             pd14_10_index = 0U;
+            dual_pose_sequence = 0U;
+            dual_pose_sequence_stage = 0U;
         }
         if ((pressed_keys & (1U << 1)) != 0U)
         {
@@ -538,6 +571,8 @@ static void Arm_ProcessRemote(const send_to_arm_t *status)
             pd13_10_index = 0U;
             pd14_10_index = 0U;
             pd15_10_index = 0U;
+            dual_pose_sequence = 0U;
+            dual_pose_sequence_stage = 0U;
         }
     }
     if (!pa6_low_mode)
@@ -565,7 +600,7 @@ void Arm_Task(void *argument)
         send_to_arm_t status;
         if (osMessageQueueGet(Arm_QueueHandle, &status, NULL, 0U) == osOK)
             Arm_ProcessRemote(&status);
-        Arm_UpdatePd13Sequence();
+        Arm_UpdateDualPoseSequence();
         next += (osKernelGetTickFreq() * 2U + 999U) / 1000U;
         if (osDelayUntil(next) != osOK)
             next = osKernelGetTickCount();

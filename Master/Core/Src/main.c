@@ -18,8 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "FreeRTOS.h"
-#include "cmsis_os2.h"
+#include "cmsis_os.h"
 #include "bdma.h"
 #include "dma.h"
 #include "fdcan.h"
@@ -74,6 +73,7 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -108,7 +108,7 @@ int main(void)
 
   /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
+  /* Initialize all con·figured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_BDMA_Init();
@@ -296,19 +296,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
-    static uint8_t can_poll_divider;
-
     HAL_IncTick();
-    can_poll_divider++;
-    if (can_poll_divider >= 2U)
-    {
-      can_poll_divider = 0U;
-      BspCan_Poll(&hfdcan2);
-      BspCan_Poll(&hfdcan3);
-    }
   }
   /* USER CODE BEGIN Callback 1 */
+  {
+    static uint8_t can_poll_divider;
 
+    if (htim->Instance == TIM6)
+    {
+      can_poll_divider++;
+      if (can_poll_divider >= 2U)
+      {
+        can_poll_divider = 0U;
+        BspCan_Poll(&hfdcan2);
+        BspCan_Poll(&hfdcan3);
+      }
+    }
+  }
   /* USER CODE END Callback 1 */
 }
 

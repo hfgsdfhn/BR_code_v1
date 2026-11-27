@@ -23,7 +23,8 @@
 #define M2006_CURRENT_RAW_LIMIT 10000.0f
 #define M2006_CUR_MAX_A 10.0f
 
-#define M2006_ZERO_STABLE_FRAMES 1U
+#define M2006_ZERO_STABLE_FRAMES 25U
+#define M2006_STARTUP_ZERO_SPEED_RAD_S (-10.0f)
 #define M2006_ZERO_MAX_STEP_COUNTS 128
 #define M2006_ZERO_MAX_SPEED_RPM 30
 #define RPM_TO_RAD_S 0.10471975512f
@@ -80,6 +81,8 @@ typedef struct
     bool trajectory_pending;
     bool trajectory_active;
     bool startup_hold_active;
+    bool startup_zero_calibrating;
+    bool startup_zero_complete;
 } m2006_t;
 
 extern volatile float m2006_trajectory_max_speed_rad_s;
@@ -115,6 +118,9 @@ void M2006_BuildGroupFrame(uint8_t first_id,
 void M2006_ResetFeedback(m2006_t *motor);
 
 void M2006_ResetSoftwareZero(m2006_t *motor);
+
+void M2006_StartSoftwareZeroCalibration(m2006_t *motor);
+bool M2006_IsSoftwareZeroCalibrated(const m2006_t *motor);
 
 void M2006_Service(m2006_t *motor,
                    float dt_s);
