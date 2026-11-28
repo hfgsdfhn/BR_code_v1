@@ -47,8 +47,8 @@ static void Arm_AdjustIKTarget(uint8_t arm, uint8_t axis, float delta_ms)
     if (arm >= 2U || axis >= 3U || delta_ms <= 0.0f)
         return;
     arm_end_target_world[arm][axis] += 0.01f * delta_ms * (float)arm_ik_target_direction[arm][axis];
-    if (axis == 1U && arm_end_target_world[arm][axis] <= 10.0f)
-        arm_end_target_world[arm][axis] = 10.1f;
+    if (axis == 1U && arm_end_target_world[arm][axis] < ARM_IK_Y_MIN_CM)
+        arm_end_target_world[arm][axis] = ARM_IK_Y_MIN_CM;
 }
 
 volatile float arm_pose_pd11[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, -1.43f, 24.09f, 0.0f}, 
