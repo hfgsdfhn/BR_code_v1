@@ -37,6 +37,27 @@ static float M2006_Clamp(float value, float minimum, float maximum)
     return value;
 }
 
+static bool M2006_HasTravelLimit(const m2006_t *motor)
+{
+    return motor->startup_zero_complete && motor->max_output_angle_deg > 0.0f;
+}
+
+float M2006_ClampPositionDegrees(const m2006_t *motor, float degrees)
+{
+    if (M2006_HasTravelLimit(motor))
+        return M2006_Clamp(degrees, 0.0f, motor->max_output_angle_deg);
+    return degrees;
+}
+
+static float M2006_ClampOutwardCommand(const m2006_t *motor, float command)
+{
+    if (M2006_HasTravelLimit(motor) &&
+        ((motor->position_rad <= 0.0f && command < 0.0f) ||
+         (motor->position_rad >= motor->max_output_angle_deg * M2006_DEG_TO_RAD && command > 0.0f)))
+        return 0.0f;
+    return command;
+}
+
 static void M2006_ResetMotion(m2006_t *motor)
 {
     motor->reference_position_rad = motor->position_rad;
@@ -320,7 +341,16 @@ void M2006_SetTargetDeferred(m2006_t *motor,
 
     bool mode_changed = mode != motor->mode;
     bool target_changed;
-    float target_position_rad = target * M2006_DEG_TO_RAD * motor->output_ratio;
+    float target_position_rad = 0.0f;
+
+    if (mode == M2006_MODE_POSITION)
+    {
+        target = M2006_ClampPositionDegrees(motor, target);
+        target_position_rad = target * M2006_DEG_TO_RAD * motor->output_ratio;
+        if (M2006_HasTravelLimit(motor))
+            target_position_rad = M2006_Clamp(target_position_rad, 0.0f,
+                                             motor->max_output_angle_deg * M2006_DEG_TO_RAD);
+    }
 
     if (mode != M2006_MODE_POSITION)
     {
@@ -497,12 +527,14 @@ int16_t M2006_Calc(m2006_t *motor,
     }
     else if (motor->mode == M2006_MODE_DAMPING)
     {
-        current = M2006_Clamp(M2006_DAMPING_GAIN_A_PER_RAD_S * (motor->target_speed_rad_s - motor->speed_rad_s),
+        target_speed = M2006_ClampOutwardCommand(motor, motor->target_speed_rad_s);
+        current = M2006_Clamp(M2006_DAMPING_GAIN_A_PER_RAD_S * (target_speed - motor->speed_rad_s),
                               -M2006_DAMPING_CURRENT_LIMIT_A, M2006_DAMPING_CURRENT_LIMIT_A);
     }
     else if (motor->mode == M2006_MODE_SPEED)
     {
         M2006_UpdateSpeedRamp(motor, dt_s);
+        motor->reference_speed_rad_s = M2006_ClampOutwardCommand(motor, motor->reference_speed_rad_s);
         current = PID_Calc(&motor->speed_pid, motor->reference_speed_rad_s, motor->speed_rad_s, dt_s);
     }
     else if (motor->mode == M2006_MODE_POSITION)
@@ -522,15 +554,29 @@ int16_t M2006_Calc(m2006_t *motor,
             motor->reference_speed_rad_s = 0.0f;
             motor->reference_acceleration_rad_s2 = 0.0f;
         }
+        if (M2006_HasTravelLimit(motor))
+        {
+            float max_angle_rad = motor->max_output_angle_deg * M2006_DEG_TO_RAD;
+            if ((motor->reference_position_rad <= 0.0f && motor->reference_speed_rad_s < 0.0f) ||
+                (motor->reference_position_rad >= max_angle_rad && motor->reference_speed_rad_s > 0.0f))
+                motor->reference_speed_rad_s = 0.0f;
+            motor->reference_position_rad = M2006_Clamp(motor->reference_position_rad, 0.0f, max_angle_rad);
+        }
         target_speed = motor->reference_speed_rad_s +
                        PID_Calc(&motor->position_pid, motor->reference_position_rad, motor->position_rad, dt_s);
         target_speed = M2006_Clamp(target_speed, -speed_limit, speed_limit);
+        target_speed = M2006_ClampOutwardCommand(motor, target_speed);
         current = PID_Calc(&motor->speed_pid, target_speed, motor->speed_rad_s, dt_s);
     }
     else
     {
         return 0;
     }
+    float limited_current = M2006_ClampOutwardCommand(motor, current);
+    if (limited_current != current)
+        PID_Reset(&motor->speed_pid);
+    current = limited_current;
+
 m2006_output_current:
     current_raw = motor->direction * current / M2006_CURRENT_SCALE;
 

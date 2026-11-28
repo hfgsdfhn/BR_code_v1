@@ -40,8 +40,6 @@ static uint8_t cup_act_step;
 static uint8_t pd13_press_step, pd14_press_step, pd15_press_step, pa8_press_step, pa11_press_step, pa12_press_step, k0_press_step;
 static void Cup_ServiceAction(void);
 
-#define PD13_UPPER_ID2_MAX_DEG 890.0f
-#define PD13_LOWER_ID2_MAX_DEG 820.0f
 volatile float pd13_stp_normal_speed_rad_s = 20.0f;
 volatile float pd13_stp_decel_speed_rad_s = 8.0f;
 volatile float pd13_stp_decel_distance_cm = 10.0f;
@@ -51,7 +49,6 @@ volatile float pd13_stp_lower_stop_distance_cm = 2.5f;
 volatile uint32_t cup_motor_offline_count = 0U;
 volatile uint32_t cup_motor_recover_count = 0U;
 static bool cup_motor_online_prev[5];
-static bool cup_startup_hold_latched;
 
 __ALIGNED(32) volatile float suction_feedback_angle[2][3];
 volatile float ustp23l_distance_cm;
@@ -269,17 +266,6 @@ static void SuctionCup_MotorWatchdog(void)
     }
 }
 
-static bool SuctionCup_StartupZeroCalibrationComplete(void)
-{
-    unsigned i;
-
-    for (i = 0U; i < 2U; i++)
-    {
-        if (!m2006_ucup[i].received || !m2006_dcup[i].received)
-            return false;
-    }
-    return m3508_dcup[0].received;
-}
 static void SuctionCup_ServicePd13StpLink(void)
 {
     m2006_t *motors[2] = {&m2006_ucup[0], &m2006_dcup[0]};
@@ -297,27 +283,33 @@ static void SuctionCup_ServicePd13StpLink(void)
         return;
     for (side = 0U; side < 2U; ++side)
     {
-        float position = suction_feedback_angle[side == 0U ? ucup : dcup][0U];
+        m2006_t *motor = motors[side];
         float distance = *distances[side];
+        if (!motor->feedback_online || !M2006_IsSoftwareZeroCalibrated(motor))
+            continue;
+
+        float position_rad = motor->position_rad;
+        float position_limit = motor->max_output_angle_deg;
         if (!pd13_stp_started[side] && distance >= 0.0f && distance <= 25.0f)
             pd13_stp_started[side] = true;
         if (!pd13_stp_started[side] || pd13_stp_done[side])
             continue;
         if (distance <= (side == 0U ? pd13_stp_upper_stop_distance_cm : pd13_stp_lower_stop_distance_cm) ||
-            position >= (side == 0U ? PD13_UPPER_ID2_MAX_DEG : PD13_LOWER_ID2_MAX_DEG))
+            position_rad >= position_limit * M2006_DEG_TO_RAD)
         {
-            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, 0.0f);
-            suction_target[side == 0U ? ucup : dcup][0U] = position;
+            float hold_target = M2006_ClampPositionDegrees(motor, position_rad * ARM_RAD_TO_DEG);
+            M2006_SetTargetDeferred(motor, M2006_MODE_POSITION, hold_target);
+            suction_target[side == 0U ? ucup : dcup][0U] = hold_target;
             pd13_stp_done[side] = true;
         }
         else
         {
-            float position_limit = side == 0U ? PD13_UPPER_ID2_MAX_DEG : PD13_LOWER_ID2_MAX_DEG;
             float speed =
-                (distance <= pd13_stp_decel_distance_cm || position >= position_limit - pd13_stp_decel_distance_cm)
+                (distance <= pd13_stp_decel_distance_cm ||
+                 position_rad >= (position_limit - pd13_stp_decel_distance_cm) * M2006_DEG_TO_RAD)
                     ? pd13_stp_decel_speed_rad_s
                     : pd13_stp_normal_speed_rad_s;
-            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, speed);
+            M2006_SetTargetDeferred(motor, M2006_MODE_SPEED, speed);
         }
     }
     if (pd13_stp_done[0] && pd13_stp_done[1])
@@ -422,7 +414,7 @@ static void Cup_ServiceAction(void)
             {
                 gpio_pb6 = 1U;
                 gpio_pd4 = 0U;
-                suction_target[dcup][0U] = 800.0f;
+                suction_target[dcup][0U] = BR_M2006_LOWER_CUP_ID2_MAX_DEG;
                 cup_act_step = 1U;
             }
         }

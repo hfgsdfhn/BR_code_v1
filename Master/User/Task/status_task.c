@@ -1,4 +1,4 @@
-﻿#include "status_task.h"
+#include "status_task.h"
 #include "bsp_can.h"
 #include "mins_imu.h"
 #include "board_can.h"
@@ -55,9 +55,9 @@ void Status_ApplyGpio(void)
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-    gpio_pa8_ = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8);
-    gpio_pc9_ = HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9);
-    gpio_pc8_ = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8);
+    gpio_pa8 = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8);
+    gpio_pc9 = HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9);
+    gpio_pc8 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8);
 }
 
 void Queue_Init(void)
