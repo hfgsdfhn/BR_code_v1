@@ -1,4 +1,4 @@
-
+﻿
 #include "upper.h"
 #include "cup_config.h"
 #include "cup_task.h"
@@ -39,7 +39,7 @@ volatile float br_elbow_kp = 100.0f;
 volatile float br_elbow_kd = 10.0f;
 volatile float br_wrist_kp = 60.0f;
 volatile float br_wrist_kd = 1.5f;
-volatile float br_rotation_kp = 30.0f;
+volatile float br_rotation_kp = 50.0f;
 volatile float br_rotation_kd = 5.0f;
 volatile float br_root_m2006_position_kp = 75.247779608f;
 volatile float br_root_m2006_position_ki = 200.359877560f;

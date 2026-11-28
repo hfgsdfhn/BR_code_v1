@@ -49,6 +49,22 @@ static void M3508_ResetMotion(m3508_t *motor)
     motor->trajectory_active = false;
 }
 
+void M3508_StartSoftwareZeroCalibration(m3508_t *motor)
+{
+    if (motor == NULL)
+        return;
+    motor->startup_zero_calibrating = true;
+    motor->startup_zero_complete = false;
+    motor->zero_stable_frames = 0U;
+    motor->mode = M3508_MODE_SPEED;
+    motor->target_speed_rad_s = M3508_STARTUP_ZERO_SPEED_RAD_S;
+    motor->speed_reference_valid = false;
+}
+
+bool M3508_IsSoftwareZeroCalibrated(const m3508_t *motor)
+{
+    return motor != NULL && motor->startup_zero_complete;
+}
 void M3508_ResetSoftwareZero(m3508_t *motor)
 {
     if (motor == NULL || !motor->received)
@@ -230,6 +246,18 @@ bool M3508_OnFrame(m3508_t *motor,
     {
         motor->total_encoder += difference;
     }
+    if (motor->startup_zero_calibrating)
+    {
+        if (motor->encoder == motor->last_encoder)
+        {
+            if (motor->zero_stable_frames < M3508_ZERO_STABLE_FRAMES)
+                motor->zero_stable_frames++;
+        }
+        else
+        {
+            motor->zero_stable_frames = 0U;
+        }
+    }
     motor->last_encoder = motor->encoder;
     motor->position_rad =
         motor->direction * (float)motor->total_encoder * TWO_PI / (M3508_ENCODER_COUNT * M3508_REDUCTION_RATIO);
@@ -237,15 +265,23 @@ bool M3508_OnFrame(m3508_t *motor,
 
     if (first_feedback)
     {
-
-        motor->mode = M3508_MODE_POSITION;
-        motor->target_position_rad = 0.0f;
-        motor->reference_position_rad = 0.0f;
-        motor->reference_speed_rad_s = 0.0f;
-        motor->reference_acceleration_rad_s2 = 0.0f;
-        motor->trajectory_pending = false;
-        motor->trajectory_active = false;
-        motor->startup_hold_active = true;
+        if (motor->startup_zero_calibrating)
+        {
+            motor->mode = M3508_MODE_SPEED;
+            motor->target_speed_rad_s = M3508_STARTUP_ZERO_SPEED_RAD_S;
+            motor->speed_reference_valid = false;
+        }
+        else
+        {
+            motor->mode = M3508_MODE_POSITION;
+            motor->target_position_rad = 0.0f;
+            motor->reference_position_rad = 0.0f;
+            motor->reference_speed_rad_s = 0.0f;
+            motor->reference_acceleration_rad_s2 = 0.0f;
+            motor->trajectory_pending = false;
+            motor->trajectory_active = false;
+            motor->startup_hold_active = true;
+        }
     }
 
     if (feedback_needs_reanchor && motor->received)
@@ -276,6 +312,13 @@ void M3508_SetTargetDeferred(m3508_t *motor,
                      m3508_mode_t mode,
                      float target)
 {
+    if (motor->startup_zero_calibrating)
+    {
+        motor->mode = M3508_MODE_SPEED;
+        motor->target_speed_rad_s = M3508_STARTUP_ZERO_SPEED_RAD_S;
+        return;
+    }
+
     bool mode_changed = mode != motor->mode;
     bool target_changed;
     float target_position_rad = target * M3508_DEG_TO_RAD;
@@ -417,6 +460,23 @@ int16_t M3508_Calc(m3508_t *motor,
     float current;
     float current_raw;
 
+    if (motor->startup_zero_calibrating)
+    {
+        if (motor->zero_stable_frames >= M3508_ZERO_STABLE_FRAMES)
+        {
+            M3508_ResetSoftwareZero(motor);
+            motor->startup_zero_calibrating = false;
+            motor->startup_zero_complete = true;
+            M3508_SetTargetDeferred(motor, M3508_MODE_POSITION, 0.0f);
+            return 0;
+        }
+        motor->mode = M3508_MODE_SPEED;
+        motor->target_speed_rad_s = M3508_STARTUP_ZERO_SPEED_RAD_S;
+        M3508_UpdateSpeedRamp(motor, dt_s);
+        current = PID_Calc(&motor->speed_pid, motor->reference_speed_rad_s, motor->speed_rad_s, dt_s);
+        goto m3508_output_current;
+    }
+
     if (motor->mode == M3508_MODE_STOP)
     {
         return 0;
@@ -455,6 +515,8 @@ int16_t M3508_Calc(m3508_t *motor,
         return 0;
     }
     current = M3508_Clamp(current, -3.0f, 3.0f);
+
+m3508_output_current:
     current_raw = motor->direction * current / M3508_CURRENT_SCALE;
 
     if (current_raw > M3508_CURRENT_RAW_LIMIT)

@@ -506,7 +506,7 @@ int16_t M2006_Calc(m2006_t *motor,
             M2006_ResetSoftwareZero(motor);
             motor->startup_zero_calibrating = false;
             motor->startup_zero_complete = true;
-            motor->mode = M2006_MODE_STOP;
+            M2006_SetTargetDeferred(motor, M2006_MODE_POSITION, 0.0f);
             return 0;
         }
         motor->mode = M2006_MODE_SPEED;
