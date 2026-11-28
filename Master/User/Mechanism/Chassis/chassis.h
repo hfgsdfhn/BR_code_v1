@@ -11,7 +11,7 @@
 #define CHASSIS_JOYSTICK_DEADBAND             1
 #define CHASSIS_LINEAR_SPEED_STEP_MPS         0.008f
 #define CHASSIS_ANGULAR_SPEED_STEP_RAD_S      0.015f
-#define CHASSIS_L2_UP_SPEED                   0.2f
+#define CHASSIS_L2_UP_SPEED                   0.4f
 
 #define M3508_LEG_MOTOR_ID_MIN 5U
 #define M3508_LEG_MOTOR_ID_MAX 8U
