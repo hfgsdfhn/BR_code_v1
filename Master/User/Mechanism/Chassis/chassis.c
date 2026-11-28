@@ -224,33 +224,6 @@ void set_target_position(float posa,float front, float behind)
     Send_Target_Pos(&hfdcan1, DJI_Board_Target.leg_height_mm);
 }
 
-void l2_leg_up(L2_Leg_up_e leg_up)
-{
-    switch (leg_up)
-    {
-    case l2_up_all_go:
-        set_target_position(320.0f, 0.0f, 9.6f);
-        break;
-    case l2_up_front_back:
-        set_target_position(320.0f, -320.0f, 9.6f);
-        break;
-    case l2_up_behind_back:
-        set_target_position(0.0f,0.0f,0.0f);
-        break;
-    case l2_down_behind_go:
-        set_target_position(0.0f, 0.0f, 329.6f);
-        break;
-    case l2_down_front_go:
-        set_target_position(320.0f, 0.0f, 9.6f);
-        break;
-    case l2_down_all_back:
-        set_target_position(0.0f, 0.0f, 0.0f);
-    default:
-        set_target_position(0.0f,0.0f,0.0f);
-        break;
-    }
-}
-
 static void leg_up_down()
 {
     if(leg_down_flag)
@@ -293,7 +266,7 @@ static void l2_leg_auto_down()
     if(l2_down_flag == 1 && BEHIND_WHEEL_SENSOR == 1)
     {
         set_target_position(0.0f, 0.0f, 314.6f);
-        l2_down_flag = 2;
+         l2_down_flag = 2;
     }
     if(l2_down_flag == 2 && FRONT_WHEEL_SENSOR == 1)
     {

@@ -11,22 +11,22 @@ typedef struct
     const void *path;
     uint16_t path_size;
     uint16_t nearest_index;
-    float lookahead_mm;
+    float lookahead_m;
     float normal_gain;
     float normal_speed_limit;
     float yaw_gain;
     float yaw_speed_limit;
-    float finish_distance_mm;
+    float finish_distance_m;
     bool finished;
 } path_follow_t;
 
 bool PathFollow_Init(path_follow_t *follow,     // 路径跟踪结构体
                      const void *path,          // 路径点数组
                      uint16_t path_size,        // 路径点数量
-                     float lookahead_mm,        // 前视距离（mm）
+                     float lookahead_m,        // 前视距离（m）
                      float normal_gain,         // 法向 P 增益
                      float normal_speed_limit,  // 法向速度限制（m/s）
-                     float finish_distance_mm);  // 结束距离（mm）
+                     float finish_distance_m);  // 结束距离（m）
 
 void PathFollow_Reset(path_follow_t *follow);
 

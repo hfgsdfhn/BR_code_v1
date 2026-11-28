@@ -1,9 +1,10 @@
-#include "status_task.h"
+﻿#include "status_task.h"
 #include "bsp_can.h"
 #include "mins_imu.h"
 #include "board_can.h"
 #include "my_main.h"
 #include "cup_task.h"
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -34,9 +35,9 @@ static bool planned_yaw_initialized;
 static status_common_t common;
 chassis_walk_t chassis_walk;
 
-uint8_t gpioc8 = 0;
-uint8_t gpioc9 = 0;
-uint8_t gpioa8 = 0;
+uint8_t gpio_pa8_flag;
+uint8_t gpio_pc8_flag;
+uint8_t gpio_pc9_flag;
 
 void Status_InitGpio(void)
 {
@@ -54,10 +55,22 @@ void Status_ApplyGpio(void)
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, gpio_pd3 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+ 
 
-    gpio_pa8 = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8);
-    gpio_pc9 = HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9);
-    gpio_pc8 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8);
+    if (HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8) && gpio_pa8_flag < GPIO_INPUT_COUNT)gpio_pa8_flag++;
+    else if(!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8) && gpio_pa8_flag >0)gpio_pa8_flag--;
+    if(gpio_pa8_flag >= GPIO_INPUT_COUNT)   gpio_pa8 = 1;
+    else gpio_pa8 = 0;
+
+    if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_8) && gpio_pc8_flag < GPIO_INPUT_COUNT)gpio_pc8_flag++;
+    else if(!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_8) && gpio_pc8_flag >0)gpio_pc8_flag--;
+    if(gpio_pc8_flag >= GPIO_INPUT_COUNT)   gpio_pc8 = 1;
+    else gpio_pc8 = 0;
+
+    if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9) && gpio_pc9_flag < GPIO_INPUT_COUNT)gpio_pc9_flag++;
+    else if(!HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9) && gpio_pc9_flag >0)gpio_pc9_flag--;
+    if(gpio_pc9_flag >= GPIO_INPUT_COUNT)   gpio_pc9 = 1;
+    else gpio_pc9 = 0;
 }
 
 void Queue_Init(void)
@@ -76,11 +89,16 @@ void motor_to_world_speed(DJI_Board *real, status_common_t * common)
     float w3 = -real->wheel_speed_mps[3];
 
     common->current_speed.vx = (w0 + w1 + w2 + w3) / (4.0f) * 1.414f;
-    common->current_speed.vy = (w0 - w1 - w2 + w3) / (4.0f) * 1.414f;
+    common->current_speed.vy = -(w0 - w1 - w2 + w3) / (4.0f) * 1.414f;
     common->current_speed.vw = (w0 + w1 - w2 - w3) / (4.0f * 0.28853451f);
 
-    chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vx;
-    chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vy;
+    /* 使用发送速度旋转的逆变换，将车体速度转换到路径坐标系 */
+    float sin_yaw = sinf(common->current_yaw);
+    float cos_yaw = cosf(common->current_yaw);
+    float world_vx = common->current_speed.vx * cos_yaw + common->current_speed.vy * sin_yaw;
+    float world_vy = -common->current_speed.vx * sin_yaw + common->current_speed.vy * cos_yaw;
+    chassis_walk.x += CHASSIS_CONTROL_PERIOD_S * world_vx;
+    chassis_walk.y += CHASSIS_CONTROL_PERIOD_S * world_vy;
     chassis_walk.z += CHASSIS_CONTROL_PERIOD_S * common->current_speed.vw;
 }
 

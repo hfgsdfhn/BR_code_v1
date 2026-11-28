@@ -27,14 +27,6 @@ typedef enum
     M3508_SPEED_PID,
     M2006_SPEED_PID
 }DJI_PID_type_e;
-
-typedef enum
-{
-    all = 0,
-    qian,
-    hou,
-}DJI_leg_pos_e;
-
 typedef enum
 {
     l2_up_all_go = 1,
@@ -62,6 +54,7 @@ typedef struct
     float z;
 }chassis_walk_t;
 
+
 typedef struct send_to_chassis_t send_to_chassis_t;
 
 void chassis_init();
@@ -69,7 +62,6 @@ void M2006_wheel_ctrl(float speed);
 void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
 void set_target_position(float posa,float front, float behind);
-void l2_leg_up(L2_Leg_up_e leg_up);
 void leg_task();
 extern pid_t yaw_pid;
 extern pid_t dt35_pid;

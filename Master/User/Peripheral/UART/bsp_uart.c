@@ -49,7 +49,7 @@ static void BspUart_Invalidate(uint8_t *buffer)
     BspUart_GetAlignedCacheRange(buffer, UART_RX_BUFFER_SIZE, &aligned_buffer, &aligned_size);                                                                                                  
     SCB_InvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);                                                                                                    
 }                                                                                                   
-                                                                                                    
+
 static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)                                                                                                 
 {                                                                                                   
     HAL_StatusTypeDef status;                                                                                                   
