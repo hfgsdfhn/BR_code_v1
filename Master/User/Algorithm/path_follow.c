@@ -1,8 +1,11 @@
 
 #include "path_follow.h"
 #include <math.h>
+#include "stddef.h"
 
 path_follow_t path_to_xiepo;
+
+int path_index;
 
 typedef struct
 {
@@ -49,25 +52,25 @@ static float PathFollow_WrapPi(float angle)
 bool PathFollow_Init(path_follow_t *follow,     // 路径跟踪结构体
                      const void *path,          // 路径点数组
                      uint16_t path_size,        // 路径点数量
-                     float lookahead_mm,        // 前视距离（mm）
+                     float lookahead_m,        // 前视距离（m）
                      float normal_gain,         // 法向 P 增益
                      float normal_speed_limit,  // 法向速度限制（m/s）
-                     float finish_distance_mm)  // 结束距离（mm）
+                     float finish_distance_m)  // 结束距离（m）
 {
     if ((follow == 0) || (path == 0) || (path_size == 0U) ||
-        (lookahead_mm < 0.0f) || (normal_gain < 0.0f) ||
+        (lookahead_m < 0.0f) || (normal_gain < 0.0f) ||
         (normal_speed_limit < 0.0f) ||
-        (finish_distance_mm < 0.0f))
+        (finish_distance_m < 0.0f))
     {
         return false;
     }
 
     follow->path = path;
     follow->path_size = path_size;
-    follow->lookahead_mm = lookahead_mm;
+    follow->lookahead_m = lookahead_m;
     follow->normal_gain = normal_gain;
     follow->normal_speed_limit = normal_speed_limit;
-    follow->finish_distance_mm = finish_distance_mm;
+    follow->finish_distance_m = finish_distance_m;
 
     PathFollow_Reset(follow);
 
@@ -84,6 +87,8 @@ void PathFollow_Reset(path_follow_t *follow)
     }
 }
 
+
+
 bool PathFollow_Calc(path_follow_t *follow,
                      float x_m,
                      float y_m,
@@ -92,44 +97,65 @@ bool PathFollow_Calc(path_follow_t *follow,
     const path_point_t *points;
     const path_point_t *nearest;
     const path_point_t *target;
+
     uint16_t index;
     uint16_t target_index;
+
     float nearest_distance;
     float distance;
     float target_s;
+
     float dx;
     float dy;
+
     float tangent_x;
     float tangent_y;
     float normal_x;
     float normal_y;
+
     float normal_error;
     float normal_speed;
     float tangent_speed;
 
-    if ((follow == 0) || (follow->path == 0) ||
-        (follow->path_size == 0U) || (speed == 0))
+    if (speed == NULL)
+    {
+        return false;
+    }
+
+    speed->vx = 0.0f;
+    speed->vy = 0.0f;
+
+
+    if ((follow == NULL) ||
+        (follow->path == NULL) ||
+        (follow->path_size == 0U))
     {
         return false;
     }
 
     if (follow->finished)
     {
-        speed->vx = 0.0f;
-        speed->vy = 0.0f;
-        speed->vw = 0.0f;
         return true;
     }
 
     points = (const path_point_t *)follow->path;
+
+    if (follow->nearest_index >= follow->path_size)
+    {
+        follow->nearest_index = 0U;
+    }
+
     nearest = &points[follow->nearest_index];
     nearest_distance = 1.0e30f;
 
     /* 搜索距离机器人最近的路径点 */
-    for (index = follow->nearest_index; index < follow->path_size; index++)
+    for (index = follow->nearest_index;
+         index < follow->path_size;
+         index++)
     {
-        dx = x_m - points[index].x * 0.001f;
-        dy = y_m - points[index].y * 0.001f;
+        dx = x_m - points[index].x;
+        dy = y_m - points[index].y;
+
         distance = dx * dx + dy * dy;
 
         if (distance < nearest_distance)
@@ -140,8 +166,15 @@ bool PathFollow_Calc(path_follow_t *follow,
         }
     }
 
-    /* 根据预瞄距离寻找目标点 */
-    target_s = nearest->s + follow->lookahead_mm;
+    /* 计算前视目标路径长度 */
+    target_s = nearest->s + follow->lookahead_m;
+
+    if (target_s > points[follow->path_size - 1U].s)
+    {
+        target_s = points[follow->path_size - 1U].s;
+    }
+
+    /* 根据前视距离寻找目标点 */
     target_index = follow->nearest_index;
 
     while ((target_index + 1U < follow->path_size) &&
@@ -153,48 +186,48 @@ bool PathFollow_Calc(path_follow_t *follow,
     target = &points[target_index];
 
     /* 判断是否到达路径终点 */
-    dx = x_m - points[follow->path_size - 1U].x * 0.001f;
-    dy = y_m - points[follow->path_size - 1U].y * 0.001f;
+    dx = x_m - points[follow->path_size - 1U].x;
+    dy = y_m - points[follow->path_size - 1U].y;
 
     distance = dx * dx + dy * dy;
 
-    if (distance <= follow->finish_distance_mm *
-                    follow->finish_distance_mm * 0.000001f)
+    if (distance <= follow->finish_distance_m *
+                    follow->finish_distance_m)
     {
         follow->finished = true;
-        speed->vx = 0.0f;
-        speed->vy = 0.0f;
-        speed->vw = 0.0f;
         return true;
     }
 
-    /* 计算路径切线方向和法线方向 */
+    /* 计算路径切线方向 */
     tangent_x = cosf(target->theta);
-    tangent_y = sinf(target->theta);
+    tangent_y = -sinf(target->theta);
 
+    /* 计算路径法线方向 */
     normal_x = -tangent_y;
     normal_y = tangent_x;
 
-    /* 计算机器人相对于路径的法向误差 */
-    dx = x_m - nearest->x * 0.001f;
-    dy = y_m - nearest->y * 0.001f;
+    /* 计算机器人相对于最近路径点的法向误差 */
+    dx = x_m - nearest->x;
+    dy = y_m - nearest->y;
 
     normal_error = dx * normal_x + dy * normal_y;
 
     /* 法向纠偏速度 */
-    normal_speed = PathFollow_Clamp(-follow->normal_gain * normal_error,
-                                    follow->normal_speed_limit);
+    normal_speed = PathFollow_Clamp(
+        follow->normal_gain * normal_error,
+        follow->normal_speed_limit);
 
-    /* 切线前进速度 */
-    tangent_speed = 1.5f * target->velocity;
+    /* 路径切线前进速度 */
+    tangent_speed = target->velocity;
 
     /* 合成底盘速度 */
-    speed->vx = tangent_speed * tangent_x + normal_speed * normal_x;
-    speed->vy = tangent_speed * tangent_y + normal_speed * normal_y;
+    speed->vx = tangent_speed * tangent_x +
+                normal_speed * normal_x;
 
-    /* 不进行角速度纠偏 */
-    speed->vw = 0.0f;
+    speed->vy = -tangent_speed * tangent_y +
+                normal_speed * normal_y;
 
     return true;
 }
+
 
