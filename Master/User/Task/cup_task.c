@@ -423,7 +423,7 @@ static void Cup_ServiceAction(void)
     {
         if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f && suction_feedback_angle[dcup][2U] < 230.0f)
         {
-            Cup_SetTarget(660.0f, 660.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
             cup_act_step = 3U;
         }
         return;
@@ -443,7 +443,7 @@ static void Cup_ServiceAction(void)
         if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f &&
                  suction_feedback_angle[dcup][2U] < 230.0f)
         {
-            Cup_SetTarget(660.0f, 660.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
             pd13_stp_state = 0U;
             pd13_stp_started[0] = false;
             pd13_stp_started[1] = false;
@@ -460,9 +460,9 @@ static void Cup_ServiceAction(void)
         else if (cup_act == CUP_ACT_PD15)
             done = Cup_Reached(880.0f, 830.0f, 5.0f);
         else if (cup_act == CUP_ACT_PA11)
-            done = Cup_Reached(660.0f, 660.0f, 5.0f);
+            done = Cup_Reached(700.0f, 700.0f, 5.0f);
         else
-            done = cup_act_step != 0U ? Cup_Reached(880.0f, 830.0f, 95.0f) : Cup_Reached(660.0f, 660.0f, 5.0f);
+            done = cup_act_step != 0U ? Cup_Reached(880.0f, 830.0f, 95.0f) : Cup_Reached(700.0f, 700.0f, 5.0f);
         if (done)
             cup_act = CUP_ACT_NONE;
     }
@@ -674,7 +674,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pd4 = 0U;
             gpio_pd3 = 0U;
             suction_target[dcup][2U] = 350.0f;
-            Cup_SetTarget(660.0f, 660.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
         }
         else
         {
@@ -685,7 +685,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pd4 = 0U;
             gpio_pd3 = 0U;
             suction_target[dcup][2U] = 0.0f;
-            Cup_SetTarget(660.0f, 660.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
         }
     }
 

@@ -6,30 +6,42 @@
 #define BR_PI 3.14159265358979323846f
 #define BR_DEG_TO_RAD (BR_PI / 180.0f)
 
+/* 运动学正逆解 */
 volatile float br_link_37_m = 0.36350003f;
 volatile float br_link_6_m = 0.05488355f;
 volatile float br_link_21_5_m = 0.21588995f;
 volatile float br_link_8_m  = 0.11631447f;
-static const float br_command_zero_ground_deg[2][4] =
+static const float br_kinematic_zero_ground_deg_table[2][4] =
 {
     {20.0f, 150.0f, 182.78f, 237.0f},
     {20.0f, 150.0f, 182.78f, 237.0f}
 };
 
-static const float *br_zero_ground_deg(const br_gravity_model_t *model)
+/* 重力补偿 */
+static const float br_gravity_link_37_m = 0.220000f;
+static const float br_gravity_link_6_m = 0.058000f;
+static const float br_gravity_link_21_5_m = 0.215000f;
+static const float br_gravity_link_8_m = 0.120000f;
+static const float br_gravity_zero_ground_deg[2][4] =
 {
-    return model == &br_gravity_models[1] ? br_command_zero_ground_deg[1]
-                                          : br_command_zero_ground_deg[0];
+    {20.0f, 150.0f, 195.0f, 235.0f},
+    {20.0f, 150.0f, 195.0f, 235.0f}
+};
+
+static const float *br_kinematic_zero_ground_deg(const br_gravity_model_t *model)
+{
+    return model == &br_gravity_models[1] ? br_kinematic_zero_ground_deg_table[1]
+                                          : br_kinematic_zero_ground_deg_table[0];
 }
 
 volatile float br_mass_003_kg = 0.770000000000f;
 volatile float br_mass_004_kg = 0.172000000000f;
 volatile float br_mass_005_kg = 0.530000000000f;
 volatile float br_mass_006_kg = 1.108000000000f;
-static const float br_com_37_m = 0.23564075f;
-static const float br_com_6_m = 0.03707482f;
-static const float br_com_21_5_m = 0.18268886f;
-static const float br_com_8_m = 0.08932964f;
+static const float br_com_37_m = 0.21244607f;
+static const float br_com_6_m = 0.049223881f;
+static const float br_com_21_5_m = 0.049902387f;
+static const float br_com_8_m = 0.080391522f;
 
 static const float br_tool_offset_m[3] = {0.0f, 0.0f, 0.0f};
 static const float br_identity[3][3] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
@@ -68,16 +80,18 @@ static br_vec2_t br_polar(float length, float angle)
 
 static void br_pose(const br_gravity_model_t *model, const float q[BR_ARM_DOF], br_vec2_t joint[4], br_vec2_t com[4], br_vec2_t *tool)
 {
-    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float *zero_ground_deg = model == &br_gravity_models[1]
+                                      ? br_gravity_zero_ground_deg[1]
+                                      : br_gravity_zero_ground_deg[0];
     const float a1 = zero_ground_deg[0] * BR_DEG_TO_RAD + q[1];
     const float a2 = zero_ground_deg[1] * BR_DEG_TO_RAD + q[1] - q[2];
     const float a3 = zero_ground_deg[2] * BR_DEG_TO_RAD + q[1] - q[2];
     const float a4 = zero_ground_deg[3] * BR_DEG_TO_RAD + q[1] - q[2] - q[3];
     const br_vec2_t p0 = {0.0f, 0.0f};
-    const br_vec2_t p1 = br_add(p0, br_polar(br_link_37_m, a1));
-    const br_vec2_t p2 = br_add(p1, br_polar(br_link_6_m, a2));
-    const br_vec2_t p3 = br_add(p2, br_polar(br_link_21_5_m, a3));
-    const br_vec2_t p4 = br_add(p3, br_polar(br_link_8_m, a4));
+    const br_vec2_t p1 = br_add(p0, br_polar(br_gravity_link_37_m, a1));
+    const br_vec2_t p2 = br_add(p1, br_polar(br_gravity_link_6_m, a2));
+    const br_vec2_t p3 = br_add(p2, br_polar(br_gravity_link_21_5_m, a3));
+    const br_vec2_t p4 = br_add(p3, br_polar(br_gravity_link_8_m, a4));
 
     joint[0] = p0; joint[1] = p1; joint[2] = p2; joint[3] = p3;
     com[0] = br_add(p0, br_polar(br_com_37_m, a1));
@@ -102,7 +116,7 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
     const float l2 = br_link_6_m;
     const float l3 = br_link_21_5_m;
     const float l4 = br_link_8_m;
-    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float *zero_ground_deg = br_kinematic_zero_ground_deg(model);
     const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
     const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
     const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
@@ -158,7 +172,7 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
     const float l2 = br_link_6_m;
     const float l3 = br_link_21_5_m;
     const float l4 = br_link_8_m;
-    const float *zero_ground_deg = br_zero_ground_deg(model);
+    const float *zero_ground_deg = br_kinematic_zero_ground_deg(model);
     const float a1_zero = zero_ground_deg[0] * BR_DEG_TO_RAD;
     const float a2_zero = zero_ground_deg[1] * BR_DEG_TO_RAD;
     const float a3_zero = zero_ground_deg[2] * BR_DEG_TO_RAD;
