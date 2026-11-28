@@ -56,9 +56,6 @@ void Status_ApplyGpio(void)
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, gpio_pd4 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, gpio_pd5 ? GPIO_PIN_SET : GPIO_PIN_RESET);
  
-    //pio_pa8 = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8);
-    gpio_pc9 = HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9);
-    gpio_pc8 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_8);
 
     if (HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8) && gpio_pa8_flag < GPIO_INPUT_COUNT)gpio_pa8_flag++;
     else if(!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_8) && gpio_pa8_flag >0)gpio_pa8_flag--;
