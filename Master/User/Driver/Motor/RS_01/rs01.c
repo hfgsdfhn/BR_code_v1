@@ -549,12 +549,16 @@ void RS01_SetTargetMIT(rs01_t *motor, rs_mode_t mode, float tau_nm, float output
 {
     if (!motor || mode != RS_MODE_MIT || !isfinite(tau_nm) || !isfinite(output_degrees))
         return;
+    if (tau_nm > RS01_TORQUE_MAX)
+        tau_nm = RS01_TORQUE_MAX;
+    else if (tau_nm < -RS01_TORQUE_MAX)
+        tau_nm = -RS01_TORQUE_MAX;
     if (motor->target_sink)
     {
         motor->target_sink(motor, (int)mode, tau_nm, output_degrees);
         return;
     }
-    if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX || fabsf(tau_nm) > RS01_TORQUE_MAX)
+    if (fabsf(output_degrees * RS01_DEG_TO_RAD) > RS01_POSITION_MAX)
         return;
     float position_target = output_degrees * RS01_DEG_TO_RAD;
     if (motor->mode != RS_MODE_MIT || motor->recovery_trajectory ||

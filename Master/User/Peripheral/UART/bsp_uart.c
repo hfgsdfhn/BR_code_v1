@@ -71,6 +71,10 @@ static HAL_StatusTypeDef BspUart_StartReceive(bsp_uart_t *uart)
         SCB_CleanInvalidateDCache_by_Addr(aligned_buffer, (int32_t)aligned_size);                                                                                                   
     }                                                                                                   
     status = HAL_UART_Receive_DMA(uart->handle, uart->buffer, UART_RX_BUFFER_SIZE);                                                                                                 
+    /* 关掉 UART 错误中断：NE/FE/ORE 一旦触发，HAL 会调�?UART_EndRxTransfer �?DMA 接收整个拆掉�?
+       丢掉的正是正在收的半帧。改成在任务里轮询错误标志（�?BspUart_Task），只清标志、不打断接收�?
+       坏字节最多毁掉当帧，解析器靠 0xAA 0xAA 0xAA 0xAA 自己重同�?*/
+    __HAL_UART_DISABLE_IT(uart->handle, UART_IT_ERR);
     if (status == HAL_OK) __HAL_DMA_DISABLE_IT(uart->handle->hdmarx, DMA_IT_HT);                                                                                                    
     return status;                                                                                                  
 }                                                                                                   
@@ -114,6 +118,23 @@ void BspUart_Task(void *argument)
                 continue;                                                                                                   
             }                                                                                                   
                                                                                                             
+            /* 轮询并清除噪�?帧错�?溢出标志：只统计，不重启接收（错误中断已关，�?BspUart_StartReceive�?*/
+            {
+                uint32_t isr = uart->handle->Instance->ISR;
+                uint32_t err = 0U;
+                if ((isr & USART_ISR_ORE) != 0U) { uart->handle->Instance->ICR = USART_ICR_ORECF; err |= HAL_UART_ERROR_ORE; }
+                if ((isr & USART_ISR_FE) != 0U)  { uart->handle->Instance->ICR = USART_ICR_FECF;  err |= HAL_UART_ERROR_FE; }
+                if ((isr & USART_ISR_NE) != 0U)  { uart->handle->Instance->ICR = USART_ICR_NECF;  err |= HAL_UART_ERROR_NE; }
+                if ((isr & USART_ISR_PE) != 0U)  { uart->handle->Instance->ICR = USART_ICR_PECF;  err |= HAL_UART_ERROR_PE; }
+                if (err != 0U)
+                {
+                    if (index != BSP_UART_UP_STP23L && index != BSP_UART_DOWN_STP23L)
+                    {
+                        uart->error_count++;
+                        uart->last_error = (uint8_t)err;
+                    }
+                }
+            }
             BspUart_Invalidate(uart->buffer);                                                                                                   
             uint16_t write = (uint16_t)(UART_RX_BUFFER_SIZE -                                                                                                   
                                         __HAL_DMA_GET_COUNTER(uart->handle->hdmarx));                                                                                                   
@@ -206,24 +227,37 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }                                                                                                   
 }                                                                                                   
                                                                                                     
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)                                                                                                  
-{                                                                                                   
-    if (huart == &huart2)                                                                                                   
-    {                                                                                                   
-        STP23L_HandleUartError(huart);                                                                                                  
-        return;                                                                                                 
-    }                                                                                                   
-    for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)                                                                                                  
-    {                                                                                                   
-        if (huart == uart_list[index].handle)                                                                                                   
-        {                                                                                                   
-            if (index == BSP_UART_REMOTE) Remote_UartError();                                                                                                   
-            BspUart_RequestRestart(index);                                                                                                  
-            return;                                                                                                 
-        }                                                                                                   
-    }                                                                                                   
-}                                                                                                   
-                                                                                                    
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart == &huart5)
+    {
+        uart_list[BSP_UART_DOWN_STP23L].error_count++;
+        uart_list[BSP_UART_DOWN_STP23L].last_error = (uint8_t)huart->ErrorCode;
+        return;
+    }
+    if (huart == &huart6)
+    {
+        uart_list[BSP_UART_UP_STP23L].error_count++;
+        uart_list[BSP_UART_UP_STP23L].last_error = (uint8_t)huart->ErrorCode;
+        return;
+    }
+    if (huart == &huart2)
+    {
+        STP23L_HandleUartError(huart);
+        return;
+    }
+    for (uint32_t index = 0U; index < BSP_UART_COUNT; index++)
+    {
+        if (huart == uart_list[index].handle)
+        {
+            if (index == BSP_UART_REMOTE)
+                Remote_UartError();
+            BspUart_RequestRestart(index);
+            return;
+        }
+    }
+}
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)                                                                                                   
 {
     (void)huart;

@@ -28,6 +28,9 @@ typedef struct
     bsp_uart_rx_callback_t callback;
     bsp_uart_tx_t tx;
     volatile bool restart_requested;
+    /* 诊断用（不影响收发逻辑）：UART 噪声/帧错误计数，配合下面的错误标志轮询 */
+    volatile uint32_t error_count;
+    volatile uint8_t last_error;     /* 最后一次错误码，见 HAL_UART_ERROR_xxx */
 } bsp_uart_t;
 typedef enum
 {

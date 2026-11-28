@@ -26,7 +26,9 @@ extern volatile float ustp23l_distance_cm;
 extern volatile float dstp23l_distance_cm;
 
 void UStp23lRx(const uint8_t *data, uint16_t size);
+void UStp23lReset(void);
 void DStp23lRx(const uint8_t *data, uint16_t size);
+void DStp23lReset(void);
 
 void SuctionCup_Init(void);
 void SuctionCup_OnFrame(const can_frame_t *frame);
