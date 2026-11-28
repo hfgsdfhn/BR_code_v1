@@ -44,6 +44,7 @@ struct send_to_chassis_t
     chassis_speed_t target_speed;
     chassis_walk_t chassis_walk;
     chassis_speed_t current_speed;
+    float leg_wheel_speed;
     float target_yaw;
     float current_yaw;
     uint8_t leg_up_flag;

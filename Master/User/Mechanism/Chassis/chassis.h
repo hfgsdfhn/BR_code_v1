@@ -1,6 +1,5 @@
 #ifndef CHASSIS_H
 #define CHASSIS_H
-#include "remote.h"
 #include "pid.h"
 
 #define CHASSIS_JOYSTICK_MAX_LINEAR_MPS       1.5f
@@ -12,6 +11,7 @@
 #define CHASSIS_JOYSTICK_DEADBAND             1
 #define CHASSIS_LINEAR_SPEED_STEP_MPS         0.008f
 #define CHASSIS_ANGULAR_SPEED_STEP_RAD_S      0.015f
+#define CHASSIS_L2_UP_SPEED                   0.2f
 
 #define M3508_LEG_MOTOR_ID_MIN 5U
 #define M3508_LEG_MOTOR_ID_MAX 8U
@@ -61,8 +61,9 @@ void chassis_init();
 void M2006_wheel_ctrl(float speed);
 void joy_to_mps(send_to_chassis_t *send);
 void key_to_chassis(send_to_chassis_t *send);
+void M2006_wheel_ctrl(float speed);
 void set_target_position(float posa,float front, float behind);
-void leg_task();
+void leg_task(chassis_speed_t *chassis_speed,float *leg_wheel_speed);
 extern pid_t yaw_pid;
 extern pid_t dt35_pid;
 #endif

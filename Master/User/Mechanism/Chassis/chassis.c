@@ -24,7 +24,7 @@ static uint8_t l2_down_flag;
 static uint8_t leg_up_flag;
 static uint8_t leg_down_flag;
 static uint8_t chassis_emmergency_stop;
-
+volatile uint8_t leg_moving_flag = 0;
 float chassis_pid[3][4] = {
     {3.0f, 0.0f, 0.0f,6.0f},
     {1.5f, 0.0f, 0.0f, 6.0f},
@@ -145,7 +145,7 @@ void joy_to_mps(send_to_chassis_t *send)
                                              CHASSIS_LINEAR_SPEED_STEP_MPS);
 }
 
-void key_to_chassis(send_to_chassis_t *send)
+void                             key_to_chassis(send_to_chassis_t *send)
 {
     uint8_t pe0_pressed;
     uint8_t pe1_pressed;
@@ -159,15 +159,17 @@ void key_to_chassis(send_to_chassis_t *send)
     pe1_pressed = (uint8_t)((send->remote.key[1] & (1U << 6)) != 0U);
     if (send->remote.online == 0U || pe0_pressed == pe1_pressed)
     {
-        M2006_wheel_ctrl(0.0f);
+    //    M2006_wheel_ctrl(0.0f);
+        send->leg_wheel_speed = 0.0f;
         persent = 0.0f;
     }
     else
     {
         persent += 0.001f;
         if(persent >1.0f) persent = 1.0f;
-        M2006_wheel_ctrl(pe1_pressed ? -CHASSIS_WHEEL_JOG_SPEED_MPS * persent
-                                    : CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
+        send->leg_wheel_speed = (pe1_pressed ? -CHASSIS_WHEEL_JOG_SPEED_MPS * persent : CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
+        // M2006_wheel_ctrl(pe1_pressed ? -CHASSIS_WHEEL_JOG_SPEED_MPS * persent
+        //                             : CHASSIS_WHEEL_JOG_SPEED_MPS * persent);
     }
 
     if (key_is_pressed(REMOTE_KEY_PE6))
@@ -275,8 +277,42 @@ static void l2_leg_auto_down()
     }
 }
 
-void leg_task()
+static uint8_t L2_LEG_MOVING()
 {
+    for(uint8_t i = 0; i<4 ; i++)
+    {
+        if(DJI_Board_FeedBack.leg_height_mm[i] >1.0f && DJI_Board_FeedBack.leg_height_mm[i] < 300.0f)    //上下L2时腿只有动的时候才会在这个范围
+        {
+            leg_moving_flag = 1;
+            return 1;
+        }
+    }
+    
+    leg_moving_flag = 2;
+    return 0;
+}
+
+void leg_task(chassis_speed_t *chassis_speed,float *leg_wheel_speed)
+{
+    uint8_t leg_moving = L2_LEG_MOVING();
+
+    if(l2_up_flag && !leg_moving)
+    {
+        chassis_speed->vy = -CHASSIS_L2_UP_SPEED;
+        *leg_wheel_speed = -CHASSIS_L2_UP_SPEED;
+    }
+    else if(l2_down_flag && !leg_moving)
+    {
+        chassis_speed->vy = CHASSIS_L2_UP_SPEED;
+        *leg_wheel_speed = CHASSIS_L2_UP_SPEED;
+    }
+    else if((l2_down_flag || l2_up_flag) && leg_moving)
+    {
+        chassis_speed->vy = 0.0f;
+        *leg_wheel_speed = 0.0f;
+        
+    }
+
     leg_up_down();
     l2_leg_auto_up();
     l2_leg_auto_down();

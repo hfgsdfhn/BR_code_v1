@@ -20,6 +20,12 @@ void Chassis_Task_(void *argument)
         if (osMessageQueueGet(Chassis_QueueHandle, &status, NULL, 0U) == osOK)
         {
             if(PC3) PathFollow_Calc(&path_to_xiepo,status.chassis_walk.x,status.chassis_walk.y,&status.target_speed);
+
+            //腿轮子任务
+            leg_task(&status.target_speed, &status.leg_wheel_speed);
+            M2006_wheel_ctrl(status.leg_wheel_speed);
+
+            //底盘任务
             if(status.chassis_emmergency_stop == 0)
             {
                 World_Change(&status);
@@ -31,8 +37,6 @@ void Chassis_Task_(void *argument)
                 chassis_speed_t stop = { .vx = 0.0f, .vy = 0.0f, .vw = 0.0f };
                 Chassis_SendSpeed(&hfdcan1, &stop);
             }
-
-            leg_task();
 
             // if(dji_flag)
             // {

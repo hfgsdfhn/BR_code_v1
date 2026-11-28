@@ -140,6 +140,17 @@ void My_Loop(void)
         DjiMotor_SendGroup(M2006, 4);
         DjiMotor_SendGroup(M3508, 4);
     }
+
+    if(flag_100ms_comm)
+    {
+        flag_100ms_comm = 0;
+        float current_3508_height_mm[4];
+        for(uint8_t i = 0; i<4; i++)
+        {
+            current_3508_height_mm[i] = M3508[i].total_encoder *encoder_to_mm;
+        }
+        Send_Feedback_Pos(&hcan1,&current_3508_height_mm);
+    }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -154,7 +165,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     {
         static uint8_t send_cnt = 0;
         send_cnt++;
-        if (send_cnt >= 10) // 100ms
+        if (send_cnt >= 1) // 10ms
         {
             send_cnt = 0;
             flag_100ms_comm = 1; 
@@ -216,7 +227,7 @@ static void Calc_Height_Sync_Comp(dji_motor_t *motors[4], float target_height[4]
         err[i] = target_height[i] - motors[i]->total_encoder;
         err_sum += err[i];
     }
-    
+
     // 2. 求这 4 个差值的平均值
     err_avg = err_sum / 4.0f;
 
