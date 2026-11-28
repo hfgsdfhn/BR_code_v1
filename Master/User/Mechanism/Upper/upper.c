@@ -13,6 +13,7 @@ extern volatile float br_mit_tau[2][ARM_JOINT_COUNT];
 extern float br_joint_velocity[2][ARM_JOINT_COUNT];
 extern bool br_grip[2];
 extern volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
+extern volatile bool arm_zero_calibration_started[2];
 extern volatile bool startup_hold_latched[2][ARM_JOINT_COUNT];
 static uint8_t zero_calibration_previous[2][ARM_JOINT_COUNT];
 __ALIGNED(32) volatile float arm_feedback_angle[2][ARM_JOINT_COUNT];
@@ -38,7 +39,7 @@ volatile float br_elbow_kp = 100.0f;
 volatile float br_elbow_kd = 10.0f;
 volatile float br_wrist_kp = 60.0f;
 volatile float br_wrist_kd = 1.5f;
-volatile float br_rotation_kp = 30.0f;
+volatile float br_rotation_kp = 50.0f;
 volatile float br_rotation_kd = 5.0f;
 volatile float br_root_m2006_position_kp = 75.247779608f;
 volatile float br_root_m2006_position_ki = 200.359877560f;
@@ -129,7 +130,7 @@ void Upper_RefreshArmIK(uint8_t arm)
                              arm_ik_second_rs00_prefer_small[arm] != 0U))
     {
         for (unsigned joint = ARM_JOINT_ROOT; joint <= ARM_JOINT_WRIST; ++joint)
-            arm_target[arm][joint] = target_deg[joint];
+            arm_target[arm][joint] = Upper_ClampJointTarget(arm, (arm_joint_t)joint, target_deg[joint]);
     }
 }
 static uint32_t last_service_tick;
@@ -152,6 +153,11 @@ bool apply_cup(uint8_t cup, uint8_t index, float target_degrees)
     if (cup >= 2U || index >= 3U)
     {
         return false;
+    }
+    if (index < 2U)
+    {
+        const m2006_t *motor = (cup == ucup) ? &m2006_ucup[index] : &m2006_dcup[index];
+        target_degrees = M2006_ClampPositionDegrees(motor, target_degrees);
     }
     suction_target[cup][index] = target_degrees;
     return true;
@@ -209,7 +215,7 @@ static void Upper_ZeroCalibrationComplete(unsigned arm, unsigned joint)
     if (arm_joint_zero_calibration[arm][joint] != 0U && !pending && at_zero)
     {
         arm_feedback_angle[arm][joint] = 0.0f;
-        arm_target[arm][joint] = arm_pose_pd11[arm][joint];
+        arm_target[arm][joint] = Upper_ClampJointTarget(arm, (arm_joint_t)joint, arm_pose_pd11[arm][joint]);
         arm_joint_zero_calibration[arm][joint] = 0U;
         zero_calibration_previous[arm][joint] = 0U;
     }
@@ -219,6 +225,50 @@ static float clampf(float v, float lo, float hi)
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+
+static const float arm_joint_min_deg[2][ARM_JOINT_COUNT] =
+{
+    {-100.0f, 0.0f, 0.0f, 0.0f, -10.0f},
+    {-10.0f, 0.0f, 0.0f, 0.0f, -10.0f}
+};
+
+static const float arm_joint_max_deg[2][ARM_JOINT_COUNT] =
+{
+    {100.0f, 160.0f, 120.0f, 90.0f, 190.0f},
+    {100.0f, 160.0f, 120.0f, 90.0f, 190.0f}
+};
+
+static float Upper_ApplyFeedbackLimit(uint8_t arm, arm_joint_t joint, float target)
+{
+    const float feedback = arm_feedback_angle[arm][joint];
+    const float minimum = arm_joint_min_deg[arm][joint];
+    const float maximum = arm_joint_max_deg[arm][joint];
+    if (!arm_zero_calibration_started[arm] ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_SHOULDER] != 0U ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_ELBOW] != 0U ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_WRIST] != 0U)
+        return target;
+    if (feedback <= minimum && target < feedback)
+        return feedback;
+    if (feedback >= maximum && target > feedback)
+        return feedback;
+    return target;
+}
+float Upper_ClampJointTarget(uint8_t arm, arm_joint_t joint, float degrees)
+{
+    if (arm >= 2U || joint >= ARM_JOINT_COUNT || !isfinite(degrees))
+        return 0.0f;
+    if (!arm_zero_calibration_started[arm] ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_SHOULDER] != 0U ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_ELBOW] != 0U ||
+        arm_joint_zero_calibration[arm][ARM_JOINT_WRIST] != 0U)
+        return degrees;
+    if (degrees < arm_joint_min_deg[arm][joint])
+        return arm_joint_min_deg[arm][joint];
+    if (degrees > arm_joint_max_deg[arm][joint])
+        return arm_joint_max_deg[arm][joint];
+    return degrees;
+}
 static void telemetry(upper_board_t *board, unsigned joint, float p, float v, float t, float temp, unsigned fault,
                       uint32_t now)
 {
@@ -380,7 +430,7 @@ static bool Upper_ArmTemperatureOverLimit(unsigned arm)
         for (unsigned joint = 0U; joint < ARM_JOINT_COUNT; joint++)
         {
             arm_mode[arm][joint] = ARM_MODE_MIT;
-            arm_target[arm][joint] = arm_pose_pd11[arm][joint];
+            arm_target[arm][joint] = Upper_ClampJointTarget(arm, (arm_joint_t)joint, arm_pose_pd11[arm][joint]);
         }
     }
 }
@@ -392,7 +442,8 @@ bool Upper_IsArmOvertemperature(uint8_t arm)
 static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float tau)
 {
     arm_mode_t mode = arm_mode[arm][joint];
-    float target = arm_target[arm][joint];
+    float target = Upper_ClampJointTarget((uint8_t)arm, joint, arm_target[arm][joint]);
+    target = Upper_ApplyFeedbackLimit((uint8_t)arm, joint, target);
 
     if (joint == ARM_JOINT_ROOT)
     {
@@ -403,9 +454,8 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
             m2006_t *root = (m2006_t *)motor;
             (void)mode;
             (void)tau;
-            M2006_SetTargetDeferred(root_motor, M2006_MODE_POSITION,
-                                    ((target * 45.0f / 14.0f) * ARM_DEG_TO_RAD - BR_LEFT_ROOT_START_RAD) /
-                                        BR_LEFT_ROOT_JOINT_PER_OUTPUT * ARM_RAD_TO_DEG);
+            float output_degrees = ((target * 45.0f / 14.0f) * ARM_DEG_TO_RAD - BR_LEFT_ROOT_START_RAD) / BR_LEFT_ROOT_JOINT_PER_OUTPUT * ARM_RAD_TO_DEG;
+            M2006_SetTargetDeferred(root_motor, M2006_MODE_POSITION, output_degrees);
         }
         else if (arm == ARM_RARM_INDEX)
         {
@@ -424,6 +474,7 @@ static void apply_arm_motor(void *motor, unsigned arm, arm_joint_t joint, float 
         if (joint == ARM_JOINT_SHOULDER)
         {
             target *= 36.0f / 20.0f;
+            target = clampf(target, 0.0f, 160.0f);
             tau *= 20.0f / 36.0f;
         }
         m->tau_ff_nm = tau;

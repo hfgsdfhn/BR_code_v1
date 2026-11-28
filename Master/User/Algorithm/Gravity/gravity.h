@@ -51,6 +51,7 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
                           const float q[BR_ARM_DOF],
                           float end_world_m[3]);
 
+/* target_world_m is Joint_7 relative to Joint_2, expressed in world axes. */
 bool BR_InverseKinematics(const br_gravity_model_t *model,
                           const float target_world_m[3],
                           const float current_q[BR_ARM_DOF],

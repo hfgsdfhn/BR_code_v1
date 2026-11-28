@@ -1,5 +1,4 @@
-﻿
-#include "cup_task.h"
+﻿#include "cup_task.h"
 
 #include "../Mechanism/Chassis/chassis.h"
 #include "../Mechanism/Upper/cup_config.h"
@@ -40,8 +39,6 @@ static uint8_t cup_act_step;
 static uint8_t pd13_press_step, pd14_press_step, pd15_press_step, pa8_press_step, pa11_press_step, pa12_press_step, k0_press_step;
 static void Cup_ServiceAction(void);
 
-#define PD13_UPPER_ID2_MAX_DEG 890.0f
-#define PD13_LOWER_ID2_MAX_DEG 820.0f
 volatile float pd13_stp_normal_speed_rad_s = 20.0f;
 volatile float pd13_stp_decel_speed_rad_s = 8.0f;
 volatile float pd13_stp_decel_distance_cm = 10.0f;
@@ -51,7 +48,6 @@ volatile float pd13_stp_lower_stop_distance_cm = 2.5f;
 volatile uint32_t cup_motor_offline_count = 0U;
 volatile uint32_t cup_motor_recover_count = 0U;
 static bool cup_motor_online_prev[5];
-static bool cup_startup_hold_latched;
 
 __ALIGNED(32) volatile float suction_feedback_angle[2][3];
 volatile float ustp23l_distance_cm;
@@ -269,17 +265,6 @@ static void SuctionCup_MotorWatchdog(void)
     }
 }
 
-static bool SuctionCup_StartupZeroCalibrationComplete(void)
-{
-    unsigned i;
-
-    for (i = 0U; i < 2U; i++)
-    {
-        if (!m2006_ucup[i].received || !m2006_dcup[i].received)
-            return false;
-    }
-    return m3508_dcup[0].received;
-}
 static void SuctionCup_ServicePd13StpLink(void)
 {
     m2006_t *motors[2] = {&m2006_ucup[0], &m2006_dcup[0]};
@@ -297,27 +282,33 @@ static void SuctionCup_ServicePd13StpLink(void)
         return;
     for (side = 0U; side < 2U; ++side)
     {
-        float position = suction_feedback_angle[side == 0U ? ucup : dcup][0U];
+        m2006_t *motor = motors[side];
         float distance = *distances[side];
+        if (!motor->feedback_online || !M2006_IsSoftwareZeroCalibrated(motor))
+            continue;
+
+        float position_rad = motor->position_rad;
+        float position_limit = motor->max_output_angle_deg;
         if (!pd13_stp_started[side] && distance >= 0.0f && distance <= 25.0f)
             pd13_stp_started[side] = true;
         if (!pd13_stp_started[side] || pd13_stp_done[side])
             continue;
         if (distance <= (side == 0U ? pd13_stp_upper_stop_distance_cm : pd13_stp_lower_stop_distance_cm) ||
-            position >= (side == 0U ? PD13_UPPER_ID2_MAX_DEG : PD13_LOWER_ID2_MAX_DEG))
+            position_rad >= position_limit * M2006_DEG_TO_RAD)
         {
-            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, 0.0f);
-            suction_target[side == 0U ? ucup : dcup][0U] = position;
+            float hold_target = M2006_ClampPositionDegrees(motor, position_rad * ARM_RAD_TO_DEG);
+            M2006_SetTargetDeferred(motor, M2006_MODE_POSITION, hold_target);
+            suction_target[side == 0U ? ucup : dcup][0U] = hold_target;
             pd13_stp_done[side] = true;
         }
         else
         {
-            float position_limit = side == 0U ? PD13_UPPER_ID2_MAX_DEG : PD13_LOWER_ID2_MAX_DEG;
             float speed =
-                (distance <= pd13_stp_decel_distance_cm || position >= position_limit - pd13_stp_decel_distance_cm)
+                (distance <= pd13_stp_decel_distance_cm ||
+                 position_rad >= (position_limit - pd13_stp_decel_distance_cm) * M2006_DEG_TO_RAD)
                     ? pd13_stp_decel_speed_rad_s
                     : pd13_stp_normal_speed_rad_s;
-            M2006_SetTargetDeferred(motors[side], M2006_MODE_SPEED, speed);
+            M2006_SetTargetDeferred(motor, M2006_MODE_SPEED, speed);
         }
     }
     if (pd13_stp_done[0] && pd13_stp_done[1])
@@ -422,7 +413,7 @@ static void Cup_ServiceAction(void)
             {
                 gpio_pb6 = 1U;
                 gpio_pd4 = 0U;
-                suction_target[dcup][0U] = 800.0f;
+                suction_target[dcup][0U] = BR_M2006_LOWER_CUP_ID2_MAX_DEG;
                 cup_act_step = 1U;
             }
         }
@@ -430,14 +421,9 @@ static void Cup_ServiceAction(void)
     }
     if (cup_act == CUP_ACT_PA8)
     {
-        if (cup_act_step == 0U && suction_feedback_angle[dcup][2U] > -10.0f && suction_feedback_angle[dcup][2U] < 10.0f)
+        if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f && suction_feedback_angle[dcup][2U] < 230.0f)
         {
-            Cup_SetTarget(830.0f, 700.0f, 95.0f);
-            cup_act_step = 1U;
-        }
-        else if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f && suction_feedback_angle[dcup][2U] < 230.0f)
-        {
-            Cup_SetTarget(550.0f, 550.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
             cup_act_step = 3U;
         }
         return;
@@ -454,10 +440,10 @@ static void Cup_ServiceAction(void)
         {
             cup_act_step = 3U;
         }
-        else if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f &&
+        if (cup_act_step == 2U && suction_feedback_angle[dcup][2U] > 200.0f &&
                  suction_feedback_angle[dcup][2U] < 230.0f)
         {
-            Cup_SetTarget(550.0f, 550.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
             pd13_stp_state = 0U;
             pd13_stp_started[0] = false;
             pd13_stp_started[1] = false;
@@ -470,13 +456,13 @@ static void Cup_ServiceAction(void)
     {
         bool done;
         if (cup_act == CUP_ACT_PD14)
-            done = Cup_Reached(830.0f, 780.0f, 5.0f);
+            done = Cup_Reached(880.0f, 830.0f, 185.0f);
         else if (cup_act == CUP_ACT_PD15)
-            done = Cup_Reached(830.0f, 780.0f, 185.0f);
+            done = Cup_Reached(880.0f, 830.0f, 5.0f);
         else if (cup_act == CUP_ACT_PA11)
-            done = Cup_Reached(550.0f, 550.0f, 5.0f);
+            done = Cup_Reached(700.0f, 700.0f, 5.0f);
         else
-            done = cup_act_step != 0U ? Cup_Reached(830.0f, 700.0f, 95.0f) : Cup_Reached(550.0f, 550.0f, 5.0f);
+            done = cup_act_step != 0U ? Cup_Reached(880.0f, 830.0f, 95.0f) : Cup_Reached(700.0f, 700.0f, 5.0f);
         if (done)
             cup_act = CUP_ACT_NONE;
     }
@@ -549,6 +535,13 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     if ((pressed & (1U << 1U)) != 0U)
     {
         Cup_ResetAction();
+        k0_press_step = 0U;
+        pd13_press_step = 0U;
+        pd14_press_step = 0U;
+        pd15_press_step = 0U;
+        pa8_press_step = 0U;
+        pa11_press_step = 0U;
+        pa12_press_step = 0U;
         gpio_pd7 = 0U;
         gpio_pb6 = 0U;
         gpio_pb7 = 0U;
@@ -563,6 +556,8 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool pd13_first_press = (pd13_press_step == 0U);
 
         Cup_ResetAction();
+        pd14_press_step = 0U;
+        pd15_press_step = 0U;
         k0_press_step = 0U;
         pa8_press_step = 0U;
         pa12_press_step = 0U;
@@ -594,18 +589,22 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool second_press = (pd14_press_step != 0U);
         pd14_press_step = second_press ? 0U : 1U;
         Cup_ResetAction();
+        pa8_press_step = 0U;
+        pa12_press_step = 0U;
+        gpio_pd3 = second_press ? 0U : 1U;
+        suction_target[dcup][2U] = second_press ? 0.0f : 220.0f;
         if (second_press)
         {
-            gpio_pd3 = 0U;
-            suction_target[dcup][2U] = 0.0f;
-            Cup_ResetAction();
+            gpio_pd7 = 0U;
+            gpio_pb6 = 0U;
+            gpio_pb7 = 1U;
+            gpio_pd4 = 1U;
         }
-        else
+        Cup_SetTarget(880.0f, 830.0f, 185.0f);
+        k0_press_step = 0U;
+        if (!second_press)
         {
-            gpio_pd3 = 1U;
-            suction_target[dcup][2U] = 220.0f;
             cup_act = CUP_ACT_PD14;
-            Cup_SetTarget(830.0f, 780.0f, 5.0f);
         }
     }
 
@@ -614,18 +613,22 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool second_press = (pd15_press_step != 0U);
         pd15_press_step = second_press ? 0U : 1U;
         Cup_ResetAction();
+        pa8_press_step = 0U;
+        pa12_press_step = 0U;
+        gpio_pd3 = second_press ? 0U : 1U;
+        suction_target[dcup][2U] = second_press ? 0.0f : 220.0f;
         if (second_press)
         {
-            gpio_pd3 = 0U;
-            suction_target[dcup][2U] = 0.0f;
-            Cup_ResetAction();
+            gpio_pd7 = 0U;
+            gpio_pb6 = 0U;
+            gpio_pb7 = 1U;
+            gpio_pd4 = 1U;
         }
-        else
+        Cup_SetTarget(880.0f, 830.0f, 5.0f);
+        k0_press_step = 0U;
+        if (!second_press)
         {
-            gpio_pd3 = 1U;
-            suction_target[dcup][2U] = 220.0f;
             cup_act = CUP_ACT_PD15;
-            Cup_SetTarget(830.0f, 780.0f, 185.0f);
         }
     }
 
@@ -634,17 +637,23 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool first_press = (pa8_press_step == 0U);
         pa8_press_step = first_press ? 1U : 0U;
         Cup_ResetAction();
+        pd14_press_step = 0U;
+        pd15_press_step = 0U;
         k0_press_step = 0U;
         pd13_press_step = 0U;
         pa12_press_step = 0U;
         cup_act = CUP_ACT_PA8;
-        cup_act_step = first_press ? 0U : 2U;
+        cup_act_step = first_press ? 1U : 2U;
         gpio_pd7 = 1U;
         gpio_pb6 = 1U;
         gpio_pb7 = 0U;
         gpio_pd4 = 0U;
         gpio_pd3 = first_press ? 0U : 1U;
         suction_target[dcup][2U] = first_press ? 0.0f : 220.0f;
+        if (first_press)
+        {
+            Cup_SetTarget(880.0f, 830.0f, 95.0f);
+        }
     }
 
     if ((pressed & (1U << 7U)) != 0U)
@@ -652,6 +661,8 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
         bool pa11_first_press = (pa11_press_step == 0U);
         pa11_press_step = pa11_first_press ? 1U : 0U;
         Cup_ResetAction();
+        k0_press_step = pa11_first_press ? 1U : 0U;
+        pa12_press_step = 0U;
         cup_act = CUP_ACT_PA11;
         cup_act_step = pa11_first_press ? 0U : 1U;
         if (pa11_first_press)
@@ -663,7 +674,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pd4 = 0U;
             gpio_pd3 = 0U;
             suction_target[dcup][2U] = 350.0f;
-            Cup_SetTarget(600.0f, 600.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
         }
         else
         {
@@ -674,7 +685,7 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
             gpio_pd4 = 0U;
             gpio_pd3 = 0U;
             suction_target[dcup][2U] = 0.0f;
-            Cup_SetTarget(550.0f, 550.0f, 5.0f);
+            Cup_SetTarget(700.0f, 700.0f, 5.0f);
         }
     }
 
@@ -682,6 +693,8 @@ static void SuctionCup_ProcessRemote(const send_to_cup_t *status)
     {
         pa12_press_step = (uint8_t)((pa12_press_step + 1U) % 2U);
         Cup_ResetAction();
+        pd14_press_step = 0U;
+        pd15_press_step = 0U;
         k0_press_step = 0U;
         pd13_press_step = 0U;
         pa8_press_step = 0U;

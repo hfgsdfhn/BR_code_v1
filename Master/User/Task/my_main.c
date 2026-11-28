@@ -88,9 +88,14 @@ void My_Init(void)
     M2006_Init(&m2006_dcup[0], &hfdcan2, 2U, -1);
     M2006_Init(&m2006_dcup[1], &hfdcan2, 3U, -1);
     M3508_Init(&m3508_dcup[0], &hfdcan2, 5U, 1);
+    M3508_StartSoftwareZeroCalibration(&m3508_dcup[0]);
 
     M2006_Init(&m2006_ucup[0], &hfdcan3, 2U, -1);
     M2006_Init(&m2006_ucup[1], &hfdcan3, 3U, -1);
+    m2006_ucup[0].max_output_angle_deg = BR_M2006_UPPER_CUP_ID2_MAX_DEG;
+    m2006_dcup[0].max_output_angle_deg = BR_M2006_LOWER_CUP_ID2_MAX_DEG;
+    m2006_ucup[1].max_output_angle_deg = BR_M2006_CUP_ID3_MAX_DEG;
+    m2006_dcup[1].max_output_angle_deg = BR_M2006_CUP_ID3_MAX_DEG;
     M2006_StartSoftwareZeroCalibration(&m2006_ucup[0]);
     M2006_StartSoftwareZeroCalibration(&m2006_ucup[1]);
     M2006_StartSoftwareZeroCalibration(&m2006_dcup[0]);

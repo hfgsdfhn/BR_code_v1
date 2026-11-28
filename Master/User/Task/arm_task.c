@@ -1,4 +1,4 @@
-#include "arm_task.h"
+﻿#include "arm_task.h"
 #include "../Peripheral/CAN/bsp_can.h"
 #include "cmsis_os2.h"
 #include "cup_task.h"
@@ -82,6 +82,7 @@ volatile float xarm_pose_pd15_2[2][ARM_JOINT_COUNT] = {{0.0f, 0.0f, 28.57f, 74.0
 float br_joint_velocity[2][ARM_JOINT_COUNT];
 bool br_grip[2];
 volatile uint8_t arm_joint_zero_calibration[2][ARM_JOINT_COUNT];
+volatile bool arm_zero_calibration_started[2];
 
 void Arm_OnFrame(const can_frame_t *frame)
 {
@@ -147,7 +148,7 @@ static bool arm_set_command(uint8_t arm, arm_joint_t joint, arm_mode_t mode, flo
         return false;
     osMutexAcquire(br_mutex, osWaitForever);
     arm_mode[arm][joint] = mode;
-    arm_target[arm][joint] = target;
+    arm_target[arm][joint] = Upper_ClampJointTarget(arm, joint, target);
     br_mit_tau[arm][joint] = tau;
     osMutexRelease(br_mutex);
     return true;
@@ -206,16 +207,11 @@ static void Arm_ApplyDualPose(const volatile float left_pose[ARM_JOINT_COUNT],
 }
 static void Arm_ResetSoftwareZeros(void)
 {
-    unsigned i;
     M2006_ResetSoftwareZero(&m2006_larm);
     RS01_ResetSoftwareZero(&rs01_rarm);
     RS05_ResetSoftwareZero(&rs05_larm);
     RS05_ResetSoftwareZero(&rs05_rarm);
-    for (i = 0U; i < 2U; ++i)
-    {
-        M2006_ResetSoftwareZero(&m2006_ucup[i]);
-        M2006_ResetSoftwareZero(&m2006_dcup[i]);
-    }
+    /* The cup M2006 travel limits stay relative to the power-on calibration. */
     M3508_ResetSoftwareZero(&m3508_dcup[0]);
 }
 
@@ -224,8 +220,11 @@ static void Arm_RequestAllJointMechanicalZeros(void)
     unsigned arm;
     unsigned joint;
     for (arm = 0U; arm < 2U; ++arm)
+    {
+        arm_zero_calibration_started[arm] = true;
         for (joint = ARM_JOINT_SHOULDER; joint < ARM_JOINT_ROTATION; ++joint)
             arm_joint_zero_calibration[arm][joint] = 1U;
+    }
 }
 
 static void Arm_ClearTargets(void)

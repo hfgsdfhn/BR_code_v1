@@ -20,7 +20,8 @@
 #define M3508_CURRENT_RAW_LIMIT 16384.0f
 #define M3508_CUR_MAX_A 20.0f
 
-#define M3508_ZERO_STABLE_FRAMES 1U
+#define M3508_ZERO_STABLE_FRAMES 10U
+#define M3508_STARTUP_ZERO_SPEED_RAD_S (-10.0f)
 #define M3508_ZERO_MAX_STEP_COUNTS 128
 #define M3508_ZERO_MAX_SPEED_RPM 30
 #define RPM_TO_RAD_S 0.10471975512f
@@ -75,6 +76,8 @@ typedef struct
     bool trajectory_pending;
     bool trajectory_active;
     bool startup_hold_active;
+    bool startup_zero_calibrating;
+    bool startup_zero_complete;
 } m3508_t;
 
 extern volatile float m3508_trajectory_max_speed_rad_s;
@@ -108,6 +111,9 @@ void M3508_BuildGroupFrame(uint8_t first_id,
 void M3508_ResetFeedback(m3508_t *motor);
 
 void M3508_ResetSoftwareZero(m3508_t *motor);
+
+void M3508_StartSoftwareZeroCalibration(m3508_t *motor);
+bool M3508_IsSoftwareZeroCalibrated(const m3508_t *motor);
 
 void M3508_Service(m3508_t *motor,
                    float dt_s);

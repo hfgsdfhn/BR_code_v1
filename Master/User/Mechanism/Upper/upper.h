@@ -81,6 +81,7 @@ void Upper_Service(uint32_t now);
 bool Upper_IsArmOvertemperature(uint8_t arm);
 
 typedef enum { ARM_JOINT_ROOT, ARM_JOINT_SHOULDER, ARM_JOINT_ELBOW, ARM_JOINT_WRIST, ARM_JOINT_ROTATION } arm_joint_t;
+float Upper_ClampJointTarget(uint8_t arm, arm_joint_t joint, float degrees);
 bool Upper_SetJointMIT(uint8_t arm, arm_joint_t joint, float tau_nm, float output_degrees);
 bool Upper_SetJointModeTarget(uint8_t arm, arm_joint_t joint, arm_mode_t mode, float target_degrees);
 bool Upper_SetJointDegrees(uint8_t arm, arm_joint_t joint, float degrees);

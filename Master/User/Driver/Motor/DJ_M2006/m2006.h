@@ -23,7 +23,7 @@
 #define M2006_CURRENT_RAW_LIMIT 10000.0f
 #define M2006_CUR_MAX_A 10.0f
 
-#define M2006_ZERO_STABLE_FRAMES 25U
+#define M2006_ZERO_STABLE_FRAMES 10U
 #define M2006_STARTUP_ZERO_SPEED_RAD_S (-10.0f)
 #define M2006_ZERO_MAX_STEP_COUNTS 128
 #define M2006_ZERO_MAX_SPEED_RPM 30
@@ -52,6 +52,7 @@ typedef struct
     uint16_t last_encoder;
     int32_t total_encoder;
     float output_ratio;
+    float max_output_angle_deg; /* Zero disables the post-calibration travel limit. */
     int16_t speed_rpm;
     int16_t current_raw;
     float position_rad;
@@ -121,6 +122,7 @@ void M2006_ResetSoftwareZero(m2006_t *motor);
 
 void M2006_StartSoftwareZeroCalibration(m2006_t *motor);
 bool M2006_IsSoftwareZeroCalibrated(const m2006_t *motor);
+float M2006_ClampPositionDegrees(const m2006_t *motor, float degrees);
 
 void M2006_Service(m2006_t *motor,
                    float dt_s);
