@@ -1,4 +1,4 @@
-﻿#include "gravity.h"
+#include "gravity.h"
 
 #include <math.h>
 #include <string.h>
@@ -144,15 +144,37 @@ bool BR_ForwardKinematics(const br_gravity_model_t *model,
     return true;
 }
 
-static bool br_q_within_limits(const br_gravity_model_t *model, const float q_deg[BR_ARM_DOF])
+static const float br_motor_limit_min_deg[2][BR_ARM_DOF] =
 {
-    const float root_min = model == &br_gravity_models[1] ? -10.0f : -100.0f;
-    const float root_max = 100.0f;
-    return q_deg[0] >= root_min && q_deg[0] <= root_max &&
-           q_deg[1] >= 0.0f && q_deg[1] <= 160.0f &&
-           q_deg[2] >= 0.0f && q_deg[2] <= 120.0f &&
-           q_deg[3] >= 0.0f && q_deg[3] <= 90.0f &&
-           q_deg[4] >= -10.0f && q_deg[4] <= 190.0f;
+    {-100.0f, 0.0f, 0.0f, 0.0f, -10.0f},
+    {-10.0f, 0.0f, 0.0f, 0.0f, -10.0f}
+};
+
+static const float br_motor_limit_max_deg[2][BR_ARM_DOF] =
+{
+    {100.0f, 160.0f, 120.0f, 90.0f, 190.0f},
+    {100.0f, 160.0f, 120.0f, 90.0f, 190.0f}
+};
+
+static bool br_q_within_limits(const br_gravity_model_t *model,
+                               const float q_deg[BR_ARM_DOF],
+                               const float current_q_deg[BR_ARM_DOF])
+{
+    const unsigned arm = model == &br_gravity_models[1] ? 1U : 0U;
+    const float limit_epsilon_deg = 0.5f;
+    for (unsigned joint = 0U; joint < BR_ARM_DOF; ++joint)
+    {
+        const float minimum = br_motor_limit_min_deg[arm][joint];
+        const float maximum = br_motor_limit_max_deg[arm][joint];
+        const float current = current_q_deg[joint];
+        if (q_deg[joint] < minimum || q_deg[joint] > maximum)
+            return false;
+        if (current <= minimum + limit_epsilon_deg && q_deg[joint] < current)
+            return false;
+        if (current >= maximum - limit_epsilon_deg && q_deg[joint] > current)
+            return false;
+    }
+    return true;
 }
 static float br_wrap_deg(float angle_deg)
 {
@@ -245,7 +267,10 @@ bool BR_InverseKinematics(const br_gravity_model_t *model,
                 br_wrap_deg(yaw * 180.0f / pi), q1_wrapped, q2_wrapped,
                 q3_wrapped, current_q[4] * 180.0f / pi};
 
-            if (!br_q_within_limits(model, candidate_q))
+            float current_q_deg[BR_ARM_DOF];
+            for (unsigned joint = 0U; joint < BR_ARM_DOF; ++joint)
+                current_q_deg[joint] = current_q[joint] * 180.0f / pi;
+            if (!br_q_within_limits(model, candidate_q, current_q_deg))
                 continue;
 
             if (!found || cost < best_cost)
