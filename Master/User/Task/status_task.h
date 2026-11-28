@@ -7,6 +7,7 @@
 #include "chassis.h"
 #include <stdint.h>
 
+#define GPIO_INPUT_COUNT 5
 
 typedef struct
 {
@@ -79,7 +80,9 @@ extern osMessageQueueId_t Cup_QueueHandle;
 extern volatile uint8_t gpio_pb6, gpio_pb7, gpio_pd7, gpio_pd6;
 extern volatile uint8_t gpio_pd1, gpio_pd3, gpio_pd4, gpio_pd5;
 extern volatile uint8_t gpio_pa8, gpio_pc9, gpio_pc8;
-
+extern uint8_t gpio_pa8_flag;
+extern uint8_t gpio_pc8_flag;
+extern uint8_t gpio_pc9_flag;
 void Status_InitGpio(void);
 void Status_ApplyGpio(void);
 void Queue_Init(void);

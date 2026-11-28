@@ -8,7 +8,6 @@
 #include "fdcan.h"
 send_to_chassis_t chassis_data_;
 uint8_t dji_flag = 1;   //调试用
-DJI_leg_pos_e dji_leg_pos_type = 0;
 void World_Change(send_to_chassis_t *send);
 void Chassis_Task_(void *argument)
 {
@@ -34,14 +33,14 @@ void Chassis_Task_(void *argument)
             }
 
             leg_task();
-            
+
             // if(dji_flag)
             // {
             //     dji_flag = 0U;
             //     SmallBoard_Send_PID(&hfdcan1, 0U, DJI_Board_Target.PID_K[0][0], DJI_Board_Target.PID_K[0][1], DJI_Board_Target.PID_K[0][2]);
             //     SmallBoard_Send_PID(&hfdcan1, 1U, DJI_Board_Target.PID_K[1][0], DJI_Board_Target.PID_K[1][1], DJI_Board_Target.PID_K[1][2]);
             //     SmallBoard_Send_PID(&hfdcan1, 2U, DJI_Board_Target.PID_K[2][0], DJI_Board_Target.PID_K[2][1], DJI_Board_Target.PID_K[2][2]);
-            // } 
+            // }
         }
         tick += period;
         osDelayUntil(tick);
